@@ -6,7 +6,17 @@ import { createDemoSession, mode, readDemoSession } from './store';
 import { createGuest } from './auth';
 
 export const COOKIE = 'porsi_session';
+export const CUSTOMER_COOKIE = 'porsi_customer';
 export const GUEST_COOKIE = 'porsi_guest';
+export type SessionSpace = 'auto' | 'customer' | 'work';
+export const requestSpace = (request: NextRequest): SessionSpace =>
+  request.headers.get('x-porsi-space') === 'customer' ||
+  request.nextUrl.searchParams.get('space') === 'customer'
+    ? 'customer'
+    : request.headers.get('x-porsi-space') === 'work' ||
+        request.nextUrl.searchParams.get('space') === 'work'
+      ? 'work'
+      : 'auto';
 export const cookieOptions = () => ({
   httpOnly: true,
   secure:
@@ -45,18 +55,43 @@ export function checkOrigin(request: NextRequest) {
       403,
     );
 }
-export async function readUser(): Promise<User | null> {
+export async function readUser(
+  space: SessionSpace = 'auto',
+): Promise<User | null> {
   const jar = await cookies();
+  let customerUser: User | null = null;
+  if (space !== 'work') {
+    const customerToken = jar.get(CUSTOMER_COOKIE)?.value;
+    if (customerToken) {
+      const customer =
+        mode() === 'demo'
+          ? await readDemoSession(customerToken)
+          : await (
+              await import('./supabase')
+            ).readCloudSession(customerToken, CUSTOMER_COOKIE);
+      if (customer?.role === 'student') customerUser = customer;
+      if (
+        customer?.role === 'student' &&
+        (space === 'customer' || !jar.get(COOKIE)?.value)
+      )
+        return customer;
+    }
+  }
   const token = jar.get(COOKIE)?.value;
-  if (token && mode() === 'supabase') {
+  if (space !== 'customer' && token && mode() === 'supabase') {
     const { readCloudSession } = await import('./supabase');
     const user = await readCloudSession(token);
     if (user) return user;
   }
-  if (token && mode() === 'demo') {
+  if (space !== 'customer' && token && mode() === 'demo') {
     const user = await readDemoSession(token);
     if (user) return user;
   }
+  if (space === 'work') return null;
+  return customerUser ?? readGuestUser();
+}
+export async function readGuestUser(): Promise<User | null> {
+  const jar = await cookies();
   const guestToken = jar.get(GUEST_COOKIE)?.value;
   if (!guestToken) return null;
   if (mode() === 'supabase') {
@@ -66,9 +101,11 @@ export async function readUser(): Promise<User | null> {
   const guest = await readDemoSession(guestToken);
   return guest?.isGuest && guest.role === 'student' ? guest : null;
 }
-export async function ensureUser(): Promise<User> {
-  const existing = await readUser();
+export async function ensureUser(space: SessionSpace = 'auto'): Promise<User> {
+  const existing = await readUser(space);
   if (existing) return existing;
+  const guest = await readGuestUser();
+  if (guest) return guest;
   const jar = await cookies();
   if (mode() === 'supabase') {
     const { createCloudGuestSession } = await import('./supabase');

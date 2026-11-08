@@ -13,10 +13,12 @@ import {
   createMarketplaceState,
   DomainError,
   snapshot,
+  adoptGuestOrders,
   type StoreState,
 } from './engine';
 import { COOKIE, cookieOptions } from './http';
 import { createGuest } from './auth';
+import { accountFields } from './accounts';
 
 function config() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -61,7 +63,11 @@ interface SessionToken {
   refresh: string;
   expires: number;
 }
-interface GuestToken { kind: 'guest'; user: User; expires: number }
+interface GuestToken {
+  kind: 'guest';
+  user: User;
+  expires: number;
+}
 function seal(value: SessionToken | GuestToken) {
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv);
@@ -99,8 +105,18 @@ export function userFromAuth(user: SupabaseUser): User {
   const rawRole = user.app_metadata?.role;
   const role: Role =
     rawRole === 'seller' || rawRole === 'admin' ? rawRole : 'student';
-  const outletId = typeof user.app_metadata?.outletId === 'string' ? user.app_metadata.outletId : undefined;
-  if (role === 'seller' && (!outletId || !/^[a-zA-Z0-9_-]{1,100}$/.test(outletId))) throw new DomainError('Akun gerai belum memiliki penugasan gerai yang valid.', 403);
+  const outletId =
+    typeof user.app_metadata?.outletId === 'string'
+      ? user.app_metadata.outletId
+      : undefined;
+  if (
+    role === 'seller' &&
+    (!outletId || !/^[a-zA-Z0-9_-]{1,100}$/.test(outletId))
+  )
+    throw new DomainError(
+      'Akun gerai belum memiliki penugasan gerai yang valid.',
+      403,
+    );
   return {
     id: user.id,
     role,
@@ -116,14 +132,26 @@ export function userFromAuth(user: SupabaseUser): User {
 }
 
 export function createCloudGuestSession() {
-  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw new DomainError('Identitas tamu belum selesai dikonfigurasi.', 503);
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)
+    throw new DomainError('Identitas tamu belum selesai dikonfigurasi.', 503);
   const user = createGuest();
-  return { user, token: seal({ kind: 'guest', user, expires: Date.now() + 86400000 }) };
+  return {
+    user,
+    token: seal({ kind: 'guest', user, expires: Date.now() + 86400000 }),
+  };
 }
 export function readCloudGuestSession(token: string): User | null {
-  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) return null;
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)
+    return null;
   const value = unseal(token);
-  return value && 'kind' in value && value.kind === 'guest' && value.user.role === 'student' && value.user.isGuest === true && /^guest-[a-f0-9-]{36}$/.test(value.user.id) ? value.user : null;
+  return value &&
+    'kind' in value &&
+    value.kind === 'guest' &&
+    value.user.role === 'student' &&
+    value.user.isGuest === true &&
+    /^guest-[a-f0-9-]{36}$/.test(value.user.id)
+    ? value.user
+    : null;
 }
 export async function cloudLogin(data: Record<string, unknown>) {
   if (
@@ -171,7 +199,10 @@ export async function cloudLogin(data: Record<string, unknown>) {
   });
   return { token, user };
 }
-export async function readCloudSession(token: string): Promise<User | null> {
+export async function readCloudSession(
+  token: string,
+  cookieName = COOKIE,
+): Promise<User | null> {
   config();
   const value = unseal(token);
   if (!value || 'kind' in value) return null;
@@ -205,7 +236,7 @@ export async function readCloudSession(token: string): Promise<User | null> {
     expires: value.expires,
   });
   const jar = await cookies();
-  jar.set(COOKIE, updated, cookieOptions());
+  jar.set(cookieName, updated, cookieOptions());
   return userFromAuth(refreshed.data.user);
 }
 export async function cloudLogout(token: string) {
@@ -239,23 +270,24 @@ async function load() {
   if (error?.code === 'PGRST116') {
     const initial = createMarketplaceState(Date.now(), true);
     // A live installation starts empty, with slots relative to actual server time.
-    for (const kitchen of [initial, ...(initial.kitchens ?? [])]) kitchen.slots = kitchen.slots.map((slot, i) => {
-      const start = Date.now() + (60 + i * 30) * 60000;
-      const end = start + 30 * 60000;
-      const fmt = (date: number) =>
-        new Intl.DateTimeFormat('id-ID', {
-          timeZone: 'Asia/Jakarta',
-          hour: '2-digit',
-          minute: '2-digit',
-        }).format(new Date(date));
-      return {
-        ...slot,
-        start: new Date(start).toISOString(),
-        end: new Date(end).toISOString(),
-        cutoff: new Date(Date.now() + 30 * 60000).toISOString(),
-        label: `${fmt(start)}–${fmt(end)}`,
-      };
-    });
+    for (const kitchen of [initial, ...(initial.kitchens ?? [])])
+      kitchen.slots = kitchen.slots.map((slot, i) => {
+        const start = Date.now() + (60 + i * 30) * 60000;
+        const end = start + 30 * 60000;
+        const fmt = (date: number) =>
+          new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date(date));
+        return {
+          ...slot,
+          start: new Date(start).toISOString(),
+          end: new Date(end).toISOString(),
+          cutoff: new Date(Date.now() + 30 * 60000).toISOString(),
+          label: `${fmt(start)}–${fmt(end)}`,
+        };
+      });
     const inserted = await client
       .from('porsi_state')
       .insert({ id: 'main', document: initial, revision: 0 });
@@ -291,11 +323,23 @@ function upgradeCloudState(state: StoreState): StoreState {
     const empty = createMarketplaceState(Date.now(), true);
     state.kitchens = empty.kitchens;
     state.menu.outletId ??= 'outlet-bu-ratna';
-    for (const kitchen of state.kitchens ?? []) kitchen.slots = kitchen.slots.map((slot, i) => {
-      const start = Date.now() + (60 + i * 30) * 60000;
-      const format = (time: number) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).format(new Date(time));
-      return { ...slot, start: new Date(start).toISOString(), end: new Date(start + 30 * 60000).toISOString(), cutoff: new Date(Date.now() + 30 * 60000).toISOString(), label: `${format(start)}–${format(start + 30 * 60000)}` };
-    });
+    for (const kitchen of state.kitchens ?? [])
+      kitchen.slots = kitchen.slots.map((slot, i) => {
+        const start = Date.now() + (60 + i * 30) * 60000;
+        const format = (time: number) =>
+          new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            hour: '2-digit',
+            minute: '2-digit',
+          }).format(new Date(time));
+        return {
+          ...slot,
+          start: new Date(start).toISOString(),
+          end: new Date(start + 30 * 60000).toISOString(),
+          cutoff: new Date(Date.now() + 30 * 60000).toISOString(),
+          label: `${format(start)}–${format(start + 30 * 60000)}`,
+        };
+      });
   }
   return state;
 }
@@ -330,4 +374,120 @@ export async function cloudMutate(
     'Data sedang diperbarui pengguna lain. Muat ulang dan coba lagi.',
     409,
   );
+}
+
+export async function cloudClaimGuest(guest: User | null, customer: User) {
+  if (!guest?.isGuest || customer.role !== 'student') return;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { state, revision } = await load();
+    adoptGuestOrders(state, guest.id, customer.id);
+    const result = await serviceClient().rpc('porsi_compare_and_swap', {
+      expected_revision: revision,
+      next_document: state,
+    });
+    if (result.error)
+      throw new DomainError(
+        'Pesanan tamu belum dapat ditautkan. Coba masuk kembali.',
+        503,
+      );
+    if (result.data === true) return;
+  }
+  throw new DomainError('Pesanan sedang diperbarui. Coba masuk kembali.', 409);
+}
+
+export async function cloudRegister(
+  data: Record<string, unknown>,
+  guest: User | null,
+) {
+  const fields = accountFields(data);
+  const client = publicClient();
+  const { data: result, error } = await client.auth.signUp({
+    email: fields.email,
+    password: fields.password,
+    options: { data: { display_name: fields.name } },
+  });
+  if (error || !result.user)
+    throw new DomainError(
+      'Akun belum dapat dibuat. Periksa email dan coba lagi.',
+    );
+  if (!result.session) return { user: null, token: null };
+  const signedIn = await cloudLogin({
+    role: 'student',
+    email: fields.email,
+    password: fields.password,
+  });
+  await cloudClaimGuest(guest, signedIn.user);
+  return signedIn;
+}
+
+export async function cloudCreateSeller(
+  admin: User,
+  data: Record<string, unknown>,
+) {
+  if (admin.role !== 'admin')
+    throw new DomainError('Akses pengelola diperlukan.', 403);
+  const fields = accountFields(data);
+  const current = await load();
+  const outletId =
+    typeof data.outletId === 'string' && data.outletId
+      ? data.outletId
+      : `outlet-${randomUUID()}`;
+  if (
+    data.outletId &&
+    ![current.state, ...(current.state.kitchens ?? [])].some(
+      (k) => k.menu.outletId === outletId,
+    )
+  )
+    throw new DomainError('Gerai tidak ditemukan.', 404);
+  const created = await serviceClient().auth.admin.createUser({
+    email: fields.email,
+    password: fields.password,
+    email_confirm: true,
+    app_metadata: { role: 'seller', outletId },
+    user_metadata: { display_name: fields.name },
+  });
+  if (created.error || !created.data.user)
+    throw new DomainError(
+      'Akun gerai belum dapat dibuat. Periksa apakah email sudah terdaftar.',
+    );
+  try {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { state, revision } = await load();
+      if (data.outletId) {
+        state.staffAccounts ??= [];
+        state.staffAccounts.push({
+          id: created.data.user.id,
+          name: fields.name,
+          email: fields.email,
+          outletId,
+        });
+      } else
+        applyAction(
+          state,
+          admin,
+          {
+            type: 'create_outlet',
+            outletId,
+            name: data.outletName,
+            location: data.location,
+            category: data.category,
+            accountId: created.data.user.id,
+            sellerEmail: fields.email,
+            sellerName: fields.name,
+          },
+          Date.now(),
+          'supabase',
+        );
+      const result = await serviceClient().rpc('porsi_compare_and_swap', {
+        expected_revision: revision,
+        next_document: state,
+      });
+      if (result.error) throw new DomainError('Gerai belum tersimpan.', 503);
+      if (result.data === true) return snapshot(state, admin, 'supabase');
+    }
+    throw new DomainError('Data sedang berubah. Coba kembali.', 409);
+  } catch (error) {
+    await serviceClient().auth.admin.deleteUser(created.data.user.id);
+    throw error;
+  }
 }

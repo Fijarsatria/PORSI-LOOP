@@ -2,7 +2,8 @@ export type Role = 'student' | 'seller' | 'admin';
 export type Portion = 'small' | 'regular';
 export type Fulfillment = 'dine_in' | 'pick_up';
 export type PaymentMethod = 'qris' | 'ewallet' | 'bank_transfer' | 'cash';
-export type PaymentStatus = 'pending' | 'paid' | 'refund_pending' | 'refunded' | 'expired';
+export type PaymentStatus =
+  'pending' | 'paid' | 'refund_pending' | 'refunded' | 'expired';
 export type OrderStatus =
   | 'pending_payment'
   | 'confirmed'
@@ -22,6 +23,8 @@ export interface User {
   outletId?: string;
 }
 export interface Menu {
+  ratingAverage?: number;
+  ratingCount?: number;
   slots?: Slot[];
   outletId?: string;
   availableStock?: number;
@@ -51,6 +54,7 @@ export interface Slot {
   closed: boolean;
 }
 export interface Order {
+  rating?: { stars: number; comment: string; at: string };
   outletId?: string;
   fulfillment?: Fulfillment;
   paymentStatus?: PaymentStatus;
@@ -93,6 +97,7 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  rating?: { stars: number; comment: string; at: string };
   note?: string;
   outletId?: string;
   fulfillment?: Fulfillment;
@@ -243,10 +248,37 @@ export interface FinanceReport extends FinanceTotals {
   paymentMethods: FinanceMethod[];
 }
 export interface Snapshot {
+  staffAccounts?: {
+    id: string;
+    name: string;
+    email: string;
+    outletId: string;
+  }[];
   finance?: FinanceReport;
-  orderTraffic?: { date: string; outletId: string; outletName: string; orders: number; portions: number; normal: number; promo: number; paid: number; served: number; pending: number; preparing: number; ready: number; active: number }[];
+  orderTraffic?: {
+    date: string;
+    outletId: string;
+    outletName: string;
+    orders: number;
+    portions: number;
+    normal: number;
+    promo: number;
+    paid: number;
+    served: number;
+    pending: number;
+    preparing: number;
+    ready: number;
+    active: number;
+  }[];
   menus?: Menu[];
-  outlets?: { id: string; name: string; location: string; category: string; menuIds: string[]; metrics?: Metrics }[];
+  outlets?: {
+    id: string;
+    name: string;
+    location: string;
+    category: string;
+    menuIds: string[];
+    metrics?: Metrics;
+  }[];
   kitchens?: Snapshot[];
   selectedOutletId?: string;
   sessionId: string;
@@ -273,7 +305,7 @@ export type Action = {
   [key: string]: unknown;
 };
 export const roleNames: Record<Role, string> = {
-  student: 'Mahasiswa',
+  student: 'Customer',
   seller: 'Pemilik gerai',
   admin: 'Pengelola kantin',
 };

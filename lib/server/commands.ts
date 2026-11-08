@@ -28,7 +28,9 @@ export function applyDemoCommand(
         'Hanya pengelola yang dapat mengatur ulang simulasi.',
         403,
       );
-    const next = state.kitchens ? createMarketplaceState(realNow) : createState(realNow);
+    const next = state.kitchens
+      ? createMarketplaceState(realNow)
+      : createState(realNow);
     if (key) next.idempotency.push(key);
     return next;
   }
@@ -48,7 +50,10 @@ export function applyDemoCommand(
     state.demoClock = new Date(
       Date.parse(state.demoClock) + action.minutes * 60000,
     ).toISOString();
-    for (const kitchen of state.kitchens ?? []) kitchen.demoClock = new Date(Date.parse(kitchen.demoClock) + action.minutes * 60000).toISOString();
+    for (const kitchen of state.kitchens ?? [])
+      kitchen.demoClock = new Date(
+        Date.parse(kitchen.demoClock) + action.minutes * 60000,
+      ).toISOString();
     const now = serverNow(state, 'demo', realNow);
     expire(state, now);
     state.logs.unshift({

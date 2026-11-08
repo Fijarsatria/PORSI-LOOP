@@ -6,6 +6,7 @@ import {
   checkOrigin,
   errorResponse,
   readUser,
+  requestSpace,
 } from '../../../lib/server/http';
 import { mutate } from '../../../lib/server/store';
 
@@ -13,7 +14,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     checkOrigin(request);
-    const user = await readUser();
+    const user = await readUser(requestSpace(request));
     if (!user)
       throw new DomainError('Masuk terlebih dahulu untuk melanjutkan.', 401);
     const data = await body(request);

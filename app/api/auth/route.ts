@@ -7,9 +7,14 @@ import {
   body,
   checkOrigin,
   COOKIE,
+  CUSTOMER_COOKIE,
+  GUEST_COOKIE,
   cookieOptions,
   errorResponse,
   ensureUser,
+  readGuestUser,
+  requestSpace,
+  readUser,
 } from '../../../lib/server/http';
 import {
   checkRateLimit,
@@ -17,6 +22,8 @@ import {
   getSnapshot,
   mode,
   removeDemoSession,
+  authenticateLocal,
+  claimLocalGuest,
 } from '../../../lib/server/store';
 
 export const runtime = 'nodejs';
@@ -37,9 +44,15 @@ export async function POST(request: NextRequest) {
       await checkRateLimit(
         `account:${role}:${typeof data.email === 'string' ? data.email.trim().toLowerCase() : 'missing'}`,
       );
-      const user = authenticateDemo(data);
+      const user = await authenticateLocal(data);
+      if (user.role === 'student')
+        await claimLocalGuest(await readGuestUser(), user);
       const token = await createDemoSession(user);
-      jar.set(COOKIE, token, cookieOptions());
+      jar.set(
+        role === 'student' ? CUSTOMER_COOKIE : COOKIE,
+        token,
+        cookieOptions(),
+      );
       return NextResponse.json(await getSnapshot(user), {
         headers: { 'Cache-Control': 'no-store, private' },
       });
@@ -56,7 +69,15 @@ export async function POST(request: NextRequest) {
         'Jenis akun tidak sesuai. Pilih akses yang sesuai dengan akunmu.',
         403,
       );
-    jar.set(COOKIE, token, cookieOptions());
+    if (role === 'student')
+      await (
+        await import('../../../lib/server/supabase')
+      ).cloudClaimGuest(await readGuestUser(), user);
+    jar.set(
+      role === 'student' ? CUSTOMER_COOKIE : COOKIE,
+      token,
+      cookieOptions(),
+    );
     return NextResponse.json(await getSnapshot(user), {
       headers: { 'Cache-Control': 'no-store, private' },
     });
@@ -68,7 +89,15 @@ export async function DELETE(request: NextRequest) {
   try {
     checkOrigin(request);
     const jar = await cookies();
-    const token = jar.get(COOKIE)?.value;
+    const current = await readUser(requestSpace(request));
+    const cookieName =
+      requestSpace(request) === 'customer' ||
+      (requestSpace(request) === 'auto' &&
+        current?.role === 'student' &&
+        jar.get(CUSTOMER_COOKIE)?.value)
+        ? CUSTOMER_COOKIE
+        : COOKIE;
+    const token = jar.get(cookieName)?.value;
     if (token) {
       if (mode() === 'demo') await removeDemoSession(token);
       else {
@@ -76,10 +105,13 @@ export async function DELETE(request: NextRequest) {
         await cloudLogout(token);
       }
     }
-    jar.set(COOKIE, '', { ...cookieOptions(), maxAge: 0 });
-    return NextResponse.json(await getSnapshot(await ensureUser()), {
-      headers: { 'Cache-Control': 'no-store, private' },
-    });
+    jar.set(cookieName, '', { ...cookieOptions(), maxAge: 0 });
+    return NextResponse.json(
+      await getSnapshot(await ensureUser(requestSpace(request))),
+      {
+        headers: { 'Cache-Control': 'no-store, private' },
+      },
+    );
   } catch (error) {
     return errorResponse(error);
   }
