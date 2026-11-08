@@ -8,7 +8,7 @@
   --mist: #f5f7f2;
   --peach: #f3c8aa;
   --white: #fff;
-  --muted: #63746a;
+  --muted: #526258;
   --line: #dfe5db;
   --green-light: #eaf0e5;
   --orange: #94552a;
@@ -4764,3 +4764,7 @@ input[type='range'] {
   letter-spacing: -0.045em;
   line-height: 1.2;
 }
+
+/* Decorative rings stay inside the illustration at small viewport widths. */
+.hero .orbit { transform: none; }
+.hero .orbit-one { inset: 2% 0 3%; }

@@ -4,6 +4,12 @@
 
 Web kantin kampus untuk Hackathon CR YOUTH 2026 oleh Trinity LFA. MVP satu gerai, satu menu dengan dua pilihan porsi, tiga slot pickup, dan tiga peran pengguna. Dibangun dengan Next.js, TypeScript, Supabase/PostgreSQL, dan penyimpanan demo SQLite.
 
+## Lihat web langsung
+
+**[Buka demo PORSI LOOP](https://porsi-loop-demo.secretloom514.chatgpt.site/)**
+
+Demo bersifat privat: masuk melalui ChatGPT dengan akun yang memiliki akses, kemudian pilih demo mahasiswa atau pemilik gerai. Akses pengelola tetap melalui `/akses-pengelola`. Seluruh transaksi pada tautan ini adalah simulasi. Data demo online disimpan di server; Supabase produksi belum dihubungkan.
+
 ## Jalankan demo
 
 Gunakan Node.js **24 LTS** (minimal 22.13).
