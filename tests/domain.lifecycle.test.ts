@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAction, createState, DEMO_USERS, expire, recommendation, snapshot, stock } from '../lib/server/engine';
+import { applyAction, createState, DEMO_USERS, expire, recommendation, serverNow, snapshot, stock } from '../lib/server/engine';
 
 const now = Date.parse('2026-11-08T10:00:00+07:00');
 const seller = DEMO_USERS.seller;
@@ -104,4 +104,15 @@ test('rescue allergen information remains tied to the food offered when the menu
   act(state, { type: 'save_menu', allergens: ['Telur'] });
   assert.deepEqual(state.rescues[0].allergens, ['Kedelai']);
   assert.deepEqual(state.menu.allergens, ['Telur']);
+});
+
+
+test('starting a session preserves the advancing demo clock after a simulated time jump', () => {
+  const state = createState(now);
+  state.demoClock = new Date(now + 240 * 60000).toISOString();
+  const realNow = now + 1000;
+  const simulatedNow = serverNow(state, 'demo', realNow);
+  act(state, { type: 'reconcile', endingStock: 32 }, simulatedNow);
+  act(state, { type: 'start_session', businessDate: '2026-11-08', cutoffTime: '14:30', pickupStart: '15:00' }, simulatedNow);
+  assert.equal(serverNow(state, 'demo', realNow + 60000), simulatedNow + 60000);
 });

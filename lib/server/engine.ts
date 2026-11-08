@@ -160,14 +160,14 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(cutoffTime)) throw new DomainError('Isi tanggal, batas pesan, dan awal pickup dalam WIB.');
       const start = Date.parse(`${date}T${startTime}:00+07:00`); const cutoff = Date.parse(`${date}T${cutoffTime}:00+07:00`);
       if (!Number.isFinite(start) || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(start)) !== date || cutoff <= now || cutoff > start || start + 90 * 60000 >= Date.parse(`${date}T23:59:59+07:00`)) throw new DomainError('Jadwal harus valid: batas pesan masih di depan, sebelum pickup, dan seluruh slot di hari yang sama.');
-      const previous = { history: state.history, archivedOrders: [...state.archivedOrders ?? [], ...state.orders], archivedClaims: [...state.archivedClaims ?? [], ...state.claims], menu: state.menu, logs: state.logs, capacity: state.capacity, buffer: state.buffer, manualBaseline: state.manualBaseline, slots: state.slots };
+      const previous = { createdAt: state.createdAt, demoClock: state.demoClock, history: state.history, archivedOrders: [...state.archivedOrders ?? [], ...state.orders], archivedClaims: [...state.archivedClaims ?? [], ...state.claims], menu: state.menu, logs: state.logs, capacity: state.capacity, buffer: state.buffer, manualBaseline: state.manualBaseline, slots: state.slots };
       const next = createState(now, true);
       next.slots = previous.slots.map((slot, i) => {
         const from = start + i * 30 * 60000; const until = from + 30 * 60000;
         const fmt = (ms: number) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
         return { ...slot, start: iso(from), end: iso(until), cutoff: iso(cutoff), label: `${fmt(from)}–${fmt(until)}`, reserved: 0, available: slot.capacity, closed: false };
       });
-      Object.assign(state, next, { history: previous.history, archivedOrders: previous.archivedOrders, archivedClaims: previous.archivedClaims, menu: previous.menu, logs: previous.logs, capacity: previous.capacity, buffer: previous.buffer, manualBaseline: previous.manualBaseline, businessDate: date, demoClock: iso(now), idempotency: state.idempotency });
+      Object.assign(state, next, { history: previous.history, archivedOrders: previous.archivedOrders, archivedClaims: previous.archivedClaims, menu: previous.menu, logs: previous.logs, capacity: previous.capacity, buffer: previous.buffer, manualBaseline: previous.manualBaseline, businessDate: date, createdAt: previous.createdAt, demoClock: previous.demoClock, idempotency: state.idempotency });
       delete state.endingStock; delete state.override; delete state.acceptedPlan;
       log(state, user, 'Sesi baru dibuka', `${date} · pickup ${startTime} WIB · stok awal baru 0; stok akhir lama tetap di arsip`, now);
       break;

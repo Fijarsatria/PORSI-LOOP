@@ -34,7 +34,7 @@ Tanggal: 8 November 2026. Titik awal: `7decd009c071c856f436a10f35f84dbf21546e4d`
 
 ## Verifikasi lokal akhir
 
-- `npm test`: 18 tes lulus (aturan domain, SQLite, konfigurasi, origin dan cloud fail-closed).
+- `npm test`: 19 tes lulus (aturan domain, SQLite, konfigurasi, origin dan cloud fail-closed).
 - `npm run build`: build produksi Next.js lulus.
 - `npm run typecheck`: lulus.
 - `npm run test:integration`: 5 tes lulus pada server produksi dengan database sementara.
@@ -45,3 +45,5 @@ Tanggal: 8 November 2026. Titik awal: `7decd009c071c856f436a10f35f84dbf21546e4d`
 ## Pemeriksaan browser GitHub
 
 Workflow pertama `42439518467` berhasil menjalankan build, 18 tes lokal, dan 5 tes API. Tujuh dari delapan tes browser berhasil; satu tes mendeteksi overflow pada hero desktop. Lebar ilustrasi hero diperbaiki agar mengikuti kolom grid dan diagnostik overflow ditambahkan. Tiket juga menyimpan tanggal serta lokasi saat pemesanan supaya arsip tetap benar setelah sesi atau lokasi gerai berubah. Hasil workflow perbaikan harus dinilai dari eksekusi GitHub berikutnya.
+
+Workflow perbaikan `42439731135` pada commit `b8260cd` selesai **success**: 8 tes browser mobile/desktop, build, TypeScript, dan tes API lulus. Skenario mencakup overflow, login tiap peran, pemesanan/tiket, Escape, reduced motion, dan retry dengan respons hilang. Pemeriksaan jam simulasi saat pergantian sesi kemudian ditambahkan sebagai regresi; total tes lokal menjadi 19. Ini pengujian otomatis browser, bukan klaim audit visual manual atau aksesibilitas menyeluruh.
