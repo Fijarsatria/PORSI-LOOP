@@ -123,15 +123,22 @@ export function userFromAuth(user: SupabaseUser): User {
       'Akun gerai belum memiliki penugasan gerai yang valid.',
       403,
     );
+  // The display name is only shown in the interface; it never grants access.
+  const registered = user.user_metadata?.display_name;
+  const displayName =
+    typeof registered === 'string'
+      ? registered.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 100)
+      : '';
   return {
     id: user.id,
     role,
     name:
-      role === 'student'
+      displayName ||
+      (role === 'student'
         ? 'Teman Porsi'
         : role === 'seller'
           ? 'Pemilik gerai'
-          : 'Pengelola kantin',
+          : 'Pengelola kantin'),
     email: user.email,
     outletId: role === 'seller' ? outletId : undefined,
   };

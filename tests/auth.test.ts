@@ -63,6 +63,25 @@ test('cloud role and outlet originate only in administrator metadata', () => {
   );
 });
 
+test('cloud customers see the name they registered, never a role taken from it', () => {
+  const base = { id: 'u', email: 'rani@example.com', app_metadata: {} };
+  assert.equal(
+    userFromAuth({ ...base, user_metadata: { display_name: '  Rani Putri ' } } as never).name,
+    'Rani Putri',
+  );
+  assert.equal(userFromAuth({ ...base, user_metadata: {} } as never).name, 'Teman Porsi');
+  assert.equal(
+    userFromAuth({ ...base, user_metadata: { display_name: 'A\u0000B' } } as never).name,
+    'AB',
+  );
+  const claimed = userFromAuth({
+    ...base,
+    user_metadata: { display_name: 'Pengelola kantin', role: 'admin' },
+  } as never);
+  assert.equal(claimed.role, 'student');
+  assert.equal(claimed.name, 'Pengelola kantin');
+});
+
 test('cloud guest cookies are authenticated encrypted identities and tampering fails closed', () => {
   const prior = process.env.SESSION_SECRET;
   try {
