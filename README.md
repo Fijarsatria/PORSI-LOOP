@@ -54,6 +54,8 @@ Proyek **PORSI LOOP** telah dibuat: [buka dashboard](https://supabase.com/dashbo
 
 ## Dokumen
 
+- [Foto menu, penjualan langsung, riwayat, promo, dan chat pesanan](docs/ordering-tools.md)
+
 - [Alur, keamanan, notifikasi, dan batas implementasi terkini](docs/flow-v2.md)
 - [Penyederhanaan penjual, pendaftaran customer, rating, dan gerai](docs/customer-canteen-update.md)
 - [Hasil pemeriksaan kelanjutan dan batas verifikasi](docs/verification-2026-11-08.md)

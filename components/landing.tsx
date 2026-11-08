@@ -53,7 +53,7 @@ const roles = [
       'Promo Terbatas dari stok layak yang benar-benar tersisa',
     ],
     action: 'Buka ruang gerai',
-    href: '/masuk?peran=gerai',
+    href: '/masuk/gerai',
   },
   {
     id: 'manager',
@@ -113,8 +113,14 @@ export function PublicHeader() {
             <a onClick={() => setOpen(false)} href="/#dampak">
               Kenapa PORSI? <ArrowUpRight size={17} />
             </a>
-            <Link href="/masuk?peran=gerai">
+            <Link href="/masuk/gerai">
               Masuk sebagai gerai <Store size={17} />
+            </Link>
+            <Link href="/akses-pengelola" onClick={() => setOpen(false)}>
+              Akses pengelola kantin <ArrowUpRight size={17} />
+            </Link>
+            <Link href="/masuk" onClick={() => setOpen(false)}>
+              Masuk customer <ArrowUpRight size={17} />
             </Link>
           </motion.nav>
         )}

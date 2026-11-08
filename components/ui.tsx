@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from './provider';
+import { LoadingExperience } from './loading-experience';
 import { lockPageScroll } from '@/lib/client/scroll-lock';
 
 export function Brand({
@@ -277,16 +278,5 @@ export function LinkButton({
   );
 }
 export function PageLoading() {
-  return (
-    <div className="page-loading" aria-label="Memuat halaman" role="status">
-      <span className="skeleton skeleton-title" />
-      <span className="skeleton skeleton-subtitle" />
-      <div className="stat-grid">
-        {[1, 2, 3, 4].map((n) => (
-          <span key={n} className="skeleton skeleton-card" />
-        ))}
-      </div>
-      <span className="skeleton skeleton-large" />
-    </div>
-  );
+  return <LoadingExperience />;
 }

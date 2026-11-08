@@ -406,7 +406,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
           <div className="ops-plan-source">
             <ClipboardCheck size={16} />
             {state.recommendation.source === 'manual'
-              ? 'Baseline manual · data terbatas'
+              ? 'Perkiraan sendiri · data terbatas'
               : `${state.recommendation.historyDays} sesi lengkap berlabel walk-in`}
           </div>
           <Link href="/gerai?tab=planning" className="ops-plan-link">
@@ -513,8 +513,8 @@ export function Planning({ state }: { state: Snapshot }) {
         </div>
         <Badge tone={r.source === 'manual' ? 'orange' : 'green'}>
           {r.source === 'manual'
-            ? 'Data terbatas · baseline manual'
-            : 'Histori walk-in tersedia'}
+            ? 'Gunakan perkiraan sendiri'
+            : 'Riwayat penjualan tersedia'}
         </Badge>
       </div>
       <div className="ops-planning-layout">
@@ -532,18 +532,18 @@ export function Planning({ state }: { state: Snapshot }) {
             <b>+</b>
             <div>
               <strong>{r.walkinEstimate}</strong>
-              <span>Walk-in</span>
+              <span>Pembeli langsung</span>
             </div>
             <b>+</b>
             <div>
               <strong>{r.buffer}</strong>
-              <span>Buffer</span>
+              <span>Cadangan</span>
             </div>
           </div>
           <p>
             Estimasi walk-in {r.walkinRange[0]}–{r.walkinRange[1]} porsi.{' '}
             {r.source === 'manual'
-              ? 'Angka awal berasal dari baseline yang Anda masukkan, bukan prediksi model.'
+              ? 'Perkiraan pembeli langsung berasal dari angka yang Anda isi. Angka ini belum merupakan prediksi otomatis.'
               : `Dihitung dari ${r.historyDays} sesi lengkap pada kanal walk-in.`}
           </p>
           <div className="ops-plan-details">
@@ -630,10 +630,10 @@ export function Planning({ state }: { state: Snapshot }) {
               }}
             >
               <Field
-                label="Baseline pembeli langsung (porsi)"
+                label="Perkiraan pembeli langsung (porsi)"
                 hint={
                   r.source === 'history'
-                    ? 'Histori walk-in sedang digunakan. Baseline ini disimpan untuk saat data histori belum mencukupi.'
+                    ? 'Riwayat penjualan langsung sedang digunakan. Perkiraan ini disimpan untuk saat riwayat belum cukup.'
                     : 'Masukkan hanya pembeli walk-in; pisahkan komitmen Pick up terjadwal.'
                 }
               >
@@ -649,7 +649,7 @@ export function Planning({ state }: { state: Snapshot }) {
                 />
               </Field>
               <div className="form-grid">
-                <Field label="Buffer (porsi)">
+                <Field label="Cadangan (porsi)">
                   <input
                     type="number"
                     name="buffer"

@@ -98,3 +98,28 @@ test('menu photos accept safe raster uploads and reject external URLs and script
     ),
   );
 });
+test('daily reconciliation keeps actual manual sales value for later dates', async () => {
+  const { createState } = await import('../lib/server/engine');
+  const state = createState(Date.now(), true);
+  const now = serverNow(state, 'demo');
+  applyAction(
+    state,
+    DEMO_USERS.seller,
+    { type: 'record_production', quantity: 3 },
+    now,
+  );
+  applyAction(
+    state,
+    DEMO_USERS.seller,
+    { type: 'record_walkin', quantity: 1, price: 17500 },
+    now,
+  );
+  applyAction(
+    state,
+    DEMO_USERS.seller,
+    { type: 'reconcile', endingStock: 2, waste: 0, wasteKg: 0, internal: 0 },
+    now,
+  );
+  assert.equal(state.history.at(-1)?.revenue, 17500);
+  assert.equal(state.history.at(-1)?.walkin, 1);
+});

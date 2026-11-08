@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { OrderChat } from './order-chat';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -296,6 +297,16 @@ export function AppShell({ role }: { role: Role }) {
               <Bell size={20} />
               {(notices.length > 0 || count > 0) && <span />}
             </button>
+            {!state.user.isGuest && (
+              <button
+                className="icon-button"
+                aria-label="Keluar dari akun"
+                disabled={busy}
+                onClick={() => void logout()}
+              >
+                <LogOut size={19} />
+              </button>
+            )}
             <button
               className="avatar mobile-avatar"
               onClick={() => setProfile(true)}
@@ -351,6 +362,7 @@ export function AppShell({ role }: { role: Role }) {
       <nav className="app-bottom-nav glass" aria-label="Navigasi seluler">
         {nav(true)}
       </nav>
+      <OrderChat />
       <Modal
         open={profile}
         onClose={() => setProfile(false)}

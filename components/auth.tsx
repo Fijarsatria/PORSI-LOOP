@@ -21,13 +21,19 @@ import { PasswordInput } from './controls';
 export function Auth({
   admin = false,
   signup = false,
+  seller = false,
 }: {
   admin?: boolean;
   signup?: boolean;
+  seller?: boolean;
 }) {
   const params = useSearchParams();
   const [role, setRole] = useState<Role>(
-    admin ? 'admin' : params.get('peran') === 'gerai' ? 'seller' : 'student',
+    admin
+      ? 'admin'
+      : seller || params.get('peran') === 'gerai'
+        ? 'seller'
+        : 'student',
   );
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -50,7 +56,11 @@ export function Auth({
         </Link>
         <div className="auth-story-copy">
           <p className="eyebrow">
-            {admin ? 'PENGELOLA KANTIN' : 'KANTIN DALAM JANGKAUANMU'}
+            {admin
+              ? 'PENGELOLA KANTIN'
+              : role === 'seller'
+                ? 'RUANG KERJA GERAI'
+                : 'KANTIN DALAM JANGKAUANMU'}
           </p>
           <h1>
             {admin ? (
@@ -58,6 +68,12 @@ export function Auth({
                 Pantau kantin.
                 <br />
                 <span>Rencanakan esok.</span>
+              </>
+            ) : role === 'seller' ? (
+              <>
+                Kelola dapur.
+                <br />
+                <span>Layani lebih mudah.</span>
               </>
             ) : (
               <>
@@ -72,13 +88,20 @@ export function Auth({
           <p>
             {admin
               ? 'Kelola kantin Anda dengan ringkasan penjualan, penerimaan pembayaran, pesanan, dan operasional seluruh gerai.'
-              : 'Pesan dari kelas, pilih waktu ambil, dan pantau kesiapan makananmu.'}
+              : role === 'seller'
+                ? 'Menu, pesanan, dan rencana memasak. Semua kebutuhan geraimu, dalam satu ruang.'
+                : 'Pilih menu, tentukan waktu ambil, dan pantau kesiapan makananmu.'}
           </p>
         </div>
         {admin ? (
           <div className="auth-admin-art">
             <ShieldCheck size={100} strokeWidth={0.8} />
             <span>Akses khusus pengelola yang terdaftar.</span>
+          </div>
+        ) : role === 'seller' ? (
+          <div className="auth-admin-art">
+            <Store size={100} strokeWidth={0.8} />
+            <span>Dari dapurmu, untuk pelangganmu.</span>
           </div>
         ) : (
           <PlateScene compact />
@@ -109,26 +132,6 @@ export function Auth({
                 ? 'Masuk dengan akun gerai untuk mengubah menu, mengatur ketersediaan, dan memperbarui status pesanan.'
                 : 'Langsung pesan sebagai tamu. Masuk dengan akun tersedia sebagai pilihan.'}
           </p>
-          {!admin && !signup && (
-            <div className="auth-role-switch" aria-label="Pilih ruang">
-              <button
-                type="button"
-                onClick={() => setRole('student')}
-                aria-pressed={role === 'student'}
-                className={role === 'student' ? 'selected' : ''}
-              >
-                <Utensils size={18} /> Customer
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('seller')}
-                aria-pressed={role === 'seller'}
-                className={role === 'seller' ? 'selected' : ''}
-              >
-                <Store size={18} /> Pemilik gerai
-              </button>
-            </div>
-          )}
           {role === 'student' && !signup && (
             <div className="stack" style={{ marginBlock: 24 }}>
               <Link

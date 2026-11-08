@@ -14,6 +14,7 @@ import type { Role, Snapshot } from '@/lib/domain';
 import { createIdempotencyKey } from '@/lib/client/idempotency';
 import { orderNotices } from '@/lib/client/notifications';
 import { usePathname } from 'next/navigation';
+import { LoadingExperience } from './loading-experience';
 
 interface AppContextValue {
   state: Snapshot | null;
@@ -50,6 +51,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [entering, setEntering] = useState(false);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
   const [notices, setNotices] = useState<string[]>([]);
@@ -150,6 +152,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (inFlight.current) return false;
     inFlight.current = true;
     setBusy(true);
+    if (url === '/api/auth' && method === 'POST') setEntering(true);
     setError('');
     generation.current += 1;
     try {
@@ -188,6 +191,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       inFlight.current = false;
       setBusy(false);
+      setEntering(false);
       setLoading(false);
     }
   };
@@ -237,6 +241,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }}
       >
         {children}
+        {(loading || entering) && (
+          <div className="session-splash">
+            <LoadingExperience />
+          </div>
+        )}
         {error && !state && !loading && (
           <div className="connection-error" role="alert">
             <WifiOff size={20} />

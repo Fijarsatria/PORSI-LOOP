@@ -77,12 +77,31 @@ function MenuArt({
   category = '',
   index = 0,
   compact = false,
+  image,
 }: {
+  image?: string;
   name: string;
   category?: string;
   index?: number;
   compact?: boolean;
 }) {
+  if (image?.startsWith('data:image/'))
+    return (
+      <div className={`market-food-art ${compact ? 'art-compact' : ''}`}>
+        <img
+          src={image}
+          alt={name}
+          loading="lazy"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            position: 'absolute',
+            inset: 0,
+          }}
+        />
+      </div>
+    );
   const text = `${name} ${category}`.toLowerCase();
   const drink = /minum|teh|kopi|jus|cokelat|jeruk|matcha/.test(text);
   const noodle = /mie|mi |bakso|soto|ramen|bihun/.test(text);
@@ -802,6 +821,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
                   >
                     <div className="market-card-visual">
                       <MenuArt
+                        image={menu.image}
                         name={menu.name}
                         category={menu.category}
                         index={index}
@@ -969,6 +989,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
                   </div>
                   <div className="market-order-body">
                     <MenuArt
+                      image={menu?.image}
                       name={order.menuName}
                       category={menu?.category}
                       index={Math.max(
@@ -1105,6 +1126,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
                 <article className="market-promo-card" key={offer.id}>
                   <div className="market-card-visual">
                     <MenuArt
+                      image={menu?.image}
                       name={offer.menuName}
                       category={menu?.category}
                       index={Math.max(
@@ -1257,6 +1279,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
           >
             <div className="market-checkout-menu">
               <MenuArt
+                image={selectedMenu.image}
                 name={selectedMenu.name}
                 category={selectedMenu.category}
                 index={Math.max(

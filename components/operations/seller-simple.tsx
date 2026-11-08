@@ -35,6 +35,8 @@ import { Closing, Planning, Rescue } from './seller';
 import { OperationsScope } from './shared';
 import { PickupScanner } from './pickup-scanner';
 import './simple.css';
+import { MenuPhoto } from '../menu-photo';
+import { SalesHistory, SimplePromo } from './seller-extras';
 
 export function SellerDashboard({ tab }: { tab: string }) {
   const params = useSearchParams();
@@ -237,6 +239,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
               Catat penjualan langsung
             </Button>
           </div>
+          <SalesHistory state={state} />
           <div className="seller-notes">
             <Leaf size={23} />
             <p>Lebih sedikit tersisa dimulai dari rencana yang pas.</p>
@@ -488,6 +491,11 @@ export function SellerDashboard({ tab }: { tab: string }) {
       )}
       {tab === 'planning' && (
         <>
+          <p className="callout">
+            Rencana membantu menentukan berapa porsi perlu dimasak. Isi
+            perkiraan pembeli langsung, periksa pesanan terjadwal, lalu catat
+            produksi hanya setelah makanan selesai dimasak.
+          </p>
           {picker}
           <OperationsScope state={scoped}>
             <Planning state={scoped} />
@@ -521,6 +529,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
                 type: 'record_walkin',
                 menuId: selected.menu.id,
                 quantity: Number(data.get('quantity')),
+                price: Number(data.get('price')),
               })
             ) {
               setWalkin(false);
@@ -540,9 +549,22 @@ export function SellerDashboard({ tab }: { tab: string }) {
               inputMode="numeric"
             />
           </Field>
+          <Field label="Harga per porsi (Rp)">
+            <input
+              name="price"
+              type="number"
+              min={0}
+              max={1000000}
+              defaultValue={selected.menu.prices.regular}
+              key={selected.menu.id}
+              required
+              inputMode="numeric"
+            />
+          </Field>
           <p className="fine-print">
-            Stok bebas {selected.metrics.availableStock} porsi. Pesanan online
-            dan promo tetap dicadangkan.
+            Catat setelah pembayaran diterima dan makanan diserahkan. Stok bebas{' '}
+            {selected.metrics.availableStock} porsi. Pesanan online dan promo
+            tetap dicadangkan.
           </p>
           <Button
             loading={busy}
@@ -608,7 +630,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
         title="Promo Terbatas"
       >
         <OperationsScope state={scoped}>
-          <Rescue state={scoped} />
+          <SimplePromo state={scoped} />
         </OperationsScope>
       </Modal>
       <Modal
@@ -651,6 +673,7 @@ function MenuForm({
             .map((s) => s.trim())
             .filter(Boolean),
           category: String(data.get('category')),
+          image: String(data.get('image')),
         };
         if (await action(payload)) {
           onDone();
@@ -662,6 +685,7 @@ function MenuForm({
         }
       }}
     >
+      <MenuPhoto initial={kitchen?.menu.image} />
       <Field label="Nama makanan">
         <input
           name="name"

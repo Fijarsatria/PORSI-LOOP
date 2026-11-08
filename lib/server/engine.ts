@@ -964,7 +964,7 @@ function menuImage(value: unknown): string {
   if (typeof value !== 'string' || value.length > 90000)
     throw new DomainError('Foto terlalu besar. Pilih foto lain.');
   if (
-    /^\/images\/[a-zA-Z0-9_./-]+\.(webp|png|jpe?g)$/.test(value) &&
+    /^\/images\/[a-zA-Z0-9_./-]+\.(webp|png|jpe?g|svg)$/.test(value) &&
     !value.includes('..')
   )
     return value;
@@ -1171,7 +1171,7 @@ function catalogCommand(
       id: randomUUID(),
       senderId: user.id,
       role: user.role === 'seller' ? 'seller' : 'student',
-      name: user.name,
+      name: user.role === 'student' ? ticket.customer : user.name,
       text: message,
       at: iso(now),
     });
