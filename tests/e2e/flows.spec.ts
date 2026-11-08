@@ -541,6 +541,7 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
   page,
 }, info) => {
   await page.goto('/customer');
+  await expect(page.locator('.session-splash')).toHaveCount(0);
   for (const width of [320, 375, 430]) {
     await page.setViewportSize({ width, height: 760 });
     const cards = page.getByTestId('menu-card');
@@ -562,14 +563,19 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
       .poll(async () => Math.abs((await dock.boundingBox())!.y - before!.y))
       .toBeLessThan(2);
     expect(before!.y + before!.height).toBeLessThanOrEqual(760 - 8);
-    expect(
-      await dock.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return el.contains(
-          document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2),
-        );
-      }),
-    ).toBe(true);
+    await expect
+      .poll(() =>
+        dock.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          return el.contains(
+            document.elementFromPoint(
+              r.left + r.width / 2,
+              r.top + r.height / 2,
+            ),
+          );
+        }),
+      )
+      .toBe(true);
     await expect(dock.locator('.nav-promo-count')).toHaveCount(1);
   }
   await page.setViewportSize({ width: 375, height: 760 });
@@ -585,6 +591,8 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
     'HEMAT',
   );
   await noOverflow(page);
+  await expect(page.locator('.session-splash')).toHaveCount(0);
+  await expect(page.locator('main#main')).toHaveCSS('opacity', '1');
   await page.screenshot({
     path: info.outputPath('compact-mobile-promotions.png'),
   });
