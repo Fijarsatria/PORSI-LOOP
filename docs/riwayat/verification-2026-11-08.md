@@ -1,6 +1,6 @@
 # Hasil pemeriksaan kelanjutan
 
-Catatan tahap penggabungan branch. Pemasangan cloud dan pemeriksaan setelahnya tercatat pada [status rilis](release-status.md).
+Catatan tahap penggabungan branch. Pemasangan cloud dan pemeriksaan setelahnya tercatat pada [status rilis](../release-status.md).
 
 ## Integrasi
 

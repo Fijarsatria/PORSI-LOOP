@@ -26,6 +26,14 @@ Sesi belanja dan sesi kerja terpisah. Customer hanya mendapat tiket miliknya; pe
 3. Setelah pembayaran diverifikasi dan makanan siap, customer menunjukkan QR. Gerai memindainya untuk mencatat penyerahan satu kali.
 4. Customer dapat menghubungi gerai lewat chat dan memberikan rating setelah pesanan diterima. Gerai mencatat produksi, penjualan langsung, promo, dan sisa makanan untuk perencanaan berikutnya.
 
+## Memulai dari web publik
+
+1. Buka [PORSI LOOP](https://porsi-loop.vercel.app) dan pilih **Jelajahi menu** untuk melihat katalog sebagai customer.
+2. Pengelola masuk melalui [akses pengelola](https://porsi-loop.vercel.app/akses-pengelola), kemudian membuat gerai dan akun penjual di **Gerai & akses**.
+3. Penjual masuk melalui [akses gerai](https://porsi-loop.vercel.app/masuk/gerai), melengkapi menu dan mencatat stok sebelum menerima pesanan.
+
+Menu awal cloud perlu dikonfigurasi sebelum dapat dipesan. Untuk mencoba data contoh langsung, gunakan mode lokal berikut.
+
 ## Menjalankan lokal
 
 Gunakan **Node.js 24 LTS** (minimum 22.13).
@@ -64,7 +72,8 @@ public/              Identitas visual, ilustrasi dan aset statis
 supabase/            Skema database dan pemeriksaan akses
 scripts/             Pemeriksaan konfigurasi
 tests/               Pengujian unit, API dan browser
-docs/                Panduan produk, implementasi dan verifikasi
+docs/                Panduan produk dan operasional
+docs/riwayat/        Catatan pembaruan terdahulu
 .github/workflows/   Pemeriksaan otomatis setiap push dan pull request
 ```
 
