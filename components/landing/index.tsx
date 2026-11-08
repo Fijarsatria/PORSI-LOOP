@@ -27,8 +27,8 @@ import {
 import { Brand, LinkButton, Badge } from '@/components/ui';
 import { useApp } from '@/components/provider';
 import { rupiah } from '@/lib/domain';
-import { PlanSimulator } from '@/components/plan-simulator';
-import { Founders } from '@/components/founders';
+import { PlanSimulator } from '@/components/landing/plan-simulator';
+import { Founders } from '@/components/landing/founders';
 
 const roles = [
   {

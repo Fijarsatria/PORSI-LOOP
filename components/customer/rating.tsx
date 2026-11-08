@@ -3,9 +3,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Star, Check } from 'lucide-react';
 import type { Order, RescueClaim } from '@/lib/domain';
-import { useApp } from './provider';
-import { Button, Field, Modal } from './ui';
-import './controls.css';
+import { useApp } from '../provider';
+import { Button, Field, Modal } from '../ui';
+import '../controls.css';
 
 export function OrderRating({ order }: { order: Order | RescueClaim }) {
   const { state, action, busy, toast } = useApp();
