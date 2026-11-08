@@ -4,7 +4,7 @@ import { PageLoading } from '@/components/ui';
 export const metadata = { title: 'Ruang pengelola', robots: { index: false } };
 export default function Page() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<PageLoading role="admin" />}>
       <AppShell role="admin" />
     </Suspense>
   );

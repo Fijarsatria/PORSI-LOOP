@@ -1,10 +1,9 @@
 import { Suspense } from 'react';
 import { Auth } from '@/components/auth';
-import { PageLoading } from '@/components/ui';
 export const metadata = { title: 'Daftar customer' };
 export default function Page() {
   return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={null}>
       <Auth signup />
     </Suspense>
   );

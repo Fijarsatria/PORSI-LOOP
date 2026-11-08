@@ -38,6 +38,16 @@ interface AppContextValue {
 }
 const AppContext = createContext<AppContextValue | null>(null);
 
+// The entry splash belongs to the signed-in workspaces only. Landing and the
+// sign-in pages open instantly; customer, seller and admin spaces show the
+// splash long enough for one full pass of the progress bar.
+const APP_ROUTES = ['/customer', '/mahasiswa', '/gerai', '/pengelola'];
+const MIN_SPLASH_MS = 1400;
+const isAppRoute = (pathname: string) =>
+  APP_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const space =
@@ -70,6 +80,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     promise: Promise<boolean>;
   } | null>(null);
   const pendingActions = useRef(new Map<string, string>());
+  const appRoute = isAppRoute(pathname);
+  const wantSplash = entering || (loading && appRoute);
+  const [splash, setSplash] = useState(appRoute);
+  const splashShownAt = useRef<number | null>(null);
+  const entryFailed = useRef(false);
+  useEffect(() => {
+    if (wantSplash) {
+      splashShownAt.current ??= Date.now();
+      entryFailed.current = false;
+      setSplash(true);
+      return;
+    }
+    const shownAt = splashShownAt.current;
+    const hide = () => {
+      splashShownAt.current = null;
+      setSplash(false);
+    };
+    if (shownAt === null || entryFailed.current) {
+      entryFailed.current = false;
+      hide();
+      return;
+    }
+    const wait = Math.max(120, MIN_SPLASH_MS - (Date.now() - shownAt));
+    const id = setTimeout(hide, wait);
+    return () => clearTimeout(id);
+  }, [wantSplash]);
   const toast = useCallback((message: string) => {
     setErrorToast(false);
     setNotification(message);
@@ -212,12 +248,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           result.error || 'Perubahan belum tersimpan. Coba lagi.',
         );
       if (result.verificationRequired) {
+        if (isEntry) entryFailed.current = true;
         toast(result.message);
         return false;
       }
       setState(result);
       return true;
     } catch (e) {
+      if (isEntry) entryFailed.current = true;
       const message =
         e instanceof TypeError ||
         (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name))
@@ -283,7 +321,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       >
         {children}
         <AnimatePresence>
-          {(loading || entering) && (
+          {splash && (
             <motion.div
               className="session-splash"
               key="session-entry"
