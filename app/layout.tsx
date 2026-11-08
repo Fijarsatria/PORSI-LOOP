@@ -3,6 +3,8 @@ import '@fontsource-variable/plus-jakarta-sans';
 import '@fontsource-variable/dm-sans';
 import './globals.css';
 import { AppProvider } from '@/components/provider';
+import { IntroSplash } from '@/components/intro-splash';
+import { introGate } from '@/components/intro-gate';
 
 export const metadata: Metadata = {
   title: {
@@ -32,8 +34,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body id="top">
+        <script dangerouslySetInnerHTML={{ __html: introGate }} />
+        <noscript>
+          <style>{'.intro-splash{display:none!important}'}</style>
+        </noscript>
+        <IntroSplash />
         <a className="skip-link" href="#main">
           Langsung ke konten
         </a>

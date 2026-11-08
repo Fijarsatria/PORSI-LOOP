@@ -1,0 +1,164 @@
+/* First-open brand intro. Opaque and animated with opacity/transform only, so
+   it stays smooth. Hidden before hydration when it should not run. */
+.intro-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 36%, #285a4b 0%, transparent 58%),
+    #173d35;
+  color: #fff;
+  text-align: center;
+  will-change: opacity;
+}
+html[data-intro='skip'] .intro-splash {
+  display: none;
+}
+html.intro-lock {
+  overflow: hidden;
+}
+.intro-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 190px;
+  height: 190px;
+}
+.intro-logo {
+  position: relative;
+  z-index: 1;
+  width: 104px;
+  height: auto;
+  animation: intro-pop 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-orbit span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #d5ed9a4d;
+  border-radius: 38%;
+  animation: intro-turn 9s linear infinite;
+}
+.intro-orbit span:last-child {
+  inset: 22px;
+  border-color: #d5ed9a33;
+  animation-direction: reverse;
+  animation-duration: 12s;
+}
+.intro-word {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--display);
+  font-size: clamp(36px, 9vw, 58px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  animation: intro-rise 0.8s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-word span {
+  font-weight: 450;
+  margin-left: 3px;
+}
+.intro-word span img {
+  display: inline-block;
+  height: 0.68em;
+  width: auto;
+  margin: 0 0.05em 0 0.06em;
+  vertical-align: 0.02em;
+  /* the mark is dark green; show it white on the dark intro */
+  filter: brightness(0) invert(1);
+}
+.intro-word i {
+  color: #9ccc6f;
+  font-style: normal;
+}
+.intro-tagline {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: #cfe3c8;
+  font-size: clamp(12px, 3.2vw, 14px);
+  letter-spacing: 0.4px;
+}
+.intro-tagline li {
+  opacity: 0;
+  animation: intro-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.intro-tagline li:nth-child(1) {
+  animation-delay: 1s;
+}
+.intro-tagline li:nth-child(2) {
+  animation-delay: 1.45s;
+}
+.intro-tagline li:nth-child(3) {
+  animation-delay: 1.9s;
+}
+.intro-progress {
+  width: min(220px, 60vw);
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #ffffff26;
+}
+.intro-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #d5ed9a;
+  transform-origin: left;
+  animation: intro-fill var(--intro-ms, 3000ms) cubic-bezier(0.4, 0, 0.2, 1)
+    forwards;
+}
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes intro-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes intro-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo,
+  .intro-word,
+  .intro-tagline li,
+  .intro-orbit span {
+    animation: none;
+    opacity: 1;
+  }
+  .intro-progress span {
+    animation-duration: 1ms;
+  }
+}
