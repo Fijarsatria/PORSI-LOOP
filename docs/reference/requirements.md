@@ -1,6 +1,6 @@
 # Cakupan produk dan batas implementasi
 
-Acuan terkini adalah permintaan pengguna 8 November 2026, PRD14 halaman, dan proposal21 halaman. Pengguna memperluas MVP satu gerai menjadi kantin dengan banyak gerai; istilah dan kewajiban login mengikuti arahan terbaru. Baca [audit per halaman](requirements-audit-2026-11-08.md) dan [alur terkini](flow-v2.md).
+Acuan terkini adalah permintaan pengguna 8 November 2026, PRD14 halaman, dan proposal21 halaman. Pengguna memperluas MVP satu gerai menjadi kantin dengan banyak gerai; istilah dan kewajiban login mengikuti arahan terbaru. Baca [audit per halaman](../riwayat/requirements-audit-2026-11-08.md) dan [alur terkini](flow-v2.md).
 
 | Kebutuhan | Implementasi | Batas |
 | --- | --- | --- |

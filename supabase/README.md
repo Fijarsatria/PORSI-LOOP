@@ -23,7 +23,7 @@ Dokumen global dengan revisi sesuai untuk demonstrasi/pilot terbatas. Beban bany
 2. Tinjau lalu jalankan `schemas/porsi.sql` di SQL Editor. Skema deklaratif ini tidak menghapus data yang sudah ada. Jangan memasukkan data demo ke proyek yang berisi data nyata.
 3. Jalankan `verify.sql`. Dua tabel harus ditemukan dengan RLS aktif dan dipaksa. `anon`/`authenticated` tidak boleh memiliki akses tabel atau eksekusi fungsi; service role hanya mendapat operasi yang dinyatakan pada skema. Fungsi harus menunjukkan `security_definer=false`.
 4. Tinjau Security/Performance Advisors pada dashboard.
-5. Isi konfigurasi privat berdasarkan [panduan konfigurasi](../docs/configuration.md). Uji koneksi dan alur akun/pemesanan dengan mode `supabase`, bukan `demo`. Hasil query dan pengujian cloud harus dicatat sebelum menyatakan pemasangan terverifikasi.
+5. Isi konfigurasi privat berdasarkan [panduan konfigurasi](../docs/guides/configuration.md). Uji koneksi dan alur akun/pemesanan dengan mode `supabase`, bukan `demo`. Hasil query dan pengujian cloud harus dicatat sebelum menyatakan pemasangan terverifikasi.
 
 ## Status pemasangan cloud
 

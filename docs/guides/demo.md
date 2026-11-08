@@ -15,4 +15,4 @@ Gunakan npm ci dan npm run dev, lalu http://localhost:3000. Seluruh transaksi pa
 
 Akun contoh hanya default pengembangan. Server produksi demo memerlukan DEMO_* yang ditetapkan sendiri. Mode Supabase memerlukan akun nyata dengan metadata peran/outlet yang ditetapkan administrator. Gateway pembayaran sungguhan belum terintegrasi.
 
-Hasil dan batas pemeriksaan tercatat pada [verifikasi kelanjutan](riwayat/verification-2026-11-08.md).
+Hasil dan batas pemeriksaan tercatat pada [verifikasi kelanjutan](../riwayat/verification-2026-11-08.md).
