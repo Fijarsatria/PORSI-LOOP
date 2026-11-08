@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { ArrowRight, Store, ShieldCheck, Utensils } from 'lucide-react';
 export function LoadingExperience({
   role = 'student',
@@ -29,9 +30,23 @@ export function LoadingExperience({
         <span />
         <span />
         <span />
-        <Icon size={38} strokeWidth={1.5} />
+        <Image
+          src="/brand/logo.png"
+          alt=""
+          width={160}
+          height={136}
+          priority
+          unoptimized
+        />
       </div>
-      <span className="loading-wordmark">PORSI LOOP</span>
+      <span className="loading-role">
+        <Icon size={15} strokeWidth={1.8} />
+        {role === 'admin'
+          ? 'Ruang pengelola'
+          : role === 'seller'
+            ? 'Ruang gerai'
+            : 'Ruang customer'}
+      </span>
       <h2>
         {role === 'admin'
           ? 'Menyiapkan ruang pengelola'

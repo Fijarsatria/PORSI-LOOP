@@ -5118,11 +5118,17 @@ input[type='range'] {
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: #f5f7f2ed;
-  backdrop-filter: blur(18px);
+  /* Opaque on purpose: a full-screen backdrop blur is expensive and made the
+     fade stutter. The overlay is faded by opacity only. */
+  background: radial-gradient(
+    circle at 50% 38%,
+    #fcfdf9 0%,
+    var(--mist) 58%,
+    #e8efe0 100%
+  );
   display: grid;
   place-items: center;
-  animation: chat-arrive 0.15s ease-out;
+  will-change: opacity;
 }
 @keyframes loop-turn {
   to {
@@ -5485,11 +5491,30 @@ input[type='range'] {
   border: 2px solid #f8faf5;
   line-height: 1;
 }
-.loading-wordmark {
+.loading-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--green-light);
   color: var(--leaf);
   font-size: 11px;
   font-weight: 750;
-  letter-spacing: 3px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.loading-orbit img {
+  position: relative;
+  z-index: 1;
+  width: 62px;
+  height: auto;
+  animation: loading-float 2.6s ease-in-out infinite;
+}
+@keyframes loading-float {
+  50% {
+    transform: translateY(-4px);
+  }
 }
 .loading-progress {
   width: 140px;
@@ -5512,6 +5537,9 @@ input[type='range'] {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .loading-orbit img {
+    animation: none;
+  }
   .loading-progress span {
     animation: none;
     width: 75%;

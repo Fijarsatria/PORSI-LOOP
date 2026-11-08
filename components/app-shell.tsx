@@ -33,17 +33,17 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useApp } from '@/components/provider';
-import { Brand, Badge, Button, Modal, PageLoading } from '@/components/ui';
+import { Brand, Badge, Button, Modal } from '@/components/ui';
 import { StudentDashboard } from '@/components/student';
 import { clock, roleNames, type Role } from '@/lib/domain';
 
 const SellerDashboard = dynamic(
   () => import('@/components/operations').then((m) => m.SellerDashboard),
-  { loading: () => <PageLoading role="seller" /> },
+  { loading: () => null },
 );
 const AdminDashboard = dynamic(
   () => import('@/components/operations').then((m) => m.AdminDashboard),
-  { loading: () => <PageLoading role="admin" /> },
+  { loading: () => null },
 );
 const navs: Record<
   Role,
@@ -109,13 +109,9 @@ export function AppShell({ role }: { role: Role }) {
     : navs[role][0].id;
   const active = navs[role].find((n) => n.id === tab)!;
   const base = routes[role];
-  if (loading)
-    return (
-      <div className="app-loading-shell">
-        <Brand />
-        <PageLoading role={role} />
-      </div>
-    );
+  // The provider's loading screen covers this moment; a second loader here
+  // would restart its animation and read as flicker.
+  if (loading) return <div className="app-loading-shell" aria-busy="true" />;
   if (!state?.user || state.user.role !== role)
     return (
       <main id="main" className="access-page">

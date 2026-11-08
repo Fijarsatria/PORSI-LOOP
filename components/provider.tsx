@@ -38,11 +38,14 @@ interface AppContextValue {
 }
 const AppContext = createContext<AppContextValue | null>(null);
 
-// The entry splash belongs to the signed-in workspaces only. Landing and the
-// sign-in pages open instantly; customer, seller and admin spaces show the
-// splash long enough for one full pass of the progress bar.
+// The loading screen belongs to the signed-in workspaces only. Landing and the
+// sign-in pages never show it; they simply fade between each other. From the
+// moment a sign-in succeeds the screen stays up, uninterrupted, until the
+// workspace has its data, and never for less than MIN_SPLASH_MS so it can be
+// seen and does not flash.
 const APP_ROUTES = ['/customer', '/mahasiswa', '/gerai', '/pengelola'];
-const MIN_SPLASH_MS = 1400;
+const MIN_SPLASH_MS = 2400;
+const HANDOFF_TIMEOUT_MS = 12000;
 const isAppRoute = (pathname: string) =>
   APP_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
@@ -63,6 +66,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [entering, setEntering] = useState(false);
+  // A sign-in just succeeded and the destination workspace is still loading.
+  const [handoff, setHandoff] = useState(false);
   const [entryRole, setEntryRole] = useState<Role>('student');
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
@@ -81,7 +86,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const pendingActions = useRef(new Map<string, string>());
   const appRoute = isAppRoute(pathname);
-  const wantSplash = entering || (loading && appRoute);
+  const wantSplash = entering || handoff || (loading && appRoute);
+  useEffect(() => {
+    if (!handoff) return;
+    if (appRoute && !loading) {
+      setHandoff(false);
+      return;
+    }
+    const id = setTimeout(() => setHandoff(false), HANDOFF_TIMEOUT_MS);
+    return () => clearTimeout(id);
+  }, [handoff, appRoute, loading]);
   const [splash, setSplash] = useState(appRoute);
   const splashShownAt = useRef<number | null>(null);
   const entryFailed = useRef(false);
@@ -254,9 +268,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       setState(result);
+      if (isEntry) setHandoff(true);
       return true;
     } catch (e) {
-      if (isEntry) entryFailed.current = true;
+      if (isEntry) {
+        entryFailed.current = true;
+        setHandoff(false);
+      }
       const message =
         e instanceof TypeError ||
         (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name))
@@ -321,19 +339,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }}
       >
         {children}
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {splash && (
             <motion.div
               className="session-splash"
               key="session-entry"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 1.02 }}
-              transition={{ duration: 0.24 }}
+              animate={{ opacity: 1, transition: { duration: 0.4, ease: 'easeOut' } }}
+              exit={{ opacity: 0, transition: { duration: 0.7, ease: 'easeInOut' } }}
             >
               <LoadingExperience
                 role={
-                  entering
+                  entering || handoff
                     ? entryRole
                     : pathname.startsWith('/pengelola') ||
                         pathname.startsWith('/akses-pengelola')
