@@ -52,6 +52,7 @@ import {
 import './student.css';
 import { OrderRating } from './rating';
 import { ImpactPanel } from './student-impact';
+import { DemoPayment } from './demo-payment';
 import { Star } from 'lucide-react';
 
 type Purchase = Order | RescueClaim;
@@ -635,7 +636,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
       toast(
         paymentMethod === 'cash'
           ? 'Pesanan dibuat. Bayar dan tunggu verifikasi gerai.'
-          : 'Pesanan dibuat. Lanjutkan simulasi pembayaran.',
+          : 'Pesanan dibuat. Selesaikan pembayaran demo; konfirmasi berjalan otomatis.',
       );
     }
   };
@@ -1577,54 +1578,21 @@ export function StudentDashboard({ tab }: { tab: string }) {
               </p>
             </div>
             {onlinePending ? (
-              <div className="market-payment-view">
-                <div className="market-demo-label">
-                  SIMULASI PEMBAYARAN
-                </div>
-                <div className="market-payment-symbol">
-                  {currentTicket.paymentMethod === 'qris' ? (
-                    <QrCode size={48} />
-                  ) : currentTicket.paymentMethod === 'ewallet' ? (
-                    <Wallet size={48} />
-                  ) : (
-                    <CreditCard size={48} />
-                  )}
-                </div>
-                <p className="market-payment-label">
-                  Total pembayaran{' '}
-                  {paymentNames[currentTicket.paymentMethod ?? 'qris']}
-                </p>
-                <strong className="market-payment-amount">
-                  {rupiah(currentTicket.price * currentTicket.quantity)}
-                </strong>
-                <p>
-                  {currentTicket.paymentMethod === 'qris'
-                    ? 'Kode QR pembayaran tidak diterbitkan pada simulasi ini.'
-                    : 'Tidak perlu membuka aplikasi pembayaran atau mentransfer uang.'}{' '}
-                  Gunakan tombol simulasi untuk melanjutkan.
-                </p>
-                {currentTicket.paymentExpiresAt && (
-                  <span className="market-payment-expiry">
-                    <Clock3 size={14} /> Batas pembayaran{' '}
-                    {clock(currentTicket.paymentExpiresAt)} WIB
-                  </span>
-                )}
-                <Button
-                  loading={busy}
-                  onClick={() =>
-                    void action({
-                      type: 'pay_order',
-                      [details?.promo ? 'claimId' : 'orderId']:
-                        currentTicket.id,
-                    })
-                  }
-                >
-                  Simulasikan pembayaran berhasil <Check size={17} />
-                </Button>
-                <small>
-                  Simulasi hanya menandai pesanan ini sebagai dibayar.
-                </small>
-              </div>
+              <DemoPayment
+                key={currentTicket.id}
+                method={currentTicket.paymentMethod ?? 'qris'}
+                amount={currentTicket.price * currentTicket.quantity}
+                code={currentTicket.code}
+                outlet={currentTicket.outletName}
+                expiresAt={currentTicket.paymentExpiresAt}
+                busy={busy}
+                onPay={() =>
+                  action({
+                    type: 'pay_order',
+                    [details?.promo ? 'claimId' : 'orderId']: currentTicket.id,
+                  })
+                }
+              />
             ) : (
               <>
                 {ticketActive && (
