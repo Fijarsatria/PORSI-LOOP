@@ -77,6 +77,7 @@ const navs: Record<
       mobile: 'Ringkasan',
       icon: LayoutDashboard,
     },
+    { id: 'finance', label: 'Penjualan & pemasukan', mobile: 'Penjualan', icon: Wallet },
     {
       id: 'impact',
       label: 'Laporan dampak',
@@ -144,7 +145,7 @@ export function AppShell({ role }: { role: Role }) {
         >
           Masuk sebagai {roleNames[role].toLowerCase()} <ArrowRight size={18} />
         </Link>
-        <Link className="text-link" href="/">
+        <Link className="text-link" href="/#top">
           <ArrowLeft size={17} /> Kembali ke beranda
         </Link>
       </main>
@@ -345,7 +346,7 @@ export function AppShell({ role }: { role: Role }) {
               ? 'Akun demonstrasi. Aktivitas disimpan sebagai data simulasi di instalasi ini.'
               : state.user.email}
           </p>
-          <Link className="button button-secondary full-width" href="/">
+          <Link className="button button-secondary full-width" href="/#top">
             Lihat beranda <ArrowRight size={17} />
           </Link>
           {state.user.isGuest && <Link className="button button-secondary full-width" href="/masuk">Masuk dengan akun (opsional)</Link>}

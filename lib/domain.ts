@@ -207,7 +207,43 @@ export interface HistoricalSession {
   wasteKg: number;
   closed: boolean;
 }
+export interface FinanceTotals {
+  normalSales: number;
+  promoSales: number;
+  grossSales: number;
+  grossPayments: number;
+  refunds: number;
+  refundPending: number;
+  netPayments: number;
+  awaitingPayment: number;
+  servedPortions: number;
+  completedOrders: number;
+  orders: number;
+  walkinPortions: number;
+  walkinRevenue: number;
+}
+export interface FinanceMethod {
+  method: PaymentMethod | 'walk_in' | 'unrecorded';
+  grossPayments: number;
+  refunds: number;
+  refundPending: number;
+  netPayments: number;
+}
+export interface OutletFinance extends FinanceTotals {
+  outletId: string;
+  outletName: string;
+  menuCount: number;
+  businessDates: string[];
+  paymentMethods: FinanceMethod[];
+}
+export interface FinanceReport extends FinanceTotals {
+  scope: 'current_sessions';
+  businessDates: string[];
+  outlets: OutletFinance[];
+  paymentMethods: FinanceMethod[];
+}
 export interface Snapshot {
+  finance?: FinanceReport;
   orderTraffic?: { date: string; outletId: string; outletName: string; orders: number; portions: number; normal: number; promo: number; paid: number; served: number; pending: number; preparing: number; ready: number; active: number }[];
   menus?: Menu[];
   outlets?: { id: string; name: string; location: string; category: string; menuIds: string[]; metrics?: Metrics }[];

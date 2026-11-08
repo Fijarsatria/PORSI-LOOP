@@ -12,7 +12,7 @@ export default function Page() {
   return (
     <main id="main" className="about-page container">
       <Brand />
-      <Link className="text-link" href="/">
+      <Link className="text-link" href="/#top">
         <ArrowLeft size={16} />
         Kembali ke beranda
       </Link>

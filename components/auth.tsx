@@ -22,21 +22,21 @@ export function Auth({ admin = false }: { admin?: boolean }) {
     <main id="main" className={`auth-page ${admin ? 'auth-admin' : ''}`}>
       <section className="auth-story">
         <Brand />
-        <Link className="auth-back text-link" href="/"><ArrowLeft size={16} /> Kembali ke beranda</Link>
+        <Link className="auth-back text-link" href="/#top"><ArrowLeft size={16} /> Kembali ke beranda</Link>
         <div className="auth-story-copy">
           <p className="eyebrow">{admin ? 'PENGELOLA KANTIN' : 'KANTIN DALAM JANGKAUANMU'}</p>
           <h1>{admin ? <>Pantau kantin.<br /><span>Rencanakan esok.</span></> : <>Pilih sekarang.<br />Nikmati saat<br /><span>istirahat.</span></>}</h1>
-          <p>{admin ? 'Lihat operasional seluruh gerai, dari produksi dan pesanan hingga sisa makanan.' : 'Pesan dari kelas, pilih waktu ambil, dan pantau kesiapan makananmu.'}</p>
+          <p>{admin ? 'Kelola kantin Anda dengan ringkasan penjualan, penerimaan pembayaran, pesanan, dan operasional seluruh gerai.' : 'Pesan dari kelas, pilih waktu ambil, dan pantau kesiapan makananmu.'}</p>
         </div>
         {admin ? <div className="auth-admin-art"><ShieldCheck size={100} strokeWidth={0.8} /><span>Akses khusus pengelola yang terdaftar.</span></div> : <PlateScene compact />}
         <span className="auth-story-foot">Rencanakan. Nikmati. Teruskan.</span>
       </section>
       <section className="auth-form-area">
-        <Link className="auth-mobile-back text-link" href="/"><ArrowLeft size={16} /> Beranda</Link>
+        <Link className="auth-mobile-back text-link" href="/#top"><ArrowLeft size={16} /> Beranda</Link>
         <div className="auth-form-card">
           <p className="eyebrow">{admin ? 'AKSES TERBATAS' : 'SELAMAT DATANG'}</p>
           <h2>{admin ? 'Masuk sebagai pengelola' : role === 'seller' ? 'Ruang pemilik gerai' : 'Mau makan apa hari ini?'}</h2>
-          <p className="muted">{admin ? 'Gunakan kredensial pengelola yang diberikan penyedia platform.' : role === 'seller' ? 'Masuk dengan akun gerai untuk menerima pesanan dan mengatur produksi.' : 'Langsung pesan sebagai tamu. Masuk dengan akun tersedia sebagai pilihan.'}</p>
+          <p className="muted">{admin ? 'Akses untuk pengelola kantin pelanggan PORSI LOOP. Gunakan akun yang diberikan penyedia platform untuk memantau seluruh gerai kantin Anda.' : role === 'seller' ? 'Masuk dengan akun gerai untuk mengubah menu, mengatur ketersediaan, dan memperbarui status pesanan.' : 'Langsung pesan sebagai tamu. Masuk dengan akun tersedia sebagai pilihan.'}</p>
           {!admin && <div className="auth-role-switch" aria-label="Pilih ruang">
             <button type="button" onClick={() => setRole('student')} aria-pressed={role === 'student'} className={role === 'student' ? 'selected' : ''}><Utensils size={18} /> Mahasiswa</button>
             <button type="button" onClick={() => setRole('seller')} aria-pressed={role === 'seller'} className={role === 'seller' ? 'selected' : ''}><Store size={18} /> Pemilik gerai</button>

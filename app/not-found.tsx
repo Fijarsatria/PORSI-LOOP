@@ -9,7 +9,7 @@ export default function NotFound() {
       <p className="eyebrow">404 · HALAMANNYA BELUM ADA</p>
       <h1>Sepertinya salah belok.</h1>
       <p>Kembali ke beranda untuk menemukan menu dan ruangmu.</p>
-      <Link className="button button-primary" href="/">
+      <Link className="button button-primary" href="/#top">
         <ArrowLeft size={17} /> Kembali ke beranda
       </Link>
     </main>

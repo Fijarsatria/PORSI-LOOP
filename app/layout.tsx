@@ -33,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body>
+      <body id="top">
         <a className="skip-link" href="#main">
           Langsung ke konten
         </a>

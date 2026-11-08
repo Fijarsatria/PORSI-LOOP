@@ -23,7 +23,7 @@ export function Brand({
 }) {
   return (
     <Link
-      href="/"
+      href="/#top"
       className={`brand ${light ? 'brand-light' : ''}`}
       aria-label="PORSI LOOP, beranda"
     >

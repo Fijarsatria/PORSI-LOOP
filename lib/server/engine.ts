@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { summarizeFinance } from './finance';
 import type {
   Action,
   AuditLog,
@@ -589,6 +590,7 @@ export function snapshot(
     reconciliation: isStaff ? reconciliation : { openingStock: 0, produced: 0, preorderPickedUp: 0, walkin: 0, rescuePickedUp: 0, internal: 0, waste: 0, endingStock: 0, difference: 0, wasteKg: 0, complete: false },
     history: isStaff ? state.history : [],
     ...(user?.role === 'admin' ? { orderTraffic: orderTraffic([state]) } : {}),
+    ...(user?.role === 'admin' || (isSeller && user.outletId === state.menu.outletId) ? { finance: summarizeFinance([state]) } : {}),
   };
 }
 
@@ -662,6 +664,7 @@ function marketplaceSnapshot(state: StoreState, user: User | null, mode: 'demo' 
     logs: scoped.flatMap(k => k.logs).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 100),
     movements: scoped.flatMap(k => k.movements),
     ...(user?.role === 'admin' ? { orderTraffic: orderTraffic(states) } : {}),
+    ...(staff ? { finance: summarizeFinance(states.filter(kitchen => user.role === 'admin' || kitchen.menu.outletId === user.outletId)) } : {}),
   };
 }
 

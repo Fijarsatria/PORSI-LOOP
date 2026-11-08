@@ -20,6 +20,7 @@ import {
 
 import { Badge, Button, EmptyState, Stat } from '../ui';
 import { clock, rupiah, type Snapshot } from '@/lib/domain';
+import { FinanceDashboard } from './finance';
 import './styles.css';
 
 import {
@@ -196,11 +197,10 @@ function AdminOverview({ state }: { state: Snapshot }) {
     <div className="stack ops-page">
       <div className="ops-greeting">
         <div>
-          <span className="eyebrow">PANDANGAN UTUH, KEPUTUSAN TERARAH</span>
-          <h1>Kantin yang terus belajar.</h1>
+          <span className="eyebrow">RUANG PENGELOLA KANTIN</span>
+          <h1>Ringkasan kantin Anda.</h1>
           <p className="muted">
-            Pantau layanan, kualitas pencatatan, dan hasil setiap sesi dalam
-            satu pandangan.
+            Pantau penjualan, penerimaan, pesanan, dan operasional seluruh gerai di kantin Anda.
           </p>
         </div>
         <span className="ops-date">
@@ -209,6 +209,8 @@ function AdminOverview({ state }: { state: Snapshot }) {
         </span>
       </div>
       <div className="stat-grid">
+        <Stat label="Penjualan selesai" value={rupiah(state.finance?.grossSales ?? state.metrics.revenue)} note="Seluruh gerai · sesi berjalan tiap menu" icon={ShoppingBag} />
+        <Stat label="Penerimaan setelah refund" value={rupiah(state.finance?.netPayments ?? 0)} note="Pembayaran diterima dikurangi refund selesai" icon={TrendingUp} />
         <Stat
           label="Porsi terlayani hari ini"
           value={served}
@@ -587,6 +589,7 @@ export function AdminDashboard({ tab }: { tab: string }) {
       </div>
     );
   if (tab === 'impact') return <Impact state={state} />;
+  if (tab === 'finance') return <FinanceDashboard state={state} />;
   if (tab === 'ledger') return <Ledger state={state} />;
   return <AdminOverview state={state} />;
 }

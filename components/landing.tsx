@@ -57,17 +57,17 @@ const roles = [
   },
   {
     id: 'manager',
-    label: 'Untuk kantin',
+    label: 'Untuk pengelola kantin',
     icon: ChartNoAxesCombined,
     title: 'Lihat alurnya.\nPahami yang tersisa.',
-    body: 'Baca ringkasan operasional, pendapatan, dan berat sisa pangan secara terpisah. Setiap angka punya jejak pencatatan.',
+    body: 'PORSI LOOP menyediakan sistem untuk kantin Anda. Pantau penjualan, penerimaan pembayaran, pesanan, dan operasional seluruh gerai dari satu ruang pengelola.',
     bullets: [
       'Ringkasan pengambilan dan no-show',
       'Rekonsiliasi produksi sampai stok akhir',
       'Berat sisa terukur per 100 porsi tersaji',
     ],
-    action: 'Pelajari cara kerjanya',
-    href: '#cara-kerja',
+    action: 'Masuk sebagai pengelola kantin',
+    href: '/akses-pengelola',
   },
 ];
 

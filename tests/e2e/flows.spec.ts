@@ -200,11 +200,73 @@ test('scroll returns after checkout switches to a ticket and navigation returns 
   await expect(page.locator('dialog[open]')).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
   await page.getByRole('link', { name: 'PORSI LOOP, beranda' }).first().click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/#top$/);
   await expect(page.locator('main h1')).toBeVisible();
   await page.locator('main h1').scrollIntoViewIfNeeded();
   await page.locator('main h1').hover();
   const before = await page.evaluate(() => scrollY);
   await page.mouse.wheel(0, 600);
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before + 100);
+});
+
+test('home links return to the top from student, seller, manager and landing sections', async ({ page }) => {
+  const home = () => page.getByRole('link', { name: 'PORSI LOOP, beranda' }).filter({ visible: true }).first();
+  const checkHome = async () => {
+    await expect(home()).toHaveAttribute('href', '/#top');
+    await home().click();
+    await expect(page).toHaveURL(/\/#top$/);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+  };
+  await page.goto('/#cara-kerja');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(100);
+  await checkHome();
+  await page.goto('/mahasiswa');
+  await page.getByTestId('menu-card').last().scrollIntoViewIfNeeded();
+  await checkHome();
+  await login(page, 'seller');
+  await page.goto('/gerai?tab=planning');
+  await page.getByRole('button', { name: /Terima saran/ }).scrollIntoViewIfNeeded();
+  await checkHome();
+  await login(page, 'admin');
+  await checkHome();
+});
+
+test('canteen manager monitors sales and receipts across outlets with a private financial report', async ({ page }, info) => {
+  await login(page, 'admin');
+  await page.goto('/pengelola?tab=finance');
+  await expect(page.getByRole('heading', { name: 'Penjualan & pemasukan kantin', exact: true })).toBeVisible();
+  const state = await (await page.request.get('/api/state')).json();
+  expect(state.orders).toEqual([]);
+  expect(state.finance.outlets).toHaveLength(6);
+  const money = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+  await expect(page.getByTestId('finance-net-payments')).toHaveText(money(state.finance.netPayments));
+  await expect(page.getByTestId('finance-gross-sales')).toHaveText(money(state.finance.grossSales));
+  await expect(page.getByTestId('finance-outlet-row')).toHaveCount(6);
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath('manager-finance.png'), fullPage: true });
+  await page.getByLabel('Gerai yang ditampilkan').selectOption('outlet-bu-ratna');
+  await expect(page.getByTestId('finance-outlet-row')).toHaveCount(1);
+  const outlet = state.finance.outlets.find((row: { outletId: string }) => row.outletId === 'outlet-bu-ratna');
+  await expect(page.getByTestId('finance-net-payments')).toHaveText(money(outlet.netPayments));
+  await noOverflow(page);
+});
+
+test('seller credentials allow editing menu information, price and availability', async ({ page }) => {
+  await login(page, 'seller');
+  await page.getByRole('button', { name: 'Atur menu', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Atur menu harian' });
+  await dialog.getByLabel('Nama menu', { exact: true }).fill('Nasi ayam rempah uji');
+  await dialog.getByLabel('Harga Porsi reguler', { exact: true }).fill('19000');
+  await dialog.getByLabel('Menu tersedia untuk dipesan').uncheck();
+  await dialog.getByRole('button', { name: 'Simpan menu', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const state = await (await page.request.get('/api/state')).json();
+  const menu = state.menus.find((item: { id: string }) => item.id === 'menu-ayam');
+  expect(menu.name).toBe('Nasi ayam rempah uji');
+  expect(menu.prices.regular).toBe(19000);
+  expect(menu.active).toBe(false);
+  await page.request.delete('/api/auth', { headers });
+  await page.goto('/mahasiswa');
+  const card = page.getByTestId('menu-card').filter({ hasText: 'Nasi ayam rempah uji' });
+  await expect(card.getByRole('button', { name: 'Pesan', exact: true })).toBeDisabled();
 });
