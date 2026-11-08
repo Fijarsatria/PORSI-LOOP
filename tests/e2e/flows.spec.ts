@@ -9,7 +9,12 @@ async function reset(page: Page) {
 }
 
 async function noOverflow(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  const layout = await page.evaluate(() => ({
+    width: window.innerWidth,
+    content: document.documentElement.scrollWidth,
+    overflowing: [...document.querySelectorAll('body *')].map(element => ({ tag: element.tagName, className: String(element.className), right: Math.round(element.getBoundingClientRect().right) })).filter(element => element.right > window.innerWidth + 1).slice(0, 12),
+  }));
+  expect(layout.content, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width);
 }
 
 test.beforeEach(async ({ page }) => { await reset(page); });

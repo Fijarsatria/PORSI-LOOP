@@ -56,7 +56,7 @@ export function createState(at = Date.now(), empty = false): StoreState {
   };
   const slots: Slot[] = [0, 1, 2].map(i => ({ id: `slot-${i + 1}`, label: `${11 + Math.floor((30 + i * 30) / 60)}:${((30 + i * 30) % 60).toString().padStart(2, '0')}–${12 + Math.floor(i / 2)}:${(i % 2 * 30).toString().padStart(2, '0')}`, start: iso(clock + (90 + i * 30) * 60000), end: iso(clock + (120 + i * 30) * 60000), cutoff: iso(clock + 60 * 60000), capacity: 20, reserved: 0, available: 20, closed: false }));
   const orders: Order[] = empty ? [] : Array.from({ length: 12 }, (_, i) => ({
-    id: `seed-order-${i + 1}`, code: `PL-${(7100 + i).toString()}`, userId: `seed-student-${i + 1}`, customer: `Mahasiswa ${String(i + 1).padStart(2, '0')}`, menuId: menu.id, menuName: menu.name, portion: i % 3 === 0 ? 'small' : 'regular', quantity: 2, price: i % 3 === 0 ? 13000 : 18000, slotId: slots[i % 3].id, slotLabel: slots[i % 3].label, status: 'confirmed', note: '', createdAt: iso(clock - (30 - i) * 60000),
+    id: `seed-order-${i + 1}`, serviceDate: date, outletName: menu.outlet, pickupLocation: menu.location, code: `PL-${(7100 + i).toString()}`, userId: `seed-student-${i + 1}`, customer: `Mahasiswa ${String(i + 1).padStart(2, '0')}`, menuId: menu.id, menuName: menu.name, portion: i % 3 === 0 ? 'small' : 'regular', quantity: 2, price: i % 3 === 0 ? 13000 : 18000, slotId: slots[i % 3].id, slotLabel: slots[i % 3].label, status: 'confirmed', note: '', createdAt: iso(clock - (30 - i) * 60000),
   }));
   if (empty) {
     Object.assign(menu, { name: 'Menu gerai Anda', description: 'Lengkapi nama, harga, komposisi, dan alergen sebelum membuka pemesanan.', outlet: 'Gerai kampus', location: 'Lokasi belum diatur', active: false, tags: [], allergens: [], prices: { small: 0, regular: 0 } });
@@ -191,7 +191,7 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       if (occupied + quantity > slot.capacity) throw new DomainError('Slot baru saja penuh. Pilih slot lain.');
       const assigned = sum(state.orders.filter(o => !['cancelled', 'expired', 'no_show'].includes(o.status)), o => o.quantity) + state.walkin + rescueHeld(state) + sum(state.claims.filter(c => c.status === 'picked_up'), c => c.quantity) + state.internal + state.waste;
       if (assigned + quantity > state.capacity) throw new DomainError('Kuota produksi menu ini sudah habis. Cek penawaran rescue yang tersedia.');
-      const order: Order = { id: randomUUID(), code: newCode(state, 'PL'), userId: user.id, customer: user.name, menuId: state.menu.id, menuName: state.menu.name, portion, quantity, price: state.menu.prices[portion], slotId: slot.id, slotLabel: slot.label, status: 'confirmed', note: text(action.note, 200), createdAt: iso(now) };
+      const order: Order = { id: randomUUID(), serviceDate: state.businessDate, outletName: state.menu.outlet, pickupLocation: state.menu.location, code: newCode(state, 'PL'), userId: user.id, customer: user.name, menuId: state.menu.id, menuName: state.menu.name, portion, quantity, price: state.menu.prices[portion], slotId: slot.id, slotLabel: slot.label, status: 'confirmed', note: text(action.note, 200), createdAt: iso(now) };
       state.orders.unshift(order); log(state, user, 'Pre-order', `${quantity} ${state.menu.portionLabels[portion]} · ${slot.label}`, now); break;
     }
     case 'cancel_order': {
@@ -285,7 +285,7 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       const quantity = integer(action.quantity ?? 1, 'Jumlah rescue', 1, 2);
       if (!batch || new Date(batch.expiresAt).getTime() <= now || batchAvailable(state, batch) < quantity) throw new DomainError('Porsi rescue sudah habis atau batas ambil sudah lewat.');
       if (state.claims.some(c => c.userId === user.id && c.batchId === batch.id && active(c.status))) throw new DomainError('Kamu sudah memiliki klaim aktif untuk penawaran ini.');
-      state.claims.unshift({ id: randomUUID(), code: newCode(state, 'RS'), userId: user.id, customer: user.name, batchId: batch.id, menuName: batch.menuName, quantity, price: batch.price, status: 'confirmed', createdAt: iso(now), expiresAt: batch.expiresAt });
+      state.claims.unshift({ id: randomUUID(), serviceDate: state.businessDate, outletName: state.menu.outlet, pickupLocation: state.menu.location, code: newCode(state, 'RS'), userId: user.id, customer: user.name, batchId: batch.id, menuName: batch.menuName, quantity, price: batch.price, status: 'confirmed', createdAt: iso(now), expiresAt: batch.expiresAt });
       log(state, user, 'Rescue dicadangkan', `${quantity} porsi · belum dihitung sebagai pengambilan`, now); break;
     }
     case 'cancel_rescue': {

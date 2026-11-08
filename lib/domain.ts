@@ -35,6 +35,9 @@ export interface Slot {
   closed: boolean;
 }
 export interface Order {
+  serviceDate?: string;
+  outletName?: string;
+  pickupLocation?: string;
   id: string;
   code: string;
   userId: string;
@@ -67,6 +70,9 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  serviceDate?: string;
+  outletName?: string;
+  pickupLocation?: string;
   id: string;
   code: string;
   userId: string;

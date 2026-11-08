@@ -41,3 +41,7 @@ Tanggal: 8 November 2026. Titik awal: `7decd009c071c856f436a10f35f84dbf21546e4d`
 - `npm run check:config`: lulus untuk mode demo.
 - Browser mobile/desktop dan Docker belum dijalankan lokal karena batas lingkungan yang dijelaskan di atas. Keberhasilan workflow GitHub dicatat terpisah berdasarkan hasil aktual.
 - Supabase cloud belum dipasang/diuji: daftar proyek pada koneksi pengguna kosong. Tidak ada klaim lulus pengujian cloud, banyak gerai, atau hasil pilot nyata.
+
+## Pemeriksaan browser GitHub
+
+Workflow pertama `42439518467` berhasil menjalankan build, 18 tes lokal, dan 5 tes API. Tujuh dari delapan tes browser berhasil; satu tes mendeteksi overflow pada hero desktop. Lebar ilustrasi hero diperbaiki agar mengikuti kolom grid dan diagnostik overflow ditambahkan. Tiket juga menyimpan tanggal serta lokasi saat pemesanan supaya arsip tetap benar setelah sesi atau lokasi gerai berubah. Hasil workflow perbaikan harus dinilai dari eksekusi GitHub berikutnya.

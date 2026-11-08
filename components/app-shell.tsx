@@ -14,7 +14,7 @@ import { clock, roleNames, type Role } from "@/lib/domain";
 const SellerDashboard = dynamic(() => import("@/components/operations").then(m => m.SellerDashboard), { loading: () => <PageLoading/> });
 const AdminDashboard = dynamic(() => import("@/components/operations").then(m => m.AdminDashboard), { loading: () => <PageLoading/> });
 const navs: Record<Role, { id: string; label: string; mobile?: string; icon: LucideIcon }[]> = {
-  student: [{ id: "menu", label: "Menu hari ini", mobile: "Menu", icon: Utensils }, { id: "orders", label: "Pesananmu", mobile: "Pesanan", icon: ShoppingBag }, { id: "rescue", label: "Rescue", icon: Sprout }, { id: "impact", label: "Loop baikmu", mobile: "Jejakmu", icon: Leaf }],
+  student: [{ id: "menu", label: "Menu sesi ini", mobile: "Menu", icon: Utensils }, { id: "orders", label: "Pesananmu", mobile: "Pesanan", icon: ShoppingBag }, { id: "rescue", label: "Rescue", icon: Sprout }, { id: "impact", label: "Loop baikmu", mobile: "Jejakmu", icon: Leaf }],
   seller: [{ id: "overview", label: "Ringkasan", icon: LayoutDashboard }, { id: "planning", label: "Rencana produksi", mobile: "Rencana", icon: NotebookPen }, { id: "orders", label: "Pesanan & ambil", mobile: "Pesanan", icon: Ticket }, { id: "rescue", label: "Rescue", icon: Sprout }, { id: "closing", label: "Tutup sesi", mobile: "Tutup sesi", icon: ClipboardCheck }],
   admin: [{ id: "overview", label: "Ringkasan kantin", mobile: "Ringkasan", icon: LayoutDashboard }, { id: "impact", label: "Laporan dampak", mobile: "Dampak", icon: ChartNoAxesCombined }, { id: "ledger", label: "Jejak pencatatan", mobile: "Catatan", icon: ListChecks }]
 };

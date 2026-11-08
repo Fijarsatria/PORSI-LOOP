@@ -19,3 +19,5 @@
 @media(min-width:1400px){.auth-story{padding:45px 65px}.auth-story-copy>h1{font-size:69px}.auth-story-copy{margin-top:65px}.auth-story .plate-scene{width:80%;bottom:-25%;right:-20%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.hero-plate{will-change:auto}}
 @media(prefers-reduced-transparency:reduce){.glass{background:#fafcf7;backdrop-filter:none;-webkit-backdrop-filter:none}.modal-dialog::backdrop{backdrop-filter:none;background:#18382ed9}}
+/* Keep the hero illustration inside its grid column at desktop widths. */
+@media(min-width:1000px){.hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.hero .plate-scene{width:100%;max-width:100%;left:0}}

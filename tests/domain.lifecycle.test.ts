@@ -77,6 +77,10 @@ test('incomplete reconciliation is retained and corrected in place; completed se
   assert.equal(snapshot(state, student, 'demo', now).orders.length, 1);
   assert.equal(snapshot(state, { ...student, id: 'another' }, 'demo', now).orders.length, 0);
   assert.equal(state.menu.outlet, 'Dapur Bu Ratna');
+  act(state, { type: 'save_menu', location: 'Gerai baru lantai 2' }, later);
+  const oldTicket = snapshot(state, student, 'demo', now).orders[0];
+  assert.equal(oldTicket.serviceDate, '2026-11-08');
+  assert.equal(oldTicket.pickupLocation, 'Kantin kampus · Gerai A-03');
   assert.throws(() => act(state, { type: 'start_session', businessDate: '2026-11-08', cutoffTime: '14:30', pickupStart: '15:00' }, later), /harus lengkap/);
 });
 
