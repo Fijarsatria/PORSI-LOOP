@@ -12,6 +12,7 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { AlertCircle, CheckCircle2, X, WifiOff } from 'lucide-react';
 import type { Role, Snapshot } from '@/lib/domain';
 import { createIdempotencyKey } from '@/lib/client/idempotency';
+import { orderNotices } from '@/lib/client/notifications';
 
 interface AppContextValue {
   state: Snapshot | null;
@@ -30,6 +31,7 @@ interface AppContextValue {
   ) => Promise<boolean>;
   logout: () => Promise<boolean>;
   toast: (message: string) => void;
+  notices: string[];
 }
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -39,6 +41,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
+  const [notices, setNotices] = useState<string[]>([]);
+  const previousState = useRef<Snapshot | null>(null);
   const [errorToast, setErrorToast] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const clearError = useCallback(() => setError(''), []);
@@ -52,6 +56,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setNotification(''), 5000);
   }, []);
+  useEffect(() => {
+    const previous = previousState.current;
+    previousState.current = state;
+    if (!state?.user || state.user.id !== previous?.user?.id) {
+      setNotices([]);
+      return;
+    }
+    const messages = orderNotices(
+      [...previous.orders, ...previous.claims],
+      [...state.orders, ...state.claims],
+      state.user.role,
+    );
+    if (!messages.length) return;
+    setNotices((items) => [...messages, ...items].slice(0, 20));
+    const message = messages.length > 1 ? `${messages.length} pembaruan pesanan. ${messages[0]}` : messages[0];
+    toast(message);
+    if ('Notification' in window && Notification.permission === 'granted' && document.hidden)
+      new Notification('PORSI LOOP', { body: message, icon: '/icon.png' });
+  }, [state, toast]);
   const refresh = useCallback(async () => {
     if (inFlight.current) return false;
     setRefreshing(true);
@@ -88,8 +111,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener('visibilitychange', sync);
     void refresh();
     const id = setInterval(() => {
-      if (!document.hidden && !inFlight.current) void refresh();
-    }, 15000);
+      if (!inFlight.current) void refresh();
+    }, 4000);
     return () => {
       window.removeEventListener('focus', sync);
       document.removeEventListener('visibilitychange', sync);
@@ -164,6 +187,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           refreshing,
           clearError,
           toast,
+          notices,
           action,
           login: async (role, demo, email, password) => {
             const success = await mutate('/api/auth', 'POST', {

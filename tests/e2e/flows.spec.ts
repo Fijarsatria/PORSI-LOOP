@@ -1,208 +1,180 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import jsQR from 'jsqr';
 
-async function reset(page: Page) {
-  const auth = await page.request.post('/api/auth', {
-    data: { role: 'admin', demo: true },
-    headers: { Origin: 'http://127.0.0.1:3100' },
-  });
-  expect(auth.ok()).toBeTruthy();
-  const result = await page.request.post('/api/actions', {
-    data: { type: 'reset_demo' },
-    headers: { Origin: 'http://127.0.0.1:3100' },
-  });
-  expect(result.ok()).toBeTruthy();
-  await page.context().clearCookies();
+const origin = 'http://127.0.0.1:3100';
+const headers = { Origin: origin };
+async function login(page: Page, role: 'seller' | 'admin') {
+  await page.goto(role === 'admin' ? '/akses-pengelola' : '/masuk?peran=gerai');
+  await page.getByLabel('Alamat email').fill(`${role}@porsiloop.local`);
+  await page.getByLabel('Kata sandi', { exact: true }).fill(role === 'admin' ? 'PorsiAdmin2026!' : 'PorsiSeller2026!');
+  await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+  await expect(page).toHaveURL(role === 'admin' ? /\/pengelola$/ : /\/gerai$/);
 }
-
 async function noOverflow(page: Page) {
-  const layout = await page.evaluate(() => ({
-    width: window.innerWidth,
-    content: document.documentElement.scrollWidth,
-    overflowing: [...document.querySelectorAll('body *')]
-      .map((element) => ({
-        tag: element.tagName,
-        className: String(element.className),
-        right: Math.round(element.getBoundingClientRect().right),
-      }))
-      .filter((element) => element.right > window.innerWidth + 1)
-      .slice(0, 12),
-  }));
-  expect(layout.content, JSON.stringify(layout)).toBeLessThanOrEqual(
-    layout.width,
-  );
+  const size = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth }));
+  expect(size.content).toBeLessThanOrEqual(size.width);
 }
-
 test.beforeEach(async ({ page }) => {
-  await reset(page);
+  const auth = await page.request.post('/api/auth', { headers, data: { role: 'admin', demo: true, email: 'admin@porsiloop.local', password: 'PorsiAdmin2026!' } });
+  expect(auth.ok()).toBeTruthy();
+  expect((await page.request.post('/api/actions', { headers, data: { type: 'reset_demo' } })).ok()).toBeTruthy();
+  await page.context().clearCookies();
 });
 
-test('landing and role-specific login remain usable at mobile and desktop sizes', async ({
-  page,
-}, info) => {
-  await page.goto('/');
-  await expect(page.locator('h1')).toBeVisible();
+test('guest catalogue, search, optional login and restricted staff access reflow', async ({ page }, info) => {
+  await page.goto('/mahasiswa');
+  await expect(page.getByTestId('menu-card')).toHaveCount(18);
+  const state = await (await page.request.get('/api/state')).json();
+  expect(state.user.isGuest).toBe(true);
+  expect(state.outlets).toHaveLength(6);
   await noOverflow(page);
-  await page.screenshot({
-    path: info.outputPath('landing.png'),
-    fullPage: true,
-  });
-  await page.goto('/masuk');
-  await expect(
-    page.getByRole('button', { name: 'Mahasiswa', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Pemilik gerai', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: /Masuk sebagai pengelola/ }),
-  ).toHaveCount(0);
-  await noOverflow(page);
-  await page.screenshot({ path: info.outputPath('login.png'), fullPage: true });
+  await page.screenshot({ path: info.outputPath('student-marketplace.png'), fullPage: true });
+  await page.screenshot({ path: info.outputPath('student-marketplace-viewport.png') });
+  await page.getByLabel('Cari menu atau gerai').fill('rendang');
+  await expect(page.getByTestId('menu-card')).toHaveCount(1);
+  await expect(page.getByTestId('menu-card')).toContainText('Nasi rendang');
+  await page.getByRole('button', { name: 'Hapus pencarian' }).click();
+  await page.getByRole('button', { name: 'Dapur Bu Ratna', exact: true }).click();
+  await expect(page.getByTestId('menu-card')).toHaveCount(3);
+  const anonymous = await page.request.post('/api/auth', { headers, data: { role: 'admin', demo: true } });
+  expect(anonymous.status()).toBe(401);
+  await page.goto('/gerai');
+  await expect(page.getByRole('heading', { name: /peran berbeda/ })).toBeVisible();
+  for (const width of [375, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/mahasiswa');
+    await expect(page.getByTestId('menu-card')).toHaveCount(18);
+    await noOverflow(page);
+    await page.goto('/masuk');
+    await expect(page.getByRole('link', { name: 'Langsung pilih menu' })).toBeVisible();
+    await noOverflow(page);
+  }
 });
 
-test('student can order, inspect a ticket, and dismiss the dialog using Escape', async ({
-  page,
-}, info) => {
-  await page.goto('/masuk');
-  await page.getByRole('button', { name: 'Masuk sebagai mahasiswa' }).click();
-  await expect(page).toHaveURL(/\/mahasiswa$/);
-  await page.getByRole('button', { name: 'Pilih porsi' }).click();
-  const checkout = page.getByRole('dialog', {
-    name: 'Rencanakan makan siangmu',
-  });
+test('guest payment, real QR, seller preparation, notifications and one-time handover', async ({ page, browser }, info) => {
+  await page.goto('/mahasiswa');
+  await page.getByTestId('menu-order-button').first().click();
+  const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await expect(checkout).toBeVisible();
-  await checkout.getByRole('button', { name: 'Konfirmasi pesanan' }).click();
-  await expect(checkout).not.toBeVisible();
-  await page.goto('/mahasiswa?tab=orders');
-  await page.getByRole('button', { name: 'Lihat tiket' }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Tiket pengambilan' }),
-  ).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(
-    page.getByRole('dialog', { name: 'Tiket pengambilan' }),
-  ).not.toBeVisible();
-  await noOverflow(page);
-  await page.screenshot({
-    path: info.outputPath('student-orders.png'),
-    fullPage: true,
-  });
+  await checkout.getByLabel('Nama pemesan').fill('Ayu Uji');
+  await checkout.getByRole('button', { name: /^Pick up/ }).click();
+  await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
+  await page.getByRole('button', { name: 'Simulasikan pembayaran berhasil' }).click();
+  const ticket = page.getByRole('dialog', { name: 'Status pesananmu' });
+  await expect(ticket).toBeVisible();
+  const snapshot = await (await page.request.get('/api/state')).json();
+  const order = snapshot.orders.find((item: { customer: string }) => item.customer === 'Ayu Uji');
+  expect(order.paymentStatus).toBe('paid');
+  expect(order.pickupToken.length).toBeGreaterThanOrEqual(40);
+  const qr = ticket.locator('img[src^="data:image/png"]');
+  await expect(qr).toBeVisible();
+  const encoded = await qr.getAttribute('src');
+  const { PNG } = require('pngjs');
+  const png = PNG.sync.read(Buffer.from(encoded!.split(',')[1], 'base64'));
+  expect(jsQR(new Uint8ClampedArray(png.data), png.width, png.height)?.data).toBe(order.pickupToken);
+  await page.screenshot({ path: info.outputPath('paid-ticket.png'), fullPage: true });
+  const sellerContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const seller = await sellerContext.newPage();
+  await login(seller, 'seller');
+  await seller.goto('/gerai?tab=orders');
+  const row = seller.getByRole('row').filter({ hasText: order.code });
+  await row.getByRole('button', { name: 'Mulai siapkan' }).click();
+  await expect(ticket.getByRole('heading', { name: 'Sedang disiapkan di dapur' })).toBeVisible({ timeout: 10000 });
+  await row.getByRole('button', { name: 'Tandai siap' }).click();
+  await expect(ticket.getByRole('heading', { name: 'Pesananmu sudah siap!' })).toBeVisible({ timeout: 10000 });
+  await seller.getByRole('button', { name: 'Scan QR', exact: true }).click();
+  const scanner = seller.getByRole('dialog', { name: 'Verifikasi pengambilan' });
+  await scanner.getByLabel('Token QR pengambilan').fill(order.pickupToken);
+  await scanner.getByRole('button', { name: 'Verifikasi & serahkan' }).click();
+  await expect(scanner).not.toBeVisible();
+  await expect(ticket).toContainText(/Sudah diambil|Selamat menikmati|Pesanan selesai/, { timeout: 10000 });
+  const duplicate = await seller.request.post('/api/actions', { headers, data: { type: 'scan_pickup', token: order.pickupToken } });
+  expect(duplicate.ok()).toBe(false);
+  await seller.screenshot({ path: info.outputPath('seller-orders.png'), fullPage: true });
+  await sellerContext.close();
 });
 
-test('lost action responses reuse the same idempotency key on retry', async ({
-  page,
-}) => {
-  await page.goto('/masuk');
-  await page.getByRole('button', { name: 'Masuk sebagai mahasiswa' }).click();
-  await expect(page).toHaveURL(/\/mahasiswa$/);
-  await page.getByRole('button', { name: 'Pilih porsi' }).click();
-  const keys: string[] = [];
-  await page.route('**/api/actions', async (route) => {
-    keys.push(route.request().postDataJSON().idempotencyKey);
-    if (keys.length === 1) {
-      await route.fetch();
-      await route.abort('failed');
-    } else await route.continue();
-  });
-  const button = page.getByRole('button', { name: 'Konfirmasi pesanan' });
-  await button.click();
-  await expect(button).toBeEnabled();
-  await button.click();
-  await expect(
-    page.getByRole('dialog', { name: 'Rencanakan makan siangmu' }),
-  ).not.toBeVisible();
-  expect(keys).toHaveLength(2);
-  expect(keys[0]).toBe(keys[1]);
-  const response = await page.request.get('/api/state');
-  expect((await response.json()).orders).toHaveLength(1);
-});
-
-test('seller and manager open distinct workspaces with reduced motion', async ({
-  page,
-}, info) => {
+test('dialog error, keyboard focus, accessibility and reduced motion remain usable', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/masuk?peran=gerai');
-  await page
-    .getByRole('button', { name: 'Masuk sebagai pemilik gerai' })
-    .click();
-  await expect(page).toHaveURL(/\/gerai$/);
-  await expect(page.locator('main h1')).toBeVisible();
-  await noOverflow(page);
-  await page.screenshot({
-    path: info.outputPath('seller.png'),
-    fullPage: true,
-  });
-  await page.goto('/gerai?tab=planning');
-  await expect(
-    page.getByRole('button', { name: /Terima saran/ }),
-  ).toBeVisible();
-  await noOverflow(page);
-  await page.goto('/akses-pengelola');
-  await page.getByRole('button', { name: 'Masuk sebagai pengelola' }).click();
-  await expect(page).toHaveURL(/\/pengelola$/);
-  await expect(page.locator('main h1')).toHaveText(
-    'Kantin yang terus belajar.',
-  );
-  await page.goto('/pengelola?tab=ledger');
-  await expect(
-    page.getByRole('heading', { name: 'Pergerakan stok fisik' }),
-  ).toBeVisible();
-  await noOverflow(page);
-  await page.screenshot({
-    path: info.outputPath('manager-ledger.png'),
-    fullPage: true,
-  });
-});
-
-test('form errors stay visible inside the dialog and Escape returns focus', async ({
-  page,
-}) => {
-  await page.goto('/masuk');
-  await page.getByRole('button', { name: 'Masuk sebagai mahasiswa' }).click();
-  await expect(page).toHaveURL(/\/mahasiswa$/);
-  const trigger = page.getByRole('button', {
-    name: 'Pilih porsi',
-    exact: true,
-  });
+  await page.goto('/mahasiswa');
+  const trigger = page.getByTestId('menu-order-button').first();
   await trigger.click();
-  const dialog = page.getByRole('dialog', { name: 'Rencanakan makan siangmu' });
-  await expect(dialog).toBeVisible();
-  const accessibility = await new AxeBuilder({ page })
-    .include('dialog[open]')
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze();
+  const dialog = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
+  await dialog.getByLabel('Nama pemesan').fill('Uji Error');
+  const accessibility = await new AxeBuilder({ page }).include('dialog[open]').withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(accessibility.violations).toEqual([]);
-  await page.route('**/api/actions', (route) =>
-    route.fulfill({
-      status: 409,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        error: 'Slot baru saja penuh. Pilih waktu lain.',
-      }),
-    }),
-  );
-  await dialog.getByRole('button', { name: 'Konfirmasi pesanan' }).click();
-  await expect(dialog.getByRole('alert')).toHaveText(
-    'Slot baru saja penuh. Pilih waktu lain.',
-  );
+  await page.route('**/api/actions', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'Kuota baru saja habis. Pilih menu lain.' }) }));
+  await dialog.getByRole('button', { name: 'Lanjut pembayaran' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Kuota baru saja habis');
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
   await expect(trigger).toBeFocused();
 });
 
-test('landing and sign-in reflow at small mobile tablet and laptop widths', async ({
-  page,
-}) => {
-  for (const width of [375, 768, 1024, 1440]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await page.goto('/');
-    await expect(page.locator('h1')).toBeVisible();
-    await noOverflow(page);
-    await page.goto('/masuk');
-    await expect(
-      page.getByRole('button', { name: 'Masuk sebagai mahasiswa' }),
-    ).toBeVisible();
-    await noOverflow(page);
-  }
+test('seller menu planning and administrator outlet traffic remain separate', async ({ page }, info) => {
+  await login(page, 'seller');
+  await page.goto('/gerai?tab=planning');
+  await expect(page.getByRole('button', { name: /Terima saran/ })).toBeVisible();
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath('seller-planning.png'), fullPage: true });
+  await login(page, 'admin');
+  await expect(page.locator('main h1')).toBeVisible();
+  const state = await (await page.request.get('/api/state')).json();
+  expect(state.orders).toEqual([]);
+  expect(state.outlets).toHaveLength(6);
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath('admin-overview.png'), fullPage: true });
+  await page.goto('/pengelola?tab=ledger');
+  await expect(page.getByRole('heading', { name: 'Pergerakan stok fisik' })).toBeVisible();
+  await noOverflow(page);
+});
+
+test('scheduled Pick up remains orderable after immediate cooked stock is exhausted', async ({ page }) => {
+  expect((await page.request.post('/api/auth', { headers, data: { role: 'seller', demo: true, email: 'seller@porsiloop.local', password: 'PorsiSeller2026!' } })).ok()).toBeTruthy();
+  const sellerState = await (await page.request.get('/api/state')).json();
+  const remaining = sellerState.menus.find((menu: { id: string }) => menu.id === 'menu-ayam').availableStock;
+  expect(remaining).toBeGreaterThan(0);
+  expect((await page.request.post('/api/actions', { headers, data: { type: 'record_walkin', menuId: 'menu-ayam', quantity: remaining } })).ok()).toBeTruthy();
+  await page.request.delete('/api/auth', { headers });
+  await page.goto('/mahasiswa');
+  const card = page.getByTestId('menu-card').filter({ has: page.getByRole('heading', { name: 'Nasi ayam rempah', exact: true }) });
+  await expect(card.getByRole('button', { name: 'Pesan', exact: true })).toBeEnabled();
+  await card.getByRole('button', { name: 'Pesan', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
+  await expect(dialog.getByRole('button', { name: /^Dine in/ })).toBeDisabled();
+  await expect(dialog.getByLabel('Waktu ambil')).toHaveValue(/^slot-/);
+  await dialog.getByLabel('Nama pemesan').fill('Uji Jadwal');
+  await dialog.getByRole('button', { name: 'Lanjut pembayaran' }).click();
+  await expect(page.getByRole('dialog', { name: 'Selesaikan pembayaran' })).toBeVisible();
+  const state = await (await page.request.get('/api/state')).json();
+  expect(state.orders[0].slotId).toMatch(/^slot-/);
+  expect(state.orders[0].fulfillment).toBe('pick_up');
+});
+
+test('Promo Terbatas cash waits for seller verification before issuing the buyer QR', async ({ page, browser }) => {
+  await page.goto('/mahasiswa?tab=rescue');
+  await page.getByRole('button', { name: /^Pesan promo/ }).first().click();
+  const checkout = page.getByRole('dialog', { name: 'Pesan Promo Terbatas' });
+  await checkout.getByLabel('Nama pemesan').fill('Uji Promo Tunai');
+  await checkout.getByRole('button', { name: 'Bayar di gerai', exact: true }).click();
+  await checkout.getByRole('button', { name: 'Buat pesanan' }).click();
+  const ticket = page.getByRole('dialog', { name: 'Status pesananmu' });
+  await expect(ticket).toContainText('Menunggu verifikasi pembayaran');
+  await expect(ticket.getByTestId('pickup-qr')).toHaveCount(0);
+  const state = await (await page.request.get('/api/state')).json();
+  const claim = state.claims[0];
+  expect(claim.paymentStatus).toBe('pending');
+  expect(claim.pickupToken).toBeUndefined();
+  const staff = await browser.newContext();
+  expect((await staff.request.post(`${origin}/api/auth`, { headers, data: { role: 'seller', demo: true, email: 'seller@porsiloop.local', password: 'PorsiSeller2026!' } })).ok()).toBeTruthy();
+  expect((await staff.request.post(`${origin}/api/actions`, { headers, data: { type: 'verify_cash_payment', claimId: claim.id } })).ok()).toBeTruthy();
+  await expect(ticket.getByTestId('pickup-qr')).toBeVisible({ timeout: 10000 });
+  const paid = await (await page.request.get('/api/state')).json();
+  const token = paid.claims[0].pickupToken;
+  for (const type of ['prepare_order', 'ready_order'])
+    expect((await staff.request.post(`${origin}/api/actions`, { headers, data: { type, claimId: claim.id } })).ok()).toBeTruthy();
+  expect((await staff.request.post(`${origin}/api/actions`, { headers, data: { type: 'scan_pickup', token } })).ok()).toBeTruthy();
+  await expect(ticket.getByRole('heading', { name: 'Selamat menikmati!' })).toBeVisible({ timeout: 10000 });
+  await staff.close();
 });

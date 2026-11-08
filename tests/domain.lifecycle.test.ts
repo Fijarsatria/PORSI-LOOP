@@ -42,8 +42,10 @@ test('live installations start with a closed sample menu and no fabricated deman
 test('pickup rejects early collection and expires exactly at the end of the slot', () => {
   const state = createState(now);
   const order = state.orders.find((o) => o.slotId === 'slot-1')!;
+  act(state, { type: 'prepare_order', orderId: order.id });
+  act(state, { type: 'ready_order', orderId: order.id });
   assert.throws(
-    () => act(state, { type: 'pickup_order', code: order.code }),
+    () => act(state, { type: 'scan_pickup', token: order.pickupToken }),
     /belum dimulai/,
   );
   expire(state, Date.parse(state.slots[0].end));
@@ -52,10 +54,10 @@ test('pickup rejects early collection and expires exactly at the end of the slot
     () =>
       act(
         state,
-        { type: 'pickup_order', code: order.code },
+        { type: 'scan_pickup', token: order.pickupToken },
         Date.parse(state.slots[0].end),
       ),
-    /sudah diproses/,
+    /sudah dibayar dan siap/,
   );
 });
 

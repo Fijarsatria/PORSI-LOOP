@@ -36,21 +36,21 @@ const roles = [
     bullets: [
       'Pilihan porsi kecil atau reguler',
       'Slot pengambilan yang jelas',
-      'Rescue makanan layak yang masih tersedia',
+      'Promo Terbatas makanan layak yang masih tersedia',
     ],
     action: 'Pilih makan siangmu',
-    href: '/masuk',
+    href: '/mahasiswa',
   },
   {
     id: 'seller',
     label: 'Untuk gerai',
     icon: Store,
     title: 'Masak dengan rencana.\nBukan kira-kira.',
-    body: 'Satukan pre-order dan perkiraan walk-in untuk merencanakan produksi. Catat yang benar-benar dimasak dan diserahkan.',
+    body: 'Satukan pesanan terjadwal dan perkiraan walk-in untuk merencanakan produksi. Catat yang benar-benar dimasak dan diserahkan.',
     bullets: [
       'Saran produksi dengan alasan yang terbuka',
       'Kuota, pesanan, dan stok dalam satu tempat',
-      'Rescue dari stok layak yang benar-benar tersisa',
+      'Promo Terbatas dari stok layak yang benar-benar tersisa',
     ],
     action: 'Buka ruang gerai',
     href: '/masuk?peran=gerai',
@@ -82,8 +82,8 @@ export function PublicHeader() {
         <a href="/#dampak">Kenapa PORSI?</a>
       </nav>
       <div className="header-actions">
-        <Link href="/masuk" className="header-login">
-          Masuk <ArrowUpRight size={17} />
+        <Link href="/mahasiswa" className="header-login">
+          Pilih menu <ArrowUpRight size={17} />
         </Link>
         <button
           className="icon-button mobile-menu"
@@ -276,7 +276,7 @@ export function Landing() {
                 <br className="desktop-br" /> makanan baik sampai ke piring.
               </p>
               <div className="hero-actions">
-                <LinkButton href="/masuk" arrow>
+                <LinkButton href="/mahasiswa" arrow>
                   Yuk, pilih porsimu
                 </LinkButton>
                 <a href="#cara-kerja" className="text-link">
@@ -367,7 +367,7 @@ export function Landing() {
                 n: '03',
                 icon: Sprout,
                 title: 'Teruskan yang baik.',
-                text: 'Ada makanan layak tersisa? Klaim rescue dan ambil sebelum batas waktunya.',
+                text: 'Ada makanan layak tersisa? Klaim Promo Terbatas dan ambil sebelum batas waktunya.',
                 note: 'Dicek gerai sebelum ditawarkan',
                 className: 'step-peach',
               },
@@ -483,11 +483,11 @@ export function Landing() {
                   <span className="demo-tag">Simulasi</span>
                 </div>
                 <h4>Berapa porsi hari ini?</h4>
-                <p>Geser rencana lewat jumlah pre-order.</p>
+                <p>Geser rencana lewat jumlah pesanan terjadwal.</p>
                 <div className="demand-equation">
                   <div>
                     <strong>{previewP}</strong>
-                    <span>Pre-order</span>
+                    <span>Pick up</span>
                   </div>
                   <span>+</span>
                   <div>
@@ -502,7 +502,7 @@ export function Landing() {
                 </div>
                 <div className="demand-control">
                   <button
-                    aria-label="Kurangi pre-order simulasi"
+                    aria-label="Kurangi pesanan terjadwal simulasi"
                     onClick={() => setPreviewP((n) => Math.max(0, n - 1))}
                   >
                     <Minus size={17} />
@@ -512,11 +512,11 @@ export function Landing() {
                     min="0"
                     max="40"
                     value={previewP}
-                    aria-label="Jumlah pre-order simulasi"
+                    aria-label="Jumlah pesanan terjadwal simulasi"
                     onChange={(e) => setPreviewP(Number(e.target.value))}
                   />
                   <button
-                    aria-label="Tambah pre-order simulasi"
+                    aria-label="Tambah pesanan terjadwal simulasi"
                     onClick={() => setPreviewP((n) => Math.min(40, n + 1))}
                   >
                     <Plus size={17} />
@@ -621,7 +621,7 @@ export function Landing() {
                 Rencananya juga baik.
               </h2>
               <p>Mulai satu loop baik dari makan siang berikutnya.</p>
-              <LinkButton href="/masuk" variant="lime" arrow>
+              <LinkButton href="/mahasiswa" variant="lime" arrow>
                 Coba PORSI LOOP
               </LinkButton>
             </div>

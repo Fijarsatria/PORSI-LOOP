@@ -4,10 +4,10 @@
 
 | Mode       | Kebutuhan                                               | Batas                                                                                       |
 | ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `demo`     | Node.js 24 LTS dan disk persisten                       | Akun peran bersama, seluruh angka simulasi, satu instance server                            |
+| `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server                            |
 | `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Adapter cloud tersedia; perlu verifikasi pada proyek tujuan sebelum menerima pengguna nyata |
 
-Tidak ada proyek Supabase yang terlihat pada akun plugin saat kelanjutan 8 November 2026. Tidak ada proyek berbayar, database, akun, atau deployment cloud yang dibuat tanpa target yang terverifikasi.
+Proyek PORSI LOOP (wcodhmpstpdmjpqbwoeo) telah dibuat pada organisasi LutfiZg's Org di ap-southeast-1. Skema privat sudah dipasang dan akses langsung publik ditolak. Koneksi aplikasi masih membutuhkan kunci rahasia server; pengambilan otomatis melalui browser diblokir karena URL aktif tidak dapat dipastikan. Lihat flow-v2.md untuk status terkini.
 
 ## Server Node.js
 
@@ -37,8 +37,8 @@ SESSION_SECRET=...
 APP_ORIGIN=https://domain-tujuan.example
 ```
 
-4. Buat akun uji melalui Supabase Auth. Mahasiswa adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
-5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud dimulai tanpa transaksi, produksi, histori, dan penawaran sintetis; menu awal tidak aktif. Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
+4. Buat akun uji melalui Supabase Auth. Mahasiswa adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API; penjual juga wajib memiliki `app_metadata.outletId` yang cocok dengan gerainya. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
+5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud dimulai tanpa transaksi, produksi, histori, dan penawaran sintetis; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
 6. Uji login setiap peran, penolakan peran yang salah, pembatalan sebelum cutoff, konkurensi slot terakhir, pickup, logout/cookie lama, dan rekonsiliasi pada proyek uji. Jangan menguji reset simulasi terhadap layanan nyata; operasi tersebut memang ditolak.
 7. Jalankan Security/Performance Advisors di dashboard Supabase dan tinjau hasilnya sebelum pilot. Pengujian lokal tidak menggantikan validasi RLS/privilege dan koneksi pada proyek nyata.
 
@@ -73,4 +73,4 @@ Buat `.env.production` lokal yang diabaikan Git. Set `APP_ORIGIN` ke domain publ
 - Seluruh alur utama lulus di mode yang benar-benar akan dipakai, pada mobile dan desktop.
 - Proyek dan origin tepat; secrets tidak masuk Git, log, screenshot, atau bundle browser.
 - Data demo tidak bercampur dengan hasil pilot. Catat metode timbang dan baseline secara eksplisit.
-- MVP ini satu gerai. Jangan mengklaim isolasi banyak tenant sebelum tabel/role/outlet dan pengujian lintas gerai dikembangkan.
+- Model saat ini mendukung enam gerai dengan isolasi per-menu/per-gerai pada server. Dokumen global JSONB memiliki batas kontensi; gunakan tabel/RPC per agregat bila beban meningkat.

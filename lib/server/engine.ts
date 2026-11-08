@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import type {
   Action,
   AuditLog,
@@ -24,6 +24,7 @@ export class DomainError extends Error {
   }
 }
 export interface StoreState {
+  kitchens?: StoreState[];
   schema: 1;
   sessionId?: string;
   movements?: StockMovement[];
@@ -61,10 +62,14 @@ export interface StoreState {
   endingStock?: number;
   idempotency: string[];
 }
-const active = (status: string) => status === 'confirmed' || status === 'ready';
+const active = (status: string) => ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(status);
 const sum = <T>(items: T[], value: (item: T) => number) =>
   items.reduce((a, b) => a + value(b), 0);
 const iso = (ms: number) => new Date(ms).toISOString();
+const withoutPickupToken = <T extends { pickupToken?: string }>(ticket: T) => {
+  const { pickupToken: _token, ...visible } = ticket;
+  return visible;
+};
 export const DEMO_USERS: Record<Role, User> = {
   student: {
     id: 'demo-student',
@@ -76,13 +81,14 @@ export const DEMO_USERS: Record<Role, User> = {
     id: 'demo-seller',
     role: 'seller',
     name: 'Bu Ratna',
-    email: 'gerai@demo.porsiloop.id',
+    email: 'seller@porsiloop.local',
+    outletId: 'outlet-bu-ratna',
   },
   admin: {
     id: 'demo-admin',
     role: 'admin',
     name: 'Pengelola kantin',
-    email: 'pengelola@demo.porsiloop.id',
+    email: 'admin@porsiloop.local',
   },
 };
 
@@ -95,6 +101,7 @@ export function createState(at = Date.now(), empty = false): StoreState {
   }).format(new Date(at));
   const clock = new Date(`${date}T10:00:00+07:00`).getTime();
   const menu: Menu = {
+    outletId: 'outlet-bu-ratna',
     id: 'menu-ayam',
     name: 'Nasi ayam rempah',
     description:
@@ -139,6 +146,11 @@ export function createState(at = Date.now(), empty = false): StoreState {
         slotId: slots[i % 3].id,
         slotLabel: slots[i % 3].label,
         status: 'confirmed',
+        outletId: menu.outletId,
+        fulfillment: 'pick_up',
+        paymentStatus: 'paid',
+        paymentMethod: 'qris',
+        pickupToken: randomBytes(32).toString('base64url'),
         note: '',
         createdAt: iso(clock - (30 - i) * 60000),
       }));
@@ -229,6 +241,44 @@ export function createState(at = Date.now(), empty = false): StoreState {
   };
 }
 
+export const DEMO_OUTLETS = [
+  { id: 'outlet-bu-ratna', name: 'Dapur Bu Ratna', location: 'Kantin kampus · Gerai A-03', category: 'Nasi & lauk', email: 'seller@porsiloop.local', menus: ['Nasi ayam rempah', 'Nasi telur balado', 'Nasi ikan kunyit'] },
+  { id: 'outlet-mie-pak-dedi', name: 'Mie Pak Dedi', location: 'Kantin kampus · Gerai A-04', category: 'Mie & bakso', email: 'dedi@porsiloop.local', menus: ['Mie ayam jamur', 'Bakso kuah sapi', 'Mie goreng sayur'] },
+  { id: 'outlet-sayur-bu-sari', name: 'Sayur Bu Sari', location: 'Kantin kampus · Gerai B-01', category: 'Sayur & vegetarian', email: 'sari@porsiloop.local', menus: ['Gado-gado lontong', 'Pecel nasi merah', 'Tahu tempe sayur'] },
+  { id: 'outlet-soto-pak-hadi', name: 'Soto Pak Hadi', location: 'Kantin kampus · Gerai B-02', category: 'Soto & sup', email: 'hadi@porsiloop.local', menus: ['Soto ayam bening', 'Sup ayam kentang', 'Rawon daging'] },
+  { id: 'outlet-dapur-nusantara', name: 'Dapur Nusantara', location: 'Kantin kampus · Gerai C-01', category: 'Masakan rumahan', email: 'nusantara@porsiloop.local', menus: ['Nasi rendang', 'Ayam sambal matah', 'Nasi perkedel sayur'] },
+  { id: 'outlet-roti-kopi', name: 'Roti & Kopi Kampus', location: 'Kantin kampus · Gerai C-02', category: 'Roti & camilan', email: 'roti@porsiloop.local', menus: ['Roti telur keju', 'Sandwich ayam', 'Roti sayur panggang'] },
+] as const;
+
+export function createMarketplaceState(at = Date.now(), empty = false): StoreState {
+  const kitchens = DEMO_OUTLETS.flatMap((outlet, outletIndex) => outlet.menus.map((name, menuIndex) => {
+    const kitchen = createState(at, empty);
+    const id = outletIndex === 0 && menuIndex === 0 ? 'menu-ayam' : `menu-${outlet.id.slice(7)}-${menuIndex + 1}`;
+    const regular = 15000 + ((outletIndex + menuIndex) % 4) * 2000;
+    kitchen.menu = {
+      ...kitchen.menu, id, name, outletId: outlet.id, outlet: outlet.name, location: outlet.location,
+      category: outlet.category, image: `/images/menu-${outletIndex + 1}-${menuIndex + 1}.svg`,
+      description: empty ? 'Menu belum dibuka. Gerai perlu mengisi harga, komposisi, dan alergen sebelum menerima pesanan.' : `${name} dari ${outlet.name}, disiapkan hari ini. Sambal atau saus disajikan terpisah.`,
+      allergens: empty ? [] : outletIndex === 2 ? ['Kacang', 'Kedelai'] : outletIndex === 5 ? ['Gandum', 'Telur', 'Susu'] : ['Kedelai'],
+      prices: empty ? { small: 0, regular: 0 } : { small: regular - 5000, regular }, variableCost: empty ? 0 : Math.round(regular * .5),
+    };
+    kitchen.orders.forEach((order, i) => Object.assign(order, {
+      id: `${id}-seed-${i + 1}`, code: `PL-${outletIndex + 1}${menuIndex + 1}${7100 + i}`,
+      menuId: id, menuName: name, outletId: outlet.id, outletName: outlet.name, pickupLocation: outlet.location,
+      price: kitchen.menu.prices[order.portion],
+    }));
+    kitchen.rescues.forEach(batch => Object.assign(batch, {
+      id: `${id}-promo`, menuId: id, menuName: name, outletId: outlet.id,
+      allergens: [...kitchen.menu.allergens], originalPrice: regular, price: regular - 6000,
+      description: `Promo Terbatas ${name}. Stok matang sudah diperiksa gerai.`,
+    }));
+    return kitchen;
+  }));
+  const [first, ...rest] = kitchens;
+  first.kitchens = rest;
+  return first;
+}
+
 export function serverNow(
   state: StoreState,
   mode: 'demo' | 'supabase',
@@ -240,14 +290,28 @@ export function serverNow(
     : realNow;
 }
 export function expire(state: StoreState, now: number) {
+  for (const kitchen of state.kitchens ?? []) expire(kitchen, now);
   for (const order of state.orders) {
+    if (order.status === 'pending_payment' && now >= Date.parse(order.paymentExpiresAt ?? order.createdAt) ) {
+      order.status = 'expired';
+      order.paymentStatus = 'expired';
+      delete order.pickupToken;
+      continue;
+    }
     const slot = state.slots.find((s) => s.id === order.slotId);
-    if (active(order.status) && slot && now >= new Date(slot.end).getTime())
+    if (active(order.status) && ((slot && now >= new Date(slot.end).getTime()) || (order.slotId === 'asap' && now >= Date.parse(order.createdAt) + 2 * 3600000)))
       order.status = 'no_show';
   }
-  for (const claim of state.claims)
+  for (const claim of state.claims) {
+    if (claim.status === 'pending_payment' && now >= Date.parse(claim.paymentExpiresAt ?? claim.createdAt)) {
+      claim.status = 'expired';
+      claim.paymentStatus = 'expired';
+      delete claim.pickupToken;
+      continue;
+    }
     if (active(claim.status) && now >= new Date(claim.expiresAt).getTime())
       claim.status = 'expired';
+  }
   for (const batch of state.rescues)
     if (now >= new Date(batch.expiresAt).getTime()) batch.active = false;
 }
@@ -381,6 +445,8 @@ export function snapshot(
   mode: 'demo' | 'supabase',
   realNow = Date.now(),
 ): Snapshot {
+  if (state.kitchens) return marketplaceSnapshot(state, user, mode, realNow);
+  if (user?.role === 'seller' && (!user.outletId || user.outletId !== state.menu.outletId)) throw new DomainError('Akun ini tidak memiliki akses ke gerai tersebut.', 403);
   const now = serverNow(state, mode, realNow);
   expire(state, now);
   const slots = state.slots.map((slot) => {
@@ -461,6 +527,7 @@ export function snapshot(
     businessDate: state.businessDate,
     menu: {
       ...state.menu,
+      availableStock: availableStock(state),
       variableCost: isStaff ? state.menu.variableCost : 0,
     },
     slots,
@@ -470,7 +537,7 @@ export function snapshot(
           ...(user.role === 'student' ? (state.archivedOrders ?? []) : []),
         ].filter(
           (o) => isSeller || (user.role === 'student' && o.userId === user.id),
-        )
+        ).map(order => isSeller ? withoutPickupToken(order) : order)
       : [],
     rescues: state.rescues.map((r) => ({
       ...r,
@@ -482,9 +549,9 @@ export function snapshot(
           ...(user.role === 'student' ? (state.archivedClaims ?? []) : []),
         ].filter(
           (c) => isSeller || (user.role === 'student' && c.userId === user.id),
-        )
+        ).map(claim => isSeller ? withoutPickupToken(claim) : claim)
       : [],
-    recommendation: recommendation(state),
+    recommendation: isStaff ? recommendation(state) : { preorders: 0, walkinEstimate: 0, walkinRange: [0, 0], buffer: 0, target: 0, capacity: 0, readyStock: 0, toProduce: 0, source: 'manual', historyDays: 0 },
     metrics: {
       stockouts: state.stockouts ?? 0,
       totalOrders: state.orders.length,
@@ -519,8 +586,82 @@ export function snapshot(
       completionRate: pickupRate,
     },
     logs: isStaff ? state.logs.slice(0, 100) : [],
-    reconciliation,
+    reconciliation: isStaff ? reconciliation : { openingStock: 0, produced: 0, preorderPickedUp: 0, walkin: 0, rescuePickedUp: 0, internal: 0, waste: 0, endingStock: 0, difference: 0, wasteKg: 0, complete: false },
     history: isStaff ? state.history : [],
+    ...(user?.role === 'admin' ? { orderTraffic: orderTraffic([state]) } : {}),
+  };
+}
+
+function orderTraffic(states: StoreState[]): NonNullable<Snapshot['orderTraffic']> {
+  const groups = new Map<string, NonNullable<Snapshot['orderTraffic']>[number]>();
+  for (const state of states) {
+    for (const ticket of [...state.orders, ...(state.archivedOrders ?? []), ...state.claims, ...(state.archivedClaims ?? [])]) {
+      const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(ticket.createdAt));
+      const outletId = ticket.outletId ?? state.menu.outletId ?? 'outlet-bu-ratna';
+      const key = `${date}:${outletId}`;
+      const row = groups.get(key) ?? { date, outletId, outletName: ticket.outletName ?? state.menu.outlet, orders: 0, portions: 0, normal: 0, promo: 0, paid: 0, served: 0, pending: 0, preparing: 0, ready: 0, active: 0 };
+      row.orders++;
+      row.portions += ticket.quantity;
+      if ('batchId' in ticket) row.promo++; else row.normal++;
+      if (ticket.paymentStatus === 'paid') row.paid++;
+      if (ticket.status === 'picked_up') row.served++;
+      if (ticket.status === 'pending_payment') row.pending++;
+      if (ticket.status === 'preparing') row.preparing++;
+      if (ticket.status === 'ready') row.ready++;
+      if (active(ticket.status)) row.active++;
+      groups.set(key, row);
+    }
+  }
+  return [...groups.values()].sort((a, b) => a.date.localeCompare(b.date) || a.outletName.localeCompare(b.outletName));
+}
+
+function marketplaceSnapshot(state: StoreState, user: User | null, mode: 'demo' | 'supabase', realNow: number): Snapshot {
+  const states = [{ ...state, kitchens: undefined }, ...(state.kitchens ?? [])];
+  const all = states.map(kitchen => snapshot(kitchen, user?.role === 'seller' && kitchen.menu.outletId !== user.outletId ? null : user, mode, realNow));
+  const scoped = all.filter(kitchen => user?.role !== 'seller' || kitchen.menu.outletId === user.outletId);
+  if (user?.role === 'seller' && !scoped.length) throw new DomainError('Akun gerai belum terhubung ke gerai yang valid.', 403);
+  const selected = scoped[0] ?? all[0];
+  const staff = user?.role === 'seller' || user?.role === 'admin';
+  const aggregateMetrics = (kitchens: Snapshot[]) => {
+    const result = { ...kitchens[0].metrics };
+    for (const key of Object.keys(result) as (keyof typeof result)[]) {
+      if (key !== 'pickupRate' && key !== 'completionRate') result[key] = kitchens.reduce((total, kitchen) => total + kitchen.metrics[key], 0);
+    }
+    result.pickupRate = result.preorderEligible ? Math.round(kitchens.reduce((n, k) => n + k.reconciliation.preorderPickedUp, 0) / result.preorderEligible * 100) : 0;
+    result.completionRate = result.pickupRate;
+    return result;
+  };
+  const metrics = aggregateMetrics(scoped);
+  const reconciliation = { ...selected.reconciliation };
+  for (const key of ['openingStock', 'produced', 'preorderPickedUp', 'walkin', 'rescuePickedUp', 'internal', 'waste', 'endingStock', 'difference', 'wasteKg'] as const) reconciliation[key] = scoped.reduce((n, k) => n + k.reconciliation[key], 0);
+  reconciliation.complete = scoped.every(k => k.reconciliation.complete);
+  reconciliation.recorded = scoped.every(k => k.reconciliation.recorded);
+  const historyByDate = new Map<string, HistoricalSession>();
+  for (const kitchen of scoped) for (const session of kitchen.history) {
+    const old = historyByDate.get(session.date);
+    if (!old) historyByDate.set(session.date, { ...session });
+    else {
+      for (const key of ['produced', 'preorders', 'walkin', 'rescue', 'waste', 'wasteKg', 'internal', 'endingStock', 'difference'] as const) old[key] = (old[key] ?? 0) + (session[key] ?? 0);
+      old.closed = old.closed && session.closed;
+    }
+  }
+  const outletIds = [...new Set(all.map(kitchen => kitchen.menu.outletId!))];
+  return {
+    ...selected,
+    menus: all.map(kitchen => ({ ...kitchen.menu, slots: kitchen.slots, variableCost: user?.role === 'admin' || (user?.role === 'seller' && kitchen.menu.outletId === user.outletId) ? kitchen.menu.variableCost : 0 })),
+    outlets: outletIds.map(id => {
+      const group = all.filter(kitchen => kitchen.menu.outletId === id);
+      return { id, name: group[0].menu.outlet, location: group[0].menu.location, category: group[0].menu.category, menuIds: group.map(k => k.menu.id), ...(staff && (user.role === 'admin' || id === user.outletId) ? { metrics: aggregateMetrics(group) } : {}) };
+    }),
+    selectedOutletId: user?.role === 'seller' ? user.outletId : undefined,
+    ...(staff ? { kitchens: scoped.map(k => ({ ...k, kitchens: undefined, menus: undefined, outlets: undefined })) } : {}),
+    orders: user?.role === 'admin' ? [] : scoped.flatMap(k => k.orders),
+    claims: user?.role === 'admin' ? [] : scoped.flatMap(k => k.claims),
+    rescues: all.flatMap(k => k.rescues), metrics, reconciliation,
+    history: [...historyByDate.values()].sort((a, b) => a.date.localeCompare(b.date)),
+    logs: scoped.flatMap(k => k.logs).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 100),
+    movements: scoped.flatMap(k => k.movements),
+    ...(user?.role === 'admin' ? { orderTraffic: orderTraffic(states) } : {}),
   };
 }
 
@@ -536,6 +677,27 @@ const integer = (value: unknown, label: string, min = 1, max = 10000) => {
 };
 const text = (value: unknown, max = 300) =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
+const fulfillment = (value: unknown) => {
+  if (value === undefined || value === 'pick_up') return 'pick_up' as const;
+  if (value === 'dine_in') return 'dine_in' as const;
+  throw new DomainError('Pilih Dine in atau Pick up.');
+};
+const paymentMethod = (value: unknown) => {
+  if (value === undefined || value === 'qris') return 'qris' as const;
+  if (value === 'ewallet' || value === 'bank_transfer' || value === 'cash') return value;
+  throw new DomainError('Pilih metode pembayaran yang tersedia.');
+};
+const customerName = (value: unknown, user: User) => {
+  if (value === undefined) return user.name;
+  const name = text(value, 100);
+  if (name.length < 2) throw new DomainError('Isi nama pemesan sedikitnya 2 karakter.');
+  return name;
+};
+const refund = (ticket: Order | RescueClaim, mode: 'demo' | 'supabase') => {
+  if (ticket.paymentStatus === 'paid') ticket.paymentStatus = mode === 'demo' ? 'refunded' : 'refund_pending';
+  else ticket.paymentStatus = 'expired';
+  delete ticket.pickupToken;
+};
 const requireRole = (user: User, roles: Role[]) => {
   if (!roles.includes(user.role))
     throw new DomainError(
@@ -570,6 +732,33 @@ export function applyAction(
   user: User,
   action: Action,
   now: number,
+  mode: 'demo' | 'supabase' = 'demo',
+): StoreState {
+  if (mode === 'supabase' && action.type === 'pay_order') throw new DomainError('Pembayaran digital belum tersedia. Gunakan tunai dan minta gerai memverifikasi pembayaran.', 503);
+  if (mode === 'supabase' && ['preorder', 'claim_rescue'].includes(action.type) && action.paymentMethod !== 'cash') throw new DomainError('QRIS, e-wallet, dan transfer belum tersedia sampai penyedia pembayaran dikonfigurasi. Pilih tunai.', 503);
+  if (state.kitchens) {
+    const kitchens = [state, ...state.kitchens];
+    const referenced = kitchens.find(k =>
+      k.orders.some(o => o.id === action.orderId || (typeof action.token === 'string' && o.pickupToken === action.token)) ||
+      k.claims.some(c => c.id === action.claimId || (typeof action.token === 'string' && c.pickupToken === action.token)) ||
+      k.rescues.some(r => r.id === action.batchId));
+    const selected = typeof action.menuId === 'string' ? kitchens.find(k => k.menu.id === action.menuId) : referenced ?? (user.role === 'seller' ? kitchens.find(k => k.menu.outletId === user.outletId) : state);
+    if (!selected || (referenced && referenced !== selected)) throw new DomainError('Menu atau pesanan tidak ditemukan.', 404);
+    if (user.role === 'seller' && selected.menu.outletId !== user.outletId) throw new DomainError('Akun ini tidak memiliki akses ke gerai tersebut.', 403);
+    applyKitchenAction(selected, user, action, now, mode);
+    return state;
+  }
+  if (user.role === 'seller' && (!user.outletId || user.outletId !== state.menu.outletId)) throw new DomainError('Akun ini tidak memiliki akses ke gerai tersebut.', 403);
+  if (action.menuId !== undefined && action.menuId !== state.menu.id) throw new DomainError('Menu tidak ditemukan.', 404);
+  return applyKitchenAction(state, user, action, now, mode);
+}
+
+function applyKitchenAction(
+  state: StoreState,
+  user: User,
+  action: Action,
+  now: number,
+  mode: 'demo' | 'supabase',
 ): StoreState {
   expire(state, now);
   const key = text(action.idempotencyKey, 100);
@@ -611,7 +800,7 @@ export function applyAction(
         !/^([01]\d|2[0-3]):[0-5]\d$/.test(cutoffTime)
       )
         throw new DomainError(
-          'Isi tanggal, batas pesan, dan awal pickup dalam WIB.',
+          'Isi tanggal, batas pesan, dan awal Pick up dalam WIB.',
         );
       const start = Date.parse(`${date}T${startTime}:00+07:00`);
       const cutoff = Date.parse(`${date}T${cutoffTime}:00+07:00`);
@@ -625,7 +814,7 @@ export function applyAction(
         start + 90 * 60000 >= Date.parse(`${date}T23:59:59+07:00`)
       )
         throw new DomainError(
-          'Jadwal harus valid: batas pesan masih di depan, sebelum pickup, dan seluruh slot di hari yang sama.',
+          'Jadwal harus valid: batas pesan masih di depan, sebelum Pick up, dan seluruh slot di hari yang sama.',
         );
       const previous = {
         createdAt: state.createdAt,
@@ -690,7 +879,7 @@ export function applyAction(
         state,
         user,
         'Sesi baru dibuka',
-        `${date} · pickup ${startTime} WIB · stok awal baru 0; stok akhir lama tetap di arsip`,
+        `${date} · Pick up ${startTime} WIB · stok awal baru 0; stok akhir lama tetap di arsip`,
         now,
       );
       break;
@@ -720,7 +909,8 @@ export function applyAction(
             ? 'regular'
             : null;
       if (!portion) throw new DomainError('Pilih ukuran porsi.');
-      const slot = state.slots.find((s) => s.id === action.slotId);
+      const immediate = action.slotId === 'asap' || !action.slotId;
+      const slot = immediate ? { id: 'asap', label: 'Pesan sekarang', capacity: state.capacity, start: iso(now), end: iso(now + 2 * 3600000), cutoff: iso(now + 15 * 60000) } : state.slots.find((s) => s.id === action.slotId);
       if (!slot || now >= new Date(slot.cutoff).getTime())
         throw new DomainError(
           'Batas pemesanan slot ini sudah lewat. Pilih slot yang masih terbuka.',
@@ -735,10 +925,11 @@ export function applyAction(
       );
       if (occupied + quantity > slot.capacity)
         throw new DomainError('Slot baru saja penuh. Pilih slot lain.');
+      if (immediate && availableStock(state) < quantity) throw new DomainError('Stok siap saji menu ini tidak cukup. Pilih jadwal atau menu lain.');
       const assigned = committedCapacity(state);
       if (assigned + quantity > state.capacity)
         throw new DomainError(
-          'Kuota produksi menu ini sudah habis. Cek penawaran rescue yang tersedia.',
+          'Kuota produksi menu ini sudah habis. Cek Promo Terbatas yang tersedia.',
         );
       const order: Order = {
         id: randomUUID(),
@@ -747,7 +938,7 @@ export function applyAction(
         pickupLocation: state.menu.location,
         code: newCode(state, 'PL'),
         userId: user.id,
-        customer: user.name,
+        customer: customerName(action.customer, user),
         menuId: state.menu.id,
         menuName: state.menu.name,
         portion,
@@ -755,7 +946,12 @@ export function applyAction(
         price: state.menu.prices[portion],
         slotId: slot.id,
         slotLabel: slot.label,
-        status: 'confirmed',
+        status: 'pending_payment',
+        outletId: state.menu.outletId,
+        fulfillment: fulfillment(action.fulfillment),
+        paymentStatus: 'pending',
+        paymentMethod: paymentMethod(action.paymentMethod),
+        paymentExpiresAt: iso(Math.min(now + 15 * 60000, Date.parse(slot.end))),
         note: text(action.note, 200),
         createdAt: iso(now),
       };
@@ -763,7 +959,7 @@ export function applyAction(
       log(
         state,
         user,
-        'Pre-order',
+        'Pesanan dibuat',
         `${quantity} ${state.menu.portionLabels[portion]} · ${slot.label}`,
         now,
       );
@@ -774,56 +970,82 @@ export function applyAction(
       const order = state.orders.find(
         (o) => o.id === action.orderId && o.userId === user.id,
       );
-      if (!order || !active(order.status))
+      if (!order || !['pending_payment', 'confirmed'].includes(order.status))
         throw new DomainError('Pesanan tidak dapat dibatalkan.');
-      const slot = state.slots.find((s) => s.id === order.slotId)!;
-      if (now >= new Date(slot.cutoff).getTime())
+      const slot = state.slots.find((s) => s.id === order.slotId);
+      if (slot && now >= new Date(slot.cutoff).getTime())
         throw new DomainError('Pembatalan ditutup setelah batas pemesanan.');
       order.status = 'cancelled';
+      refund(order, mode);
       log(state, user, 'Pembatalan', order.code, now);
       break;
     }
-    case 'pickup_order': {
-      requireRole(user, ['seller']);
-      const order = state.orders.find(
-        (o) =>
-          o.id === action.orderId ||
-          o.code.toUpperCase() === text(action.code).toUpperCase(),
-      );
-      if (!order || !active(order.status))
-        throw new DomainError(
-          'Kode tidak ditemukan atau pesanan sudah diproses.',
-        );
-      const slot = state.slots.find((s) => s.id === order.slotId);
-      if (!slot || now < new Date(slot.start).getTime())
-        throw new DomainError(
-          'Slot pengambilan belum dimulai. Ambil sesuai waktu pada tiket.',
-        );
-      if (stock(state) - rescueHeld(state) < order.quantity)
-        throw new DomainError(
-          'Stok fisik belum cukup. Catat produksi sebelum memvalidasi pengambilan.',
-        );
-      reference = order.id;
-      order.status = 'picked_up';
-      order.pickedUpAt = iso(now);
-      log(
-        state,
-        user,
-        'Pengambilan pre-order',
-        `${order.code} · ${order.quantity} porsi`,
-        now,
-      );
+    case 'pickup_order':
+    case 'pickup_rescue':
+      throw new DomainError('Pengambilan harus memakai QR pesanan yang sudah dibayar dan siap. Gunakan pemindai QR gerai.', 403);
+    case 'pay_order':
+    case 'verify_cash_payment': {
+      const ticket = action.claimId ? state.claims.find(c => c.id === action.claimId) : state.orders.find(o => o.id === action.orderId);
+      if (!ticket) throw new DomainError('Pesanan tidak ditemukan.', 404);
+      if (action.type === 'verify_cash_payment') {
+        requireRole(user, ['seller']);
+        if (ticket.paymentMethod !== 'cash') throw new DomainError('Verifikasi tunai hanya untuk pesanan dengan pembayaran tunai.');
+      } else {
+        requireRole(user, ['student']);
+        if (ticket.userId !== user.id) throw new DomainError('Pesanan tidak ditemukan.', 404);
+        if (ticket.paymentMethod === 'cash') throw new DomainError('Pembayaran tunai harus diverifikasi gerai.');
+      }
+      if (ticket.paymentStatus === 'paid') break;
+      if (ticket.status !== 'pending_payment' || ticket.paymentStatus !== 'pending') throw new DomainError('Batas pembayaran berakhir atau pesanan sudah diproses.', 409);
+      ticket.paymentStatus = 'paid';
+      ticket.status = 'confirmed';
+      ticket.pickupToken = randomBytes(32).toString('base64url');
+      log(state, user, 'Pembayaran diterima', ticket.code, now);
       break;
     }
+    case 'confirm_cash_refund': {
+      requireRole(user, ['seller']);
+      const ticket = action.claimId ? state.claims.find(claim => claim.id === action.claimId) : state.orders.find(order => order.id === action.orderId);
+      if (!ticket || ticket.status !== 'cancelled' || ticket.paymentMethod !== 'cash') throw new DomainError('Pengembalian tunai hanya untuk pesanan tunai yang dibatalkan.');
+      if (ticket.paymentStatus === 'refunded') break;
+      if (ticket.paymentStatus !== 'refund_pending') throw new DomainError('Tidak ada pengembalian tunai yang menunggu konfirmasi.');
+      ticket.paymentStatus = 'refunded';
+      log(state, user, 'Pengembalian tunai dikonfirmasi', ticket.code, now);
+      break;
+    }
+    case 'prepare_order':
+    case 'prepare_rescue':
+    case 'ready_rescue':
     case 'ready_order': {
       requireRole(user, ['seller']);
-      const order = state.orders.find((o) => o.id === action.orderId);
-      if (!order || order.status !== 'confirmed')
-        throw new DomainError('Pesanan ini tidak dapat ditandai siap.');
-      if (stock(state) - rescueHeld(state) < order.quantity)
+      const order = action.claimId ? state.claims.find(c => c.id === action.claimId) : state.orders.find((o) => o.id === action.orderId);
+      const preparing = action.type.startsWith('prepare');
+      if (!order || order.paymentStatus !== 'paid' || order.status !== (preparing ? 'confirmed' : 'preparing'))
+        throw new DomainError(preparing ? 'Pesanan harus sudah dibayar sebelum disiapkan.' : 'Pesanan harus dibayar dan sedang disiapkan sebelum ditandai siap.');
+      if ((action.claimId ? stock(state) : stock(state) - rescueHeld(state)) < order.quantity)
         throw new DomainError('Catat produksi terlebih dahulu.');
-      order.status = 'ready';
-      log(state, user, 'Pesanan siap', order.code, now);
+      order.status = preparing ? 'preparing' : 'ready';
+      log(state, user, preparing ? 'Pesanan disiapkan' : 'Pesanan siap', order.code, now);
+      break;
+    }
+    case 'scan_pickup': {
+      requireRole(user, ['seller']);
+      const token = text(action.token, 200);
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new DomainError('QR tidak valid. Pindai QR pembayaran pada tiket.');
+      const order = state.orders.find(o => o.pickupToken === token);
+      const claim = state.claims.find(c => c.pickupToken === token);
+      const ticket = order ?? claim;
+      if (!ticket) throw new DomainError('QR tidak ditemukan di gerai ini.', 404);
+      if (ticket.status === 'picked_up') throw new DomainError('QR sudah digunakan. Pesanan sudah diproses.', 409);
+      if (ticket.paymentStatus !== 'paid' || ticket.status !== 'ready') throw new DomainError('Pesanan harus sudah dibayar dan siap sebelum diambil.', 409);
+      if (ticket.outletId !== user.outletId) throw new DomainError('QR ini untuk gerai lain.', 403);
+      const slot = order && state.slots.find(s => s.id === order.slotId);
+      if (slot && now < Date.parse(slot.start)) throw new DomainError('Slot pengambilan belum dimulai.');
+      if ((order ? stock(state) - rescueHeld(state) : stock(state)) < ticket.quantity) throw new DomainError('Stok fisik tidak mencukupi. Periksa pencatatan stok.');
+      reference = ticket.id;
+      ticket.status = 'picked_up';
+      ticket.pickedUpAt = iso(now);
+      log(state, user, claim ? 'Promo Terbatas diambil' : 'Pengambilan pesanan', `${ticket.code} · ${ticket.quantity} porsi`, now);
       break;
     }
     case 'record_production': {
@@ -842,7 +1064,7 @@ export function applyAction(
       const quantity = integer(action.quantity, 'Jumlah walk-in', 1, 100);
       if (availableStock(state) < quantity)
         throw new DomainError(
-          'Stok bebas tidak cukup. Stok pre-order dan rescue tetap dicadangkan.',
+          'Stok bebas tidak cukup. Stok pesanan dan Promo Terbatas tetap dicadangkan.',
         );
       const price =
         action.price === undefined
@@ -1001,19 +1223,19 @@ export function applyAction(
     }
     case 'publish_rescue': {
       requireRole(user, ['seller']);
-      const quantity = integer(action.quantity, 'Porsi rescue', 1, 100);
+      const quantity = integer(action.quantity, 'Porsi Promo Terbatas', 1, 100);
       if (action.foodChecked !== true)
         throw new DomainError(
-          'Periksa kelayakan pangan dan konfirmasikan sebelum menerbitkan rescue.',
+          'Periksa kelayakan pangan dan konfirmasikan sebelum menerbitkan Promo Terbatas.',
         );
       if (availableStock(state) < quantity)
         throw new DomainError(
-          'Rescue hanya boleh memakai stok matang yang belum dicadangkan.',
+          'Promo Terbatas hanya boleh memakai stok matang yang belum dicadangkan.',
         );
       const expiresAt = action.expiresAt
         ? new Date(String(action.expiresAt)).getTime()
         : now +
-          integer(action.durationMinutes ?? 60, 'Durasi rescue', 5, 180) *
+          integer(action.durationMinutes ?? 60, 'Durasi Promo Terbatas', 5, 180) *
             60000;
       if (
         !Number.isFinite(expiresAt) ||
@@ -1021,15 +1243,16 @@ export function applyAction(
         expiresAt > now + 3 * 3600000
       )
         throw new DomainError(
-          'Batas pengambilan rescue harus 1–180 menit dari sekarang.',
+          'Batas pengambilan Promo Terbatas harus 1–180 menit dari sekarang.',
         );
       const price = integer(
         action.price ?? 10000,
-        'Harga rescue',
+        'Harga Promo Terbatas',
         0,
         state.menu.prices.regular,
       );
       state.rescues.unshift({
+        outletId: state.menu.outletId,
         id: randomUUID(),
         allergens: [...state.menu.allergens],
         menuId: state.menu.id,
@@ -1049,7 +1272,7 @@ export function applyAction(
       log(
         state,
         user,
-        'Rescue diterbitkan',
+        'Promo Terbatas diterbitkan',
         `${quantity} porsi · layak diperiksa gerai`,
         now,
       );
@@ -1060,16 +1283,18 @@ export function applyAction(
       const batch = state.rescues.find(
         (r) => r.id === action.batchId && r.active,
       );
-      if (!batch) throw new DomainError('Penawaran rescue sudah ditutup.');
+      if (!batch) throw new DomainError('Promo Terbatas sudah ditutup.');
       const reason = requireReason(action.reason);
       batch.active = false;
       for (const claim of state.claims)
-        if (claim.batchId === batch.id && active(claim.status))
+        if (claim.batchId === batch.id && active(claim.status)) {
           claim.status = 'cancelled';
+          refund(claim, mode);
+        }
       log(
         state,
         user,
-        'Rescue ditutup gerai',
+        'Promo Terbatas ditutup gerai',
         `${batch.menuName} · ${reason}`,
         now,
       );
@@ -1080,14 +1305,15 @@ export function applyAction(
       const batch = state.rescues.find(
         (r) => r.id === action.batchId && r.active,
       );
-      const quantity = integer(action.quantity ?? 1, 'Jumlah rescue', 1, 2);
+      const quantity = integer(action.quantity ?? 1, 'Jumlah Promo Terbatas', 1, 2);
       if (
         !batch ||
+        !batch.foodChecked ||
         new Date(batch.expiresAt).getTime() <= now ||
         batchAvailable(state, batch) < quantity
       )
         throw new DomainError(
-          'Porsi rescue sudah habis atau batas ambil sudah lewat.',
+          'Promo Terbatas sudah habis, belum lolos pemeriksaan, atau batas ambil sudah lewat.',
         );
       if (
         state.claims.some(
@@ -1105,19 +1331,25 @@ export function applyAction(
         pickupLocation: state.menu.location,
         code: newCode(state, 'RS'),
         userId: user.id,
-        customer: user.name,
+        customer: customerName(action.customer, user),
         batchId: batch.id,
+        note: text(action.note, 200),
         menuName: batch.menuName,
         quantity,
         price: batch.price,
-        status: 'confirmed',
+        status: 'pending_payment',
+        outletId: state.menu.outletId,
+        fulfillment: fulfillment(action.fulfillment),
+        paymentStatus: 'pending',
+        paymentMethod: paymentMethod(action.paymentMethod),
+        paymentExpiresAt: iso(Math.min(now + 15 * 60000, Date.parse(batch.expiresAt))),
         createdAt: iso(now),
         expiresAt: batch.expiresAt,
       });
       log(
         state,
         user,
-        'Rescue dicadangkan',
+        'Promo Terbatas dicadangkan',
         `${quantity} porsi · belum dihitung sebagai pengambilan`,
         now,
       );
@@ -1128,41 +1360,11 @@ export function applyAction(
       const claim = state.claims.find(
         (c) => c.id === action.claimId && c.userId === user.id,
       );
-      if (!claim || !active(claim.status))
+      if (!claim || !['pending_payment', 'confirmed'].includes(claim.status))
         throw new DomainError('Klaim sudah diproses atau kedaluwarsa.');
       claim.status = 'cancelled';
-      log(state, user, 'Klaim rescue dibatalkan', claim.code, now);
-      break;
-    }
-    case 'pickup_rescue': {
-      requireRole(user, ['seller']);
-      const claim = state.claims.find(
-        (c) =>
-          c.id === action.claimId ||
-          c.code.toUpperCase() === text(action.code).toUpperCase(),
-      );
-      if (
-        !claim ||
-        !active(claim.status) ||
-        new Date(claim.expiresAt).getTime() <= now
-      )
-        throw new DomainError(
-          'Kode rescue tidak ditemukan, kedaluwarsa, atau sudah digunakan.',
-        );
-      if (stock(state) < claim.quantity)
-        throw new DomainError(
-          'Stok fisik tidak mencukupi. Periksa pencatatan stok.',
-        );
-      reference = claim.id;
-      claim.status = 'picked_up';
-      claim.pickedUpAt = iso(now);
-      log(
-        state,
-        user,
-        'Rescue diambil',
-        `${claim.code} · ${claim.quantity} porsi`,
-        now,
-      );
+      refund(claim, mode);
+      log(state, user, 'Promo Terbatas dibatalkan', claim.code, now);
       break;
     }
     case 'record_waste':
@@ -1201,6 +1403,7 @@ export function applyAction(
     }
     case 'reconcile': {
       requireRole(user, ['seller']);
+      if ([...state.orders, ...state.claims].some(ticket => ticket.paymentStatus === 'refund_pending')) throw new DomainError('Konfirmasikan pengembalian tunai yang tertunda sebelum menutup sesi.');
       if (
         state.orders.some((o) => active(o.status)) ||
         state.claims.some((c) => active(c.status))
@@ -1318,6 +1521,7 @@ export function applyAction(
         pickup_rescue: 'rescue_pickup',
         record_internal: 'internal',
         record_waste: 'waste',
+        scan_pickup: state.claims.some(c => c.id === reference) ? 'rescue_pickup' : 'preorder_pickup',
       };
       if (kinds[action.type])
         movement(kinds[action.type], stock(state) - beforeStock);

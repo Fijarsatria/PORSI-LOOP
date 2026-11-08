@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Action, Snapshot, User } from '../domain';
-import { createState, DomainError, snapshot, type StoreState } from './engine';
+import { createMarketplaceState, DomainError, snapshot, type StoreState } from './engine';
 import { applyDemoCommand } from './commands';
 
 export const mode = (): 'demo' | 'supabase' => {
@@ -28,13 +28,22 @@ async function database() {
       );
       db.prepare(
         'INSERT OR IGNORE INTO application_state (id, document) VALUES (1, ?)',
-      ).run(JSON.stringify(createState()));
+      ).run(JSON.stringify(createMarketplaceState()));
       return db;
     });
   return dbPromise;
 }
-const parse = (row: unknown) =>
-  JSON.parse((row as { document: string }).document) as StoreState;
+const parse = (row: unknown) => {
+  const state = JSON.parse((row as { document: string }).document) as StoreState;
+  if (!state.kitchens) {
+    const seeded = createMarketplaceState(Date.parse(state.createdAt));
+    state.kitchens = seeded.kitchens;
+    state.menu.outletId ??= 'outlet-bu-ratna';
+    state.orders.forEach(order => { order.outletId ??= state.menu.outletId; order.paymentStatus ??= 'paid'; order.paymentMethod ??= 'qris'; order.fulfillment ??= 'pick_up'; if (['confirmed', 'ready'].includes(order.status)) order.pickupToken ??= randomBytes(32).toString('base64url'); });
+    state.claims.forEach(claim => { claim.outletId ??= state.menu.outletId; claim.paymentStatus ??= 'paid'; claim.paymentMethod ??= 'qris'; claim.fulfillment ??= 'pick_up'; if (['confirmed', 'ready'].includes(claim.status)) claim.pickupToken ??= randomBytes(32).toString('base64url'); });
+  }
+  return state;
+};
 
 export async function getSnapshot(user: User | null): Promise<Snapshot> {
   if (mode() === 'supabase') {
@@ -42,10 +51,19 @@ export async function getSnapshot(user: User | null): Promise<Snapshot> {
     return cloudSnapshot(user);
   }
   const db = await database();
-  const state = parse(
-    db.prepare('SELECT document FROM application_state WHERE id = 1').get(),
-  );
-  return snapshot(state, user, 'demo');
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const state = parse(
+      db.prepare('SELECT document FROM application_state WHERE id = 1').get(),
+    );
+    const view = snapshot(state, user, 'demo');
+    db.prepare('UPDATE application_state SET document = ? WHERE id = 1').run(JSON.stringify(state));
+    db.exec('COMMIT');
+    return view;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 }
 
 export async function mutate(user: User, action: Action): Promise<Snapshot> {

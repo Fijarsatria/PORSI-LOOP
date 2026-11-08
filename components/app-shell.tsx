@@ -48,9 +48,9 @@ const navs: Record<
   { id: string; label: string; mobile?: string; icon: LucideIcon }[]
 > = {
   student: [
-    { id: 'menu', label: 'Menu sesi ini', mobile: 'Menu', icon: Utensils },
+    { id: 'menu', label: 'Jelajahi kantin', mobile: 'Menu', icon: Utensils },
     { id: 'orders', label: 'Pesananmu', mobile: 'Pesanan', icon: ShoppingBag },
-    { id: 'rescue', label: 'Rescue', icon: Sprout },
+    { id: 'rescue', label: 'Promo Terbatas', mobile: 'Promo', icon: Sprout },
     { id: 'impact', label: 'Loop baikmu', mobile: 'Jejakmu', icon: Leaf },
   ],
   seller: [
@@ -62,7 +62,7 @@ const navs: Record<
       icon: NotebookPen,
     },
     { id: 'orders', label: 'Pesanan & ambil', mobile: 'Pesanan', icon: Ticket },
-    { id: 'rescue', label: 'Rescue', icon: Sprout },
+    { id: 'rescue', label: 'Promo Terbatas', mobile: 'Promo', icon: Sprout },
     {
       id: 'closing',
       label: 'Tutup sesi',
@@ -94,7 +94,7 @@ const navs: Record<
 const routes = { student: '/mahasiswa', seller: '/gerai', admin: '/pengelola' };
 
 export function AppShell({ role }: { role: Role }) {
-  const { state, loading, busy, logout, refresh, refreshing, toast } = useApp();
+  const { state, loading, busy, logout, refresh, refreshing, toast, notices } = useApp();
   const [profile, setProfile] = useState(false);
   const [notifications, setNotifications] = useState(false);
   const params = useSearchParams();
@@ -150,8 +150,8 @@ export function AppShell({ role }: { role: Role }) {
       </main>
     );
   const count =
-    state.orders.filter((o) => ['confirmed', 'ready'].includes(o.status))
-      .length + state.claims.filter((c) => c.status === 'confirmed').length;
+    state.orders.filter((o) => ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(o.status))
+      .length + state.claims.filter((c) => ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(c.status)).length;
   const nav = (mobile = false) =>
     navs[role].map((n) => (
       <Link
@@ -227,7 +227,7 @@ export function AppShell({ role }: { role: Role }) {
           <span className="avatar">{state.user.name.slice(0, 1)}</span>
           <span>
             <strong>{state.user.name}</strong>
-            <small>{roleNames[role]}</small>
+            <small>{state.user.isGuest ? 'Tamu · tanpa wajib login' : roleNames[role]}</small>
           </span>
           <Settings2 size={17} />
         </button>
@@ -268,11 +268,11 @@ export function AppShell({ role }: { role: Role }) {
             </button>
             <button
               className="icon-button notification-button"
-              aria-label="Lihat pengingat"
+              aria-label="Lihat notifikasi"
               onClick={() => setNotifications(true)}
             >
               <Bell size={20} />
-              {count > 0 && <span />}
+              {(notices.length > 0 || count > 0) && <span />}
             </button>
             <button
               className="avatar mobile-avatar"
@@ -339,16 +339,17 @@ export function AppShell({ role }: { role: Role }) {
             {state.user.name.slice(0, 1)}
           </span>
           <h3>{state.user.name}</h3>
-          <Badge>{roleNames[role]}</Badge>
+          <Badge>{state.user.isGuest ? 'Sesi tamu' : roleNames[role]}</Badge>
           <p className="muted">
-            {state.mode === 'demo'
+            {state.user.isGuest ? 'Pesanan tersimpan di browser ini. Simpan tiket QR sebelum menutup atau membersihkan browser.' : state.mode === 'demo'
               ? 'Akun demonstrasi. Aktivitas disimpan sebagai data simulasi di instalasi ini.'
               : state.user.email}
           </p>
           <Link className="button button-secondary full-width" href="/">
             Lihat beranda <ArrowRight size={17} />
           </Link>
-          <Button
+          {state.user.isGuest && <Link className="button button-secondary full-width" href="/masuk">Masuk dengan akun (opsional)</Link>}
+          {!state.user.isGuest && <Button
             variant="ghost"
             loading={busy}
             onClick={async () => {
@@ -356,15 +357,16 @@ export function AppShell({ role }: { role: Role }) {
             }}
           >
             Keluar dari akun <LogOut size={17} />
-          </Button>
+          </Button>}
         </div>
       </Modal>
       <Modal
         open={notifications}
         onClose={() => setNotifications(false)}
-        title="Pengingat untukmu"
+        title="Notifikasi pesanan"
       >
         <div className="stack">
+          {notices.length > 0 ? notices.map((message, index) => <p className="callout" key={`${index}-${message}`}><Bell size={18} /><span>{message}</span></p>) : <p className="muted">Pembaruan pesanan akan muncul di sini. Data diperbarui otomatis selama halaman terbuka.</p>}
           <div className="callout">
             <Clock3 size={22} />
             <div>
@@ -373,8 +375,8 @@ export function AppShell({ role }: { role: Role }) {
               </strong>
               <p>
                 {role === 'student'
-                  ? 'Datang sesuai slot. Tunjukkan kode pesananmu ke gerai saat mengambil.'
-                  : 'Validasi kode saat serah terima agar stok dan laporan tetap sesuai.'}
+                  ? 'Tunggu status siap, lalu tunjukkan QR ke gerai yang tertera pada tiket.'
+                  : 'Pindai QR saat serah terima agar stok dan laporan tetap sesuai.'}
               </p>
             </div>
           </div>
@@ -387,6 +389,11 @@ export function AppShell({ role }: { role: Role }) {
               </span>
             </div>
           )}
+          <Button variant="secondary" onClick={async () => {
+            if (!('Notification' in window)) { toast('Browser ini belum mendukung notifikasi perangkat. Pembaruan tetap muncul di halaman.'); return; }
+            const permission = await Notification.requestPermission();
+            toast(permission === 'granted' ? 'Notifikasi perangkat aktif saat browser mendukungnya.' : 'Pembaruan tetap tersedia di halaman pesanan.');
+          }}><Bell size={17} /> Aktifkan notifikasi perangkat</Button>
           <Button onClick={() => setNotifications(false)}>
             Mengerti <CheckIcon />
           </Button>

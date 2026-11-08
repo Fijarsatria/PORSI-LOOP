@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   ShoppingBag,
   SlidersHorizontal,
-  Sparkles,
   Sprout,
   TicketCheck,
   Users,
@@ -26,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../provider';
 import { Badge, Button, EmptyState, Field, Modal, Stat } from '../ui';
-import { clock, rupiah, type Snapshot } from '@/lib/domain';
+import { clock, rupiah, type Snapshot, type Order, type RescueClaim } from '@/lib/domain';
 import './styles.css';
 
 import {
@@ -35,46 +34,19 @@ import {
   StatusPill,
   StockFlow,
   number,
+  OperationsScope,
+  ProductionInsight,
 } from './shared';
+import { PickupScanner } from './pickup-scanner';
 
 function PickupForm() {
-  const { action, busy } = useOperations();
-  const [code, setCode] = useState('');
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (
-      await action({
-        type: code.trim().toUpperCase().startsWith('RS-')
-          ? 'pickup_rescue'
-          : 'pickup_order',
-        code: code.trim().toUpperCase(),
-      })
-    )
-      setCode('');
-  }
   return (
-    <form onSubmit={submit} className="ops-pickup-form">
-      <div className="ops-input-action">
-        <Field label="Kode pengambilan">
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            required
-            maxLength={24}
-            autoComplete="off"
-            placeholder="Contoh: PL-A7K2"
-            aria-label="Kode pengambilan"
-          />
-        </Field>
-        <Button type="submit" disabled={busy || !code.trim()}>
-          <TicketCheck size={17} />
-          <span>Validasi pickup</span>
-        </Button>
-      </div>
+    <div className="ops-pickup-form">
+      <PickupScanner />
       <p className="ops-footnote">
-        Cocokkan kode dengan pesanan mahasiswa sebelum menyerahkan makanan.
+        Verifikasi lunas, siap, gerai yang benar, dan QR sekali pakai sebelum makanan diserahkan.
       </p>
-    </form>
+    </div>
   );
 }
 
@@ -199,7 +171,7 @@ function WalkinForm({ state }: { state: Snapshot }) {
       </Button>
       <p className="ops-footnote">
         Stok bebas komitmen: {state.metrics.availableStock} porsi. Kanal ini
-        dicatat terpisah dari pre-order.
+        dicatat terpisah dari Pick up terjadwal.
       </p>
       {state.metrics.availableStock === 0 && (
         <Button
@@ -342,7 +314,7 @@ function MenuSettings({
           name="active"
           defaultChecked={state.menu.active}
         />
-        <span>Menu tersedia untuk pre-order</span>
+        <span>Menu tersedia untuk dipesan</span>
       </label>
       <Button type="submit" disabled={busy}>
         Simpan menu
@@ -355,7 +327,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
   const [productionOpen, setProductionOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const active = state.orders.filter(
-    (order) => order.status === 'confirmed' || order.status === 'ready',
+    (order) => activeStatuses.includes(order.status),
   );
   return (
     <div className="stack ops-page">
@@ -377,7 +349,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
       </div>
       <div className="stat-grid">
         <Stat
-          label="Pre-order aktif"
+          label="Pesanan aktif"
           value={state.metrics.activeOrders}
           note={`${state.recommendation.preorders} porsi terkonfirmasi`}
           icon={ShoppingBag}
@@ -395,12 +367,13 @@ function SellerOverview({ state }: { state: Snapshot }) {
           icon={Users}
         />
         <Stat
-          label="Rescue tersalurkan"
+          label="Promo Terbatas tersalurkan"
           value={state.metrics.rescued}
           note="Sudah diserahkan, bukan reservasi"
           icon={Sprout}
         />
       </div>
+      <ProductionInsight state={state} />
       <div className="ops-main-grid">
         <section className="panel">
           <PanelHeading
@@ -420,12 +393,12 @@ function SellerOverview({ state }: { state: Snapshot }) {
           </div>
           <h2>Mulai dari permintaan nyata.</h2>
           <p>
-            {state.recommendation.preorders} pre-order +{' '}
+            {state.recommendation.preorders} Pick up terjadwal +{' '}
             {state.recommendation.walkinEstimate} estimasi walk-in +{' '}
             {state.recommendation.buffer} buffer.
           </p>
           <div className="ops-plan-source">
-            <Sparkles size={16} />
+            <ClipboardCheck size={16} />
             {state.recommendation.source === 'manual'
               ? 'Baseline manual · data terbatas'
               : `${state.recommendation.historyDays} sesi lengkap berlabel walk-in`}
@@ -440,7 +413,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
         <section className="panel">
           <PanelHeading
             title="Konfirmasi pengambilan"
-            description="Untuk pre-order dan reservasi rescue."
+            description="Untuk Dine in, Pick up, dan Promo Terbatas."
           />
           <PickupForm />
         </section>
@@ -495,7 +468,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
           <EmptyState
             icon={ShoppingBag}
             title="Belum ada pesanan aktif"
-            description="Pre-order yang masuk akan muncul di sini, lengkap dengan slot pengambilannya."
+            description="Pesanan yang masuk akan muncul di sini beserta pembayaran dan waktu pemenuhannya."
           />
         )}
       </section>
@@ -548,7 +521,7 @@ function Planning({ state }: { state: Snapshot }) {
           <div className="ops-equation">
             <div>
               <strong>{r.preorders}</strong>
-              <span>Pre-order</span>
+              <span>Pick up terjadwal</span>
             </div>
             <b>+</b>
             <div>
@@ -655,7 +628,7 @@ function Planning({ state }: { state: Snapshot }) {
                 hint={
                   r.source === 'history'
                     ? 'Histori walk-in sedang digunakan. Baseline ini disimpan untuk saat data histori belum mencukupi.'
-                    : 'Masukkan hanya pembeli walk-in; pisahkan pelanggan pre-order.'
+                    : 'Masukkan hanya pembeli walk-in; pisahkan komitmen Pick up terjadwal.'
                 }
               >
                 <input
@@ -716,7 +689,7 @@ function Planning({ state }: { state: Snapshot }) {
             <ShieldCheck size={24} />
             <h3>Permintaan tidak dihitung dua kali.</h3>
             <p className="muted">
-              Histori penjualan total tidak dijumlahkan dengan pre-order.
+              Histori penjualan total tidak dijumlahkan dengan komitmen Pick up terjadwal.
               Estimasi hanya memakai kanal walk-in dan sesi yang rekonsiliasinya
               lengkap.
             </p>
@@ -785,7 +758,7 @@ function Planning({ state }: { state: Snapshot }) {
         >
           <Field
             label="Jumlah persiapan pilihan Anda"
-            hint={`Minimal ${r.preorders} porsi untuk komitmen pre-order; maksimal kapasitas ${r.capacity}.`}
+            hint={`Minimal ${r.preorders} porsi untuk komitmen Pick up terjadwal; maksimal kapasitas ${r.capacity}.`}
           >
             <input
               name="target"
@@ -873,6 +846,57 @@ function SlotSettings({ state }: { state: Snapshot }) {
   );
 }
 
+const paymentLabels = { pending: 'Belum lunas', paid: 'Lunas', refund_pending: 'Menunggu pengembalian uang', refunded: 'Dikembalikan', expired: 'Pembayaran kedaluwarsa' };
+const paymentMethods = { qris: 'QRIS', ewallet: 'Dompet digital', bank_transfer: 'Transfer bank', cash: 'Tunai' };
+const activeStatuses = ['pending_payment', 'confirmed', 'preparing', 'ready'];
+
+function PaymentDetails({ item }: { item: Order | RescueClaim }) {
+  return <div className="ops-payment-details">
+    <Badge tone={item.paymentStatus === 'paid' ? 'green' : item.paymentStatus === 'pending' ? 'orange' : 'neutral'}>
+      {item.paymentStatus ? paymentLabels[item.paymentStatus] : 'Catatan pembayaran lama'}
+    </Badge>
+    <span className="ops-table-sub">{item.paymentMethod ? paymentMethods[item.paymentMethod] : 'Data simulasi lama'}</span>
+  </div>;
+}
+
+function OrderActions({ item, claim = false }: { item: Order | RescueClaim; claim?: boolean }) {
+  const { action } = useOperations();
+  const { busy } = useApp();
+  const [refundOpen, setRefundOpen] = useState(false);
+  const reference = claim ? { claimId: item.id } : { orderId: item.id };
+  if (item.paymentStatus === 'refund_pending') return <>
+    <Button variant="secondary" disabled={busy} onClick={() => setRefundOpen(true)}>Konfirmasi uang dikembalikan</Button>
+    <Modal open={refundOpen} onClose={() => setRefundOpen(false)} title="Konfirmasi pengembalian tunai">
+      <form className="stack" onSubmit={async (event) => { event.preventDefault(); if (await action({ type: 'confirm_cash_refund', ...reference })) setRefundOpen(false); }}>
+        <p>Kembalikan {rupiah(item.price * item.quantity)} kepada {item.customer} untuk pesanan {item.code} sebelum menyimpan konfirmasi.</p>
+        <label className="checkbox-field"><input type="checkbox" required /> Saya sudah mengembalikan uang tunai kepada pembeli.</label>
+        <Button type="submit" loading={busy}>Simpan konfirmasi pengembalian</Button>
+      </form>
+    </Modal>
+  </>;
+  if (!activeStatuses.includes(item.status)) return null;
+  return <div className="ops-row-actions">
+    {item.paymentStatus === 'pending' && item.paymentMethod === 'cash' && <Button variant="secondary" disabled={busy} onClick={() => action({ type: 'verify_cash_payment', ...reference })}>Tunai diterima</Button>}
+    {item.paymentStatus === 'pending' && item.paymentMethod !== 'cash' && <span className="ops-footnote">Menunggu pembayaran</span>}
+    {item.paymentStatus === 'paid' && item.status === 'confirmed' && <Button variant="secondary" disabled={busy} onClick={() => action({ type: 'prepare_order', ...reference })}><CookingPot size={15} />Mulai siapkan</Button>}
+    {item.paymentStatus === 'paid' && item.status === 'preparing' && <Button disabled={busy} onClick={() => action({ type: 'ready_order', ...reference })}><Check size={15} />Tandai siap</Button>}
+    {item.status === 'ready' && <span className="ops-ready-hint"><TicketCheck size={15} />Scan QR saat serah-terima</span>}
+  </div>;
+}
+
+function PromoClaimTable({ claims }: { claims: RescueClaim[] }) {
+  return claims.length ? <div className="table-wrap"><table className="data-table ops-order-table">
+    <thead><tr><th>Pesanan promo</th><th>Menu & porsi</th><th>Pemenuhan</th><th>Pembayaran</th><th>Status & tindakan</th></tr></thead>
+    <tbody>{claims.map((claim) => <tr key={claim.id}>
+      <td><strong className="ops-code">{claim.code}</strong><span className="ops-table-sub">{claim.customer}</span></td>
+      <td><strong>{claim.menuName}</strong><span className="ops-table-sub">{claim.quantity} porsi · {rupiah(claim.price * claim.quantity)}</span></td>
+      <td><strong>{claim.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}</strong><span className="ops-table-sub">Sebelum {clock(claim.expiresAt)} WIB</span></td>
+      <td><PaymentDetails item={claim} /></td>
+      <td><StatusPill status={claim.status} /><OrderActions item={claim} claim /></td>
+    </tr>)}</tbody>
+  </table></div> : <p className="muted">Belum ada pesanan Promo Terbatas yang cocok dengan filter.</p>;
+}
+
 function OrderTable({
   state,
   query = '',
@@ -884,7 +908,6 @@ function OrderTable({
   filter?: string;
   limit?: number;
 }) {
-  const { action, busy } = useOperations();
   const orders = state.orders.filter(
     (order) =>
       (!query ||
@@ -896,7 +919,7 @@ function OrderTable({
   const shown = limit
     ? orders
         .filter(
-          (order) => order.status === 'confirmed' || order.status === 'ready',
+          (order) => activeStatuses.includes(order.status),
         )
         .slice(0, limit)
     : orders;
@@ -907,7 +930,8 @@ function OrderTable({
           <tr>
             <th>Pesanan</th>
             <th>Menu & porsi</th>
-            <th>Slot pickup</th>
+            <th>Pemenuhan</th>
+            <th>Pembayaran</th>
             <th>Status</th>
             <th>
               <span className="sr-only">Tindakan</span>
@@ -924,46 +948,23 @@ function OrderTable({
               <td>
                 <strong>{order.menuName}</strong>
                 <span className="ops-table-sub">
-                  {order.quantity} × {state.menu.portionLabels[order.portion]} ·{' '}
+                  {order.quantity} × {(state.menus?.find((menu) => menu.id === order.menuId) ?? state.menu).portionLabels[order.portion]} ·{' '}
                   {rupiah(order.price * order.quantity)}
                 </span>
               </td>
               <td>
+                <strong>{order.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}</strong>
                 <span className="ops-table-slot">
                   <Clock3 size={14} />
                   {order.slotLabel}
                 </span>
               </td>
+              <td><PaymentDetails item={order} /></td>
               <td>
                 <StatusPill status={order.status} />
               </td>
               <td>
-                <div className="ops-row-actions">
-                  {order.status === 'confirmed' && (
-                    <Button
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        action({ type: 'ready_order', orderId: order.id })
-                      }
-                    >
-                      Tandai siap
-                    </Button>
-                  )}
-                  {(order.status === 'ready' ||
-                    order.status === 'confirmed') && (
-                    <Button
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        action({ type: 'pickup_order', code: order.code })
-                      }
-                    >
-                      <Check size={15} />
-                      Diambil
-                    </Button>
-                  )}
-                </div>
+                <OrderActions item={order} />
               </td>
             </tr>
           ))}
@@ -982,23 +983,24 @@ function OrderTable({
 function Orders({ state }: { state: Snapshot }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const activeCount = [...state.orders, ...state.claims].filter((item) => activeStatuses.includes(item.status)).length;
+  const claims = state.claims.filter((claim) => (filter === 'all' || claim.status === filter) && `${claim.code} ${claim.customer} ${claim.menuName}`.toLowerCase().includes(query.toLowerCase()));
   return (
     <div className="stack ops-page">
       <div className="ops-greeting">
         <div>
           <span className="eyebrow">LAYANI SESUAI SLOT</span>
-          <h1>Pesanan yang sudah pasti.</h1>
+          <h1>Antrean gerai, dari bayar hingga siap.</h1>
           <p className="muted">
-            Periksa slot, cocokkan kode, lalu konfirmasi makanan sudah
-            diserahkan.
+            Semua menu gerai Anda. Siapkan pesanan yang sudah lunas, lalu scan QR saat makanan diserahkan.
           </p>
         </div>
-        <Badge tone="green">{state.metrics.activeOrders} pesanan aktif</Badge>
+        <Badge tone="green">{activeCount} pesanan aktif</Badge>
       </div>
       <section className="panel">
         <PanelHeading
-          title="Validasi pickup"
-          description="Masukkan kode pre-order atau rescue mahasiswa."
+          title="Serahkan setelah terverifikasi"
+          description="Pemindai berlaku untuk Dine in, Pick up, dan Promo Terbatas."
         />
         <PickupForm />
       </section>
@@ -1020,20 +1022,24 @@ function Orders({ state }: { state: Snapshot }) {
             onChange={(e) => setFilter(e.target.value)}
           >
             <option value="all">Semua status</option>
+            <option value="pending_payment">Menunggu pembayaran</option>
             <option value="confirmed">Terkonfirmasi</option>
+            <option value="preparing">Sedang disiapkan</option>
             <option value="ready">Siap diambil</option>
             <option value="picked_up">Sudah diambil</option>
             <option value="cancelled">Dibatalkan</option>
             <option value="no_show">Tidak diambil</option>
+            <option value="expired">Kedaluwarsa</option>
           </select>
         </div>
         <OrderTable state={state} query={query} filter={filter} />
       </section>
+      <section className="panel"><PanelHeading title="Antrean Promo Terbatas" description="Pembayaran dan tahapan penyerahan diperiksa dengan aturan yang sama." /><PromoClaimTable claims={claims} /></section>
       <div className="callout">
         <Clock3 size={19} />
         <p>
           Pesanan yang melewati akhir slot tanpa diambil ditandai tidak diambil
-          oleh server. Porsinya tidak masuk hitungan pre-order terlayani.
+          oleh server. Porsinya tidak masuk hitungan layanan selesai.
         </p>
       </div>
     </div>
@@ -1055,7 +1061,7 @@ function Rescue({ state }: { state: Snapshot }) {
           <h1>Porsi baik, kesempatan berikutnya.</h1>
           <p className="muted">
             Tawarkan stok aktual yang masih layak. Produksi tambahan bukan untuk
-            rescue.
+            Promo Terbatas.
           </p>
         </div>
         <Button
@@ -1063,7 +1069,7 @@ function Rescue({ state }: { state: Snapshot }) {
           disabled={state.metrics.availableStock < 1}
         >
           <Plus size={17} />
-          Buat penawaran rescue
+          Buat Promo Terbatas
         </Button>
       </div>
       <div className="stat-grid">
@@ -1080,7 +1086,7 @@ function Rescue({ state }: { state: Snapshot }) {
           icon={Clock3}
         />
         <Stat
-          label="Rescue tersalurkan"
+          label="Promo Terbatas tersalurkan"
           value={state.metrics.rescued}
           note="Pickup terkonfirmasi"
           icon={Sprout}
@@ -1088,7 +1094,7 @@ function Rescue({ state }: { state: Snapshot }) {
       </div>
       <section className="panel">
         <PanelHeading
-          title="Penawaran rescue"
+          title="Penawaran Promo Terbatas"
           description={`${active.length} penawaran aktif pada sesi ini.`}
         />
         {state.rescues.length ? (
@@ -1151,7 +1157,7 @@ function Rescue({ state }: { state: Snapshot }) {
         ) : (
           <EmptyState
             icon={Sprout}
-            title="Belum ada penawaran rescue"
+            title="Belum ada Promo Terbatas"
             description="Jika ada stok yang masih layak menjelang akhir sesi, buat penawaran dengan kuota dan batas pickup yang jelas."
           />
         )}
@@ -1160,58 +1166,8 @@ function Rescue({ state }: { state: Snapshot }) {
         <PanelHeading
           title="Reservasi & pengambilan"
           description="Kuota ditahan saat reservasi; distribusi tercatat setelah pickup."
-        />
-        {state.claims.length ? (
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Kode & pemesan</th>
-                  <th>Porsi</th>
-                  <th>Batas pickup</th>
-                  <th>Status</th>
-                  <th>
-                    <span className="sr-only">Tindakan</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.claims.map((claim) => (
-                  <tr key={claim.id}>
-                    <td>
-                      <strong className="ops-code">{claim.code}</strong>
-                      <span className="ops-table-sub">{claim.customer}</span>
-                    </td>
-                    <td>{claim.quantity} porsi</td>
-                    <td>{clock(claim.expiresAt)} WIB</td>
-                    <td>
-                      <StatusPill status={claim.status} />
-                    </td>
-                    <td>
-                      {(claim.status === 'confirmed' ||
-                        claim.status === 'ready') && (
-                        <Button
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() =>
-                            action({ type: 'pickup_rescue', code: claim.code })
-                          }
-                        >
-                          <Check size={15} />
-                          Diambil
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="muted">
-            Reservasi mahasiswa akan muncul di sini setelah penawaran diklaim.
-          </p>
-        )}
+        ><PickupScanner /></PanelHeading>
+        <PromoClaimTable claims={state.claims} />
       </section>
       <div className="callout">
         <ShieldCheck size={20} />
@@ -1224,7 +1180,7 @@ function Rescue({ state }: { state: Snapshot }) {
       <Modal
         open={Boolean(closingBatch)}
         onClose={() => setClosingBatch(null)}
-        title="Tutup penawaran rescue"
+        title="Tutup Promo Terbatas"
       >
         <form
           className="stack"
@@ -1260,14 +1216,14 @@ function Rescue({ state }: { state: Snapshot }) {
             />
           </Field>
           <Button type="submit" disabled={busy}>
-            Tutup penawaran rescue
+            Tutup Promo Terbatas
           </Button>
         </form>
       </Modal>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Buat penawaran rescue"
+        title="Buat Promo Terbatas"
       >
         <form
           className="stack"
@@ -1296,7 +1252,7 @@ function Rescue({ state }: { state: Snapshot }) {
             </p>
           </div>
           <div className="form-grid">
-            <Field label="Kuota rescue (porsi)">
+            <Field label="Kuota promo (porsi)">
               <input
                 name="quantity"
                 type="number"
@@ -1359,7 +1315,7 @@ function Rescue({ state }: { state: Snapshot }) {
             </label>
           </div>
           <Button type="submit" disabled={busy}>
-            Terbitkan penawaran rescue
+            Terbitkan Promo Terbatas
             <ArrowRight size={17} />
           </Button>
         </form>
@@ -1369,7 +1325,8 @@ function Rescue({ state }: { state: Snapshot }) {
 }
 
 function SessionStart({ state }: { state: Snapshot }) {
-  const { action, busy, toast } = useApp();
+  const { action, toast } = useOperations();
+  const { busy } = useApp();
   const tomorrow = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
   }).format(new Date(Date.parse(state.now) + 86400000));
@@ -1462,9 +1419,9 @@ function Closing({ state }: { state: Snapshot }) {
   const rows = [
     ['Stok awal', r.openingStock],
     ['Produksi selesai', r.produced],
-    ['Pre-order diambil', r.preorderPickedUp],
+    ['Pesanan normal diserahkan', r.preorderPickedUp],
     ['Penjualan langsung', r.walkin],
-    ['Rescue diambil', r.rescuePickedUp],
+    ['Promo Terbatas diambil', r.rescuePickedUp],
     ['Konsumsi internal', internal],
     ['Makanan dibuang', waste],
     ['Stok akhir', ending],
@@ -1489,8 +1446,8 @@ function Closing({ state }: { state: Snapshot }) {
         <div className="callout">
           <Clock3 size={20} />
           <p>
-            Masih ada {state.metrics.activeOrders} pre-order aktif dan{' '}
-            {state.metrics.rescueReserved} porsi rescue dalam reservasi.
+            Masih ada {state.metrics.activeOrders} pesanan aktif dan{' '}
+            {state.metrics.rescueReserved} porsi Promo Terbatas dalam reservasi.
             Selesaikan pengambilan atau tunggu batas waktunya sebelum menutup
             sesi.{' '}
             <Link href="/gerai?tab=orders" className="text-link">
@@ -1628,7 +1585,7 @@ function Closing({ state }: { state: Snapshot }) {
             </strong>
           </div>
           <p className="ops-footnote">
-            Reservasi aktif dan pre-order tidak diambil tidak dihitung sebagai
+            Reservasi aktif dan pesanan tidak diambil tidak dihitung sebagai
             porsi terlayani.
           </p>
         </section>
@@ -1648,6 +1605,7 @@ function Closing({ state }: { state: Snapshot }) {
 
 export function SellerDashboard({ tab }: { tab: string }) {
   const { state, loading } = useOperations();
+  const [menuId, setMenuId] = useState('');
   if (loading || !state)
     return (
       <div className="ops-loading" aria-live="polite">
@@ -1655,9 +1613,19 @@ export function SellerDashboard({ tab }: { tab: string }) {
         <p>Menyiapkan ringkasan gerai…</p>
       </div>
     );
-  if (tab === 'planning') return <Planning state={state} />;
-  if (tab === 'orders') return <Orders state={state} />;
-  if (tab === 'rescue') return <Rescue state={state} />;
-  if (tab === 'closing') return <Closing key={state.sessionId} state={state} />;
-  return <SellerOverview state={state} />;
+  const kitchens = (state.kitchens?.length ? state.kitchens : [state]).filter((kitchen) => !state.user?.outletId || kitchen.menu.outletId === state.user.outletId);
+  const selected = kitchens.find((kitchen) => kitchen.menu.id === menuId) ?? kitchens.find((kitchen) => kitchen.menu.id === state.menu.id) ?? kitchens[0] ?? state;
+  const kitchen = { ...selected, user: state.user, menus: state.menus };
+  const content = tab === 'planning' ? <Planning state={kitchen} />
+    : tab === 'orders' ? <Orders state={state} />
+      : tab === 'rescue' ? <Rescue state={kitchen} />
+        : tab === 'closing' ? <Closing key={`${kitchen.menu.id}-${kitchen.sessionId}`} state={kitchen} />
+          : <SellerOverview state={kitchen} />;
+  return <OperationsScope state={kitchen}><div className="stack ops-page">
+    <section className="ops-menu-switch" aria-label="Lingkup gerai dan menu">
+      <div><span className="ops-switch-label">Gerai Anda</span><strong>{kitchen.menu.outlet}</strong><p>{tab === 'orders' ? `Antrean seluruh ${kitchens.length} menu · Dine in dan Pick up` : 'Produksi, rencana, promo, dan rekonsiliasi dicatat per menu.'}</p></div>
+      {tab !== 'orders' && <Field label="Menu yang dikelola"><select value={kitchen.menu.id} onChange={(event) => setMenuId(event.target.value)}>{kitchens.map((item) => <option key={item.menu.id} value={item.menu.id}>{item.menu.name}</option>)}</select></Field>}
+    </section>
+    <div key={tab === 'orders' ? 'queue' : kitchen.menu.id}>{content}</div>
+  </div></OperationsScope>;
 }

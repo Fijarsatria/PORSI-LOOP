@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: '%s · PORSI LOOP',
   },
   description:
-    'Rencanakan sebelum memasak. Selamatkan bila tersisa. Ukur dampaknya. Pre-order, slot ambil, dan rescue makanan untuk kantin kampus.',
+    'Pesan langsung tanpa wajib login. Pilih Dine in atau Pick up, pantau pesanan, dan temukan Promo Terbatas dari gerai kantin kampus.',
   applicationName: 'PORSI LOOP',
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.png', apple: '/icon.png' },

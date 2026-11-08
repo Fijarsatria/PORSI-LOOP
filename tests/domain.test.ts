@@ -50,6 +50,7 @@ test('pre-order reserves slot capacity, snapshots isolate student identity, and 
     'future pre-orders must not decrement physical stock',
   );
   assert.equal(snapshot(state, student, 'demo', fixed).slots[0].reserved, 2);
+  applyAction(state, student, { type: 'pay_order', orderId: state.orders[0].id }, fixed);
   assert.equal(
     snapshot(state, { ...student, id: 'other' }, 'demo', fixed).orders.length,
     0,
@@ -112,17 +113,16 @@ test('rescue reservation holds quota; only seller-validated pickup changes stock
       applyAction(
         state,
         student,
-        { type: 'pickup_rescue', claimId: state.claims[0].id },
+        { type: 'scan_pickup', token: state.claims[0].pickupToken },
         fixed,
       ),
     /tidak memiliki akses/,
   );
-  applyAction(
-    state,
-    seller,
-    { type: 'pickup_rescue', claimId: state.claims[0].id },
-    fixed,
-  );
+  const claim = state.claims[0];
+  applyAction(state, student, { type: 'pay_order', claimId: claim.id }, fixed);
+  applyAction(state, seller, { type: 'prepare_order', claimId: claim.id }, fixed);
+  applyAction(state, seller, { type: 'ready_order', claimId: claim.id }, fixed);
+  applyAction(state, seller, { type: 'scan_pickup', token: claim.pickupToken }, fixed);
   assert.equal(stock(state), 8);
   assert.equal(snapshot(state, student, 'demo', fixed).metrics.rescued, 2);
   assert.throws(
@@ -130,7 +130,7 @@ test('rescue reservation holds quota; only seller-validated pickup changes stock
       applyAction(
         state,
         seller,
-        { type: 'pickup_rescue', claimId: state.claims[0].id },
+        { type: 'scan_pickup', token: claim.pickupToken },
         fixed,
       ),
     /sudah digunakan/,
@@ -240,13 +240,18 @@ test('the complete PRD ledger reconciles 50 = 23 pre-order + 20 walk-in + 3 resc
       },
       fixed,
     );
+  for (const order of state.orders) {
+    applyAction(state, { ...student, id: order.userId }, { type: 'pay_order', orderId: order.id }, fixed);
+    applyAction(state, seller, { type: 'prepare_order', orderId: order.id }, fixed);
+    applyAction(state, seller, { type: 'ready_order', orderId: order.id }, fixed);
+  }
   for (const order of state.orders
     .slice(0, 23)
     .sort((a, b) => a.slotId.localeCompare(b.slotId)))
     applyAction(
       state,
       seller,
-      { type: 'pickup_order', orderId: order.id },
+      { type: 'scan_pickup', token: order.pickupToken },
       new Date(state.slots.find((s) => s.id === order.slotId)!.start).getTime(),
     );
   const afterSession = fixed + 181 * 60000;
@@ -276,13 +281,17 @@ test('the complete PRD ledger reconciles 50 = 23 pre-order + 20 walk-in + 3 resc
     { type: 'claim_rescue', batchId: state.rescues[0].id, quantity: 1 },
     afterSession,
   );
-  for (const claim of state.claims)
+  for (const claim of state.claims) {
+    applyAction(state, { ...student, id: claim.userId }, { type: 'pay_order', claimId: claim.id }, afterSession);
+    applyAction(state, seller, { type: 'prepare_order', claimId: claim.id }, afterSession);
+    applyAction(state, seller, { type: 'ready_order', claimId: claim.id }, afterSession);
     applyAction(
       state,
       seller,
-      { type: 'pickup_rescue', claimId: claim.id },
+      { type: 'scan_pickup', token: claim.pickupToken },
       afterSession,
     );
+  }
   applyAction(
     state,
     seller,

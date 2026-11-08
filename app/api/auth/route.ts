@@ -1,13 +1,15 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Role } from '../../../lib/domain';
-import { DEMO_USERS, DomainError } from '../../../lib/server/engine';
+import { DomainError } from '../../../lib/server/engine';
+import { authenticateDemo } from '../../../lib/server/auth';
 import {
   body,
   checkOrigin,
   COOKIE,
   cookieOptions,
   errorResponse,
+  ensureUser,
 } from '../../../lib/server/http';
 import {
   checkRateLimit,
@@ -26,26 +28,26 @@ export async function POST(request: NextRequest) {
       throw new DomainError('Pilih jenis akun.');
     const role = data.role as Role;
     const jar = await cookies();
-    if (data.demo === true) {
-      if (mode() !== 'demo')
+    if (mode() === 'demo') {
+      if (data.demo !== true)
         throw new DomainError(
-          'Akses simulasi tidak tersedia pada layanan ini.',
-          403,
+          'Gunakan akun demonstrasi yang disediakan pengelola.',
+          401,
         );
       await checkRateLimit(
-        request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'local',
+        `account:${role}:${typeof data.email === 'string' ? data.email.trim().toLowerCase() : 'missing'}`,
       );
-      const user = DEMO_USERS[role];
+      const user = authenticateDemo(data);
       const token = await createDemoSession(user);
       jar.set(COOKIE, token, cookieOptions());
       return NextResponse.json(await getSnapshot(user), {
         headers: { 'Cache-Control': 'no-store, private' },
       });
     }
-    if (mode() !== 'supabase')
+    if (data.demo === true)
       throw new DomainError(
-        'Layanan ini memakai mode simulasi. Gunakan tombol “Coba simulasi” untuk menjelajah.',
-        503,
+        'Akses simulasi tidak tersedia pada layanan ini.',
+        403,
       );
     const { cloudLogin } = await import('../../../lib/server/supabase');
     const { user, token } = await cloudLogin(data);
@@ -75,7 +77,7 @@ export async function DELETE(request: NextRequest) {
       }
     }
     jar.set(COOKIE, '', { ...cookieOptions(), maxAge: 0 });
-    return NextResponse.json(await getSnapshot(null), {
+    return NextResponse.json(await getSnapshot(await ensureUser()), {
       headers: { 'Cache-Control': 'no-store, private' },
     });
   } catch (error) {
