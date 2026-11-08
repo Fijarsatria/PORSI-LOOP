@@ -29,4 +29,4 @@ Dokumen global dengan revisi sesuai untuk demonstrasi/pilot terbatas. Beban bany
 
 Skema sudah dijalankan pada [proyek PORSI LOOP](https://supabase.com/dashboard/project/eemuhrlpfewujfuflapl). Pemeriksaan SQL menunjukkan kedua tabel memiliki `rls_enabled=true`, `rls_forced=true`, `anon_read=false`, dan `user_update=false`.
 
-[Pengujian transaksi](tests/transaction.sql) juga telah dijalankan di database tersebut dan menghasilkan PASS: service role bisa menyimpan revisi yang benar, revisi lama ditolak, serta role anon/authenticated tidak bisa membaca dokumen. Seluruh data uji di-rollback. Ini membuktikan skema dan pembatasan akses database, terpisah dari verifikasi runtime aplikasi setelah deployment.
+[Pengujian transaksi](tests/transaction.sql) juga telah dijalankan di database tersebut dan menghasilkan PASS: service role bisa menyimpan revisi yang benar, revisi lama ditolak, serta role anon/authenticated tidak bisa membaca dokumen. Seluruh data uji di-rollback. Ini membuktikan skema dan pembatasan akses database. Runtime Vercel yang memakai proyek ini juga sudah lulus pengujian pemesanan HTTPS; lihat [status rilis](../docs/release-status.md).

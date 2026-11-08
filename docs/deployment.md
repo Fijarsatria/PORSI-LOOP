@@ -2,12 +2,12 @@
 
 ## Pilihan penyimpanan
 
-| Mode       | Kebutuhan                                               | Batas                                                                                       |
-| ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server                         |
-| `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Adapter cloud tersedia; perlu verifikasi pada proyek tujuan sebelum menerima pengguna nyata |
+| Mode       | Kebutuhan                                               | Batas                                                                |
+| ---------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server  |
+| `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Aktif pada Vercel; skema, akses dan alur transaksi cloud sudah diuji |
 
-Proyek aktif: **PORSI LOOP**, organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`. Skema dan pembatasan akses sudah diuji pada database cloud. [Kontrak, bukti dan query verifikasi](../supabase/README.md) tersedia di repositori. Runtime web harus diuji terpisah setelah konfigurasi privat dan deployment selesai.
+Proyek aktif: **PORSI LOOP**, organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`. Skema dan pembatasan akses sudah diuji pada database cloud. [Kontrak, bukti dan query verifikasi](../supabase/README.md) tersedia di repositori. Runtime web aktif di [porsi-loop.vercel.app](https://porsi-loop.vercel.app). Pengujian HTTPS pada aplikasi publik dan database Supabase sudah lulus; lihat [bukti rilis](release-status.md).
 
 ## Server Node.js
 
@@ -37,7 +37,7 @@ SESSION_SECRET=...
 APP_ORIGIN=https://domain-tujuan.example
 ```
 
-4. Buat akun uji melalui Supabase Auth. Mahasiswa adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API; penjual juga wajib memiliki `app_metadata.outletId` yang cocok dengan gerainya. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
+4. Buat akun pengelola pertama melalui Admin API, dengan password acak privat serta `app_metadata.role=admin`. Opsional: isi `PORSI_OWNER_USER_ID` dengan UUID Auth akun tersebut. Jangan memberikan hak pengelola berdasarkan email yang diklaim saat pendaftaran. Customer adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API; penjual juga wajib memiliki `app_metadata.outletId` yang cocok dengan gerainya. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
 5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud dimulai tanpa transaksi, produksi, histori, dan penawaran sintetis; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
 6. Uji login setiap peran, penolakan peran yang salah, pembatalan sebelum cutoff, konkurensi slot terakhir, pickup, logout/cookie lama, dan rekonsiliasi pada proyek uji. Jangan menguji reset simulasi terhadap layanan nyata; operasi tersebut memang ditolak.
 7. Jalankan Security/Performance Advisors di dashboard Supabase dan tinjau hasilnya sebelum pilot. Pengujian lokal tidak menggantikan validasi RLS/privilege dan koneksi pada proyek nyata.
@@ -57,6 +57,15 @@ select has_table_privilege('anon', 'public.porsi_state', 'SELECT') as anon_can_r
 
 Kedua tabel harus memiliki `rowsecurity=true`; ketiga pemeriksaan privilege terakhir harus `false`. Setelah login pertama, revisi dokumen bertambah ketika transaksi berhasil. Periksa melalui akses administrator, bukan membuka dokumen ke client.
 
+## Hosting aktif dan pendaftaran demo
+
+- GitHub `main` terhubung ke proyek Vercel `porsi-loop`; setiap push membangun deployment produksi baru. Build yang gagal tidak menggantikan versi sehat sebelumnya.
+- `APP_ORIGIN` dan Supabase Auth Site URL memakai `https://porsi-loop.vercel.app`.
+- Paket yang dipilih: Vercel Hobby dan Supabase Free. Kuota dan kebijakan layanan mengikuti penyedia; paket gratis bukan jaminan kapasitas produksi. Proyek Supabase Free dapat dijeda karena tidak aktif.
+- Untuk demo hackathon, **Confirm email dimatikan atas pilihan pemilik proyek**. Customer langsung masuk setelah mendaftar. Identitas email/telepon customer belum diverifikasi; aktifkan verifikasi email dan SMTP yang sesuai sebelum pemakaian publik operasional.
+- Pengelola dan penjual memakai akun khusus dari administrator. Publik tidak dapat memilih atau menetapkan peran tersebut melalui pendaftaran.
+- Aktifkan menu dan catat produksi melalui akun penjual sebelum menawarkan makanan. Pembayaran cloud saat ini tunai, dikonfirmasi gerai; pembayaran digital belum terhubung gateway.
+
 ## Container
 
 `Dockerfile` menggunakan Node.js 24, build bertahap, secrets di runtime, user non-root, dan volume `/app/.data`. Contoh mode demo:
@@ -73,4 +82,4 @@ Buat `.env.production` lokal yang diabaikan Git. Set `APP_ORIGIN` ke domain publ
 - Seluruh alur utama lulus di mode yang benar-benar akan dipakai, pada mobile dan desktop.
 - Proyek dan origin tepat; secrets tidak masuk Git, log, screenshot, atau bundle browser.
 - Data demo tidak bercampur dengan hasil pilot. Catat metode timbang dan baseline secara eksplisit.
-- Model saat ini mendukung enam gerai dengan isolasi per-menu/per-gerai pada server. Dokumen global JSONB memiliki batas kontensi; gunakan tabel/RPC per agregat bila beban meningkat.
+- Instalasi awal menyediakan enam gerai contoh nonaktif; pengelola dapat membuat gerai tambahan. Isolasi per-menu/per-gerai dijalankan pada server. Dokumen global JSONB memiliki batas kontensi; gunakan tabel/RPC per agregat bila beban meningkat.

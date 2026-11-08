@@ -2,6 +2,8 @@
 
 ## Mulai dan operasional
 
+- [Web publik, status rilis, dan batas demo](release-status.md)
+
 - [Konfigurasi aplikasi tanpa membagikan secrets](configuration.md)
 - [Skenario demo end to end](demo.md)
 - [Deployment dan adapter Supabase](deployment.md)

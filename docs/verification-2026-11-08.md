@@ -1,5 +1,7 @@
 # Hasil pemeriksaan kelanjutan
 
+Catatan tahap penggabungan branch. Pemasangan cloud dan pemeriksaan setelahnya tercatat pada [status rilis](release-status.md).
+
 ## Integrasi
 
 PR #1 (`31cc8f5`, Luthfi) digabungkan ke `main` pada `505ccbf`. Pemeriksaan awal branch: 46 pengujian unit dan build produksi lulus. Perubahan pendaftaran customer, akses gerai, rating, sesi terpisah, serta penyederhanaan UI dilanjutkan melalui commit terpisah di `main`.

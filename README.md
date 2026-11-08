@@ -4,7 +4,7 @@
 
 PORSI LOOP menghubungkan customer, pemilik gerai, dan pengelola kantin: pesan makanan dari jauh, ambil saat siap, dan rencanakan produksi dengan catatan penjualan serta sisa makanan yang dapat ditelusuri.
 
-[Mulai lokal](#menjalankan-lokal) · [Dokumentasi](docs/README.md) · [Database](supabase/README.md) · [Kontribusi](CONTRIBUTING.md)
+[Buka web](https://porsi-loop.vercel.app) · [Mulai lokal](#menjalankan-lokal) · [Dokumentasi](docs/README.md) · [Database](supabase/README.md) · [Kontribusi](CONTRIBUTING.md)
 
 ## Tiga ruang, satu alur kantin
 
@@ -13,6 +13,8 @@ PORSI LOOP menghubungkan customer, pemilik gerai, dan pengelola kantin: pesan ma
 | Customer         | Pesan tanpa wajib login, Dine in/Pick up, tiket QR, chat gerai, promo, rating setelah diterima           | `/customer` · akun opsional `/masuk` dan `/daftar` |
 | Pemilik gerai    | Antrean pesanan, scan QR, foto/menu/stok, penjualan langsung, riwayat harian, promo dan rencana produksi | `/masuk/gerai`                                     |
 | Pengelola kantin | Ringkasan visual, pemasukan, penambahan gerai/akun penjual, laporan produksi dan sisa                    | `/akses-pengelola`                                 |
+
+Nomor telepon wajib pada pemesanan makanan dan promo. Antrean gerai terdiri dari **Masuk → Diproses → Siap diambil → Selesai**; menandai siap belum menyelesaikan pesanan.
 
 Sesi belanja dan sesi kerja terpisah. Customer hanya mendapat tiket miliknya; penjual hanya mengelola gerainya; laporan pengelola tidak membuka tiket atau chat pribadi customer. Pengambilan memakai QR sekali pakai. Reservasi menahan kuota, sedangkan stok berkurang saat penyerahan atau penjualan langsung dicatat.
 
@@ -74,11 +76,13 @@ Tes browser menggunakan database sementara dan server produksi tersendiri. Cakup
 
 ## Penyimpanan dan kesiapan layanan
 
-| Mode     | Penyimpanan                                                                    | Penggunaan                                                                            |
-| -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Demo     | SQLite di disk lokal                                                           | Demonstrasi dan pengujian dengan data sintetis                                        |
-| Supabase | PostgreSQL, Supabase Auth, sesi server dan transaksi dengan pemeriksaan revisi | Memerlukan pemasangan skema, secrets server dan verifikasi koneksi pada proyek tujuan |
+| Mode     | Penyimpanan                                                                    | Penggunaan                                                         |
+| -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Demo     | SQLite di disk lokal                                                           | Demonstrasi dan pengujian dengan data sintetis                     |
+| Supabase | PostgreSQL, Supabase Auth, sesi server dan transaksi dengan pemeriksaan revisi | Aktif pada web publik; alur cloud dan pembatasan akses sudah diuji |
 
-Lihat [panduan database](supabase/README.md) dan [deployment](docs/deployment.md) sebelum mengaktifkan cloud. Skema kompatibel dengan aplikasi berada di `supabase/schemas/porsi.sql`. Status pemasangan pada proyek cloud harus dibuktikan dengan query verifikasi; keberadaan berkas SQL bukan bukti database sudah terpasang.
+Web publik memakai **Vercel Hobby dan Supabase Free**. Skema, transaksi, isolasi akses, dan alur pemesanan cloud sudah diuji. Lihat [status rilis](docs/release-status.md), [panduan database](supabase/README.md), dan [deployment](docs/deployment.md).
+
+Pengelola memakai akun privat, lalu membuat gerai dan akun penjual dari **Gerai & akses**. Akun demo localhost tidak berlaku di web publik. Menu awal cloud sengaja tidak aktif sampai pengelola/penjual mengonfigurasi informasi dan mencatat stok nyata. Pendaftaran customer demo langsung masuk tanpa verifikasi email; nomor telepon wajib saat memesan, tanpa OTP.
 
 Pembayaran digital masih simulasi di demo dan dinonaktifkan di cloud sampai gateway nyata terintegrasi. Data contoh bukan hasil pilot. Porsi promo yang diambil tidak otomatis membuktikan pengurangan limbah; berat sisa berasal dari penimbangan dan memerlukan baseline pembanding.
