@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dist/
+.data/
+tmp/
+test-results/
+playwright-report/
+.env*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+.openai-local/
+outputs/
