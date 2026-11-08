@@ -25,11 +25,11 @@ preorder menerima menuId, portion, quantity, slotId ('asap' atau slot terbuka), 
 
 claim_rescue menerima batchId dan detail pembeli. Hanya kuota Promo Terbatas aktif, layak menurut konfirmasi penjual, belum kedaluwarsa, dan tersedia secara fisik yang dapat ditahan.
 
-Status awal pending_payment, dengan waktu habis server. Reservasi menahan kapasitas; belum menurunkan stok fisik. pay_order hanya simulasi pada mode demo dan hanya pemilik tiket; tidak dapat melunasi tunai. verify_cash_payment hanya penjual gerai pemilik setelah uang diterima. Mode Supabase menolak checkout digital sampai gateway nyata tersedia. Token acak kriptografis dibuat setelah lunas, bukan oleh browser.
+Status awal pending_payment, dengan waktu habis server. Reservasi menahan kapasitas; belum menurunkan stok fisik. pay_order adalah simulasi pada semua mode, tanpa uang yang berpindah, dan hanya untuk pemilik tiket; tidak dapat melunasi tunai. verify_cash_payment hanya penjual gerai pemilik setelah uang diterima. Gateway pembayaran nyata belum terintegrasi, sehingga QRIS, e-wallet, dan transfer tetap simulasi pada mode Supabase. Token acak kriptografis dibuat setelah lunas, bukan oleh browser.
 
 prepare_order dan ready_order menerima orderId atau claimId. Pembayaran harus lunas; gerai harus benar; stok harus cukup. scan_pickup menerima token saja. Server memeriksa token, gerai, lunas, siap, waktu, dan belum diserahkan, lalu menulis status picked_up dan pergerakan stok atomik. Aksi pickup lama tetap memerlukan pemeriksaan yang sama sehingga bukan jalan pintas lewat ID/kode.
 
-Batal sebelum diproses/cutoff melepaskan reservasi. Pada demo, pengembalian dana merupakan simulasi. Pada cloud, pembayaran tunai yang dibatalkan menjadi refund_pending; confirm_cash_refund hanya tersedia untuk penjual setelah uang benar-benar dikembalikan. Sesi tidak boleh direkonsiliasi dengan pengembalian tunai tertunda.
+Batal sebelum diproses/cutoff melepaskan reservasi. Pembayaran digital simulasi yang dibatalkan langsung tercatat refunded; pada demo, tunai juga langsung tercatat. Pada cloud, pembayaran tunai yang dibatalkan menjadi refund_pending; confirm_cash_refund hanya tersedia untuk penjual setelah uang benar-benar dikembalikan. Sesi tidak boleh direkonsiliasi dengan pengembalian tunai tertunda.
 
 ## Produksi dan perhitungan
 
@@ -38,3 +38,11 @@ Rencana = permintaan terkonfirmasi + estimasi walk-in + buffer, dibatasi kapasit
 Produksi selesai menambah stok. Walk-in, serah-terima normal, Promo Terbatas, konsumsi internal, dan waste mengurangi stok sesuai kanalnya. Reservasi belum terambil, no-show, dan pembayaran bukan porsi tersalurkan. Buku stok menyimpan tipe, referensi, pelaku, waktu, dan sesi; pengulangan idempotent tidak menulis pergerakan kedua.
 
 Rekonsiliasi: produksi = pesanan normal terambil + walk-in + promo terambil + internal + dibuang + stok akhir. Selisih ditandai belum lengkap dan tidak menjadi baseline. Berat waste harus berasal dari penimbangan; porsi positif tidak boleh disajikan sebagai nol kg. Aplikasi tidak membuat klaim emisi atau biaya terhindar tanpa metode/baseline.
+
+## Data contoh dan ringkasan kantin
+
+`lib/server/sample-data.ts` menyediakan riwayat sintetis agar demonstrasi tidak kosong: tujuh hari sesi tertutup, pesanan dan klaim Promo Terbatas yang sudah diambil beserta rating, serta beberapa penjualan hari ini untuk setiap gerai. Setiap tiket bertanda `sample: true` sehingga antarmuka menampilkan “data contoh” dan rekamannya dapat dibedakan dari aktivitas nyata. Produksi dinaikkan tepat sebesar yang dikonsumsi penjualan contoh, jadi stok bebas, kapasitas, dan rekonsiliasi tidak berubah. Hanya hari-hari terbaru yang memuat tiket individual agar dokumen operasional tetap kecil.
+
+Database demo dan tindakan `reset_demo` memakai data ini. `PORSI_SAMPLE_DATA=off` memulai dari fixture polos; server pengujian mengaturnya agar ekspektasi tetap stabil. Instalasi cloud yang baru tetap kosong; data contoh ditambahkan secara eksplisit untuk presentasi.
+
+`snapshot.community` adalah ringkasan anonim tujuh hari untuk semua peran: porsi dilayani, bagian Promo Terbatas, penghematan pembeli, rating, menu paling disukai, dan jumlah promo yang sedang terbuka. Tidak ada nama, telepon, tiket, atau baris per customer. Hari yang sudah ditutup dihitung dari riwayat sesi; hari berjalan dihitung dari tiket dan penjualan langsung.

@@ -8,6 +8,7 @@ Buat `.env.local` hanya pada perangkat pengembangan, atau isi variabel di pengat
 | `PORSI_MODE`                                  | `demo` (bawaan) atau `supabase`                                                                                      |
 | `APP_ORIGIN`                                  | Origin situs, misalnya `http://localhost:3000` saat lokal; HTTPS di produksi                                         |
 | `PORSI_DATA_DIR`                              | Direktori SQLite persisten untuk demo                                                                                |
+| `PORSI_SAMPLE_DATA`                           | `off` memulai demo dari fixture polos tanpa riwayat contoh; dipakai server pengujian                                 |
 | `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD`     | Akun pengelola pada hosting demo                                                                                     |
 | `DEMO_SELLER_EMAIL`, `DEMO_SELLER_PASSWORD`   | Akun penjual pada hosting demo                                                                                       |
 | `DEMO_STUDENT_EMAIL`, `DEMO_STUDENT_PASSWORD` | Akun customer contoh opsional pada demo                                                                              |

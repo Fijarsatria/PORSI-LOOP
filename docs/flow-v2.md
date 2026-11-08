@@ -6,7 +6,7 @@
 
 Pilih gerai/menu → nama panggilan, porsi, jumlah, catatan → Dine in atau Pick up → segera atau slot pengambilan → metode pembayaran → pantau status → tunjukkan QR ke gerai.
 
-Checkout saat ini berisi satu menu. Pesanan berbeda gerai menghasilkan pembayaran dan tiket terpisah. Pembayaran QRIS, E-wallet, dan transfer pada **mode demo** adalah simulasi tanpa memindahkan uang. Tunai memerlukan konfirmasi penjual. Pada **mode Supabase**, metode daring ditolak sampai gateway nyata terintegrasi; tombol simulasi tidak dapat melunasi transaksi nyata.
+Checkout saat ini berisi satu menu. Pesanan berbeda gerai menghasilkan pembayaran dan tiket terpisah. Pembayaran QRIS, E-wallet, dan transfer pada **mode demo** adalah simulasi tanpa memindahkan uang. Tunai memerlukan konfirmasi penjual. Pada **mode Supabase**, metode daring juga berupa simulasi: tidak ada uang yang berpindah dan gateway nyata belum terintegrasi.
 
 Status pembayaran dipisahkan dari pemenuhan. Pesanan baru menunggu pembayaran, kemudian terkonfirmasi, disiapkan, siap diambil, dan selesai setelah QR diverifikasi. QR lunas dapat ditampilkan saat persiapan, tetapi belum dapat ditukar sebelum status siap. Reservasi belum dibayar memiliki batas waktu dan otomatis melepas kapasitas saat kedaluwarsa. Batas pembatalan diperiksa server.
 

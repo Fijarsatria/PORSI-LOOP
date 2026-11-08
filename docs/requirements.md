@@ -9,7 +9,7 @@ Acuan terkini adalah permintaan pengguna 8 November 2026, PRD14 halaman, dan pro
 | Banyak gerai/menu | Demo6 gerai18 menu; stok/slot/rekonsiliasi per menu | Cloud baru18 menu nonaktif tanpa transaksi/produksi contoh |
 | Dine in/Pick up | Pengambilan segera atau slot terjadwal, cutoff dan kuota server | Tidak ada pengantaran atau pemesanan meja |
 | Promo Terbatas | Surplus aktual, pemeriksaan penjual, expiry, reservasi atomik | Bukan produksi khusus diskon; timer bukan jaminan kelayakan |
-| Pembayaran | Simulator QRIS/E-wallet/transfer demo; tunai dikonfirmasi penjual | Gateway nyata belum terintegrasi; simulasi ditolak pada cloud |
+| Pembayaran | Simulator QRIS/E-wallet/transfer; tunai dikonfirmasi penjual | Gateway nyata belum terintegrasi; simulasi berlaku di semua mode |
 | QR pengambilan | Token kriptografis hanya pemilik tiket; scanner kamera dan input token, paid+ready+gerai+expiry+sekali pakai | Kamera fisik memerlukan perangkat, HTTPS, dan izin browser |
 | Progres/notifikasi | Status beranimasi; polling4 detik; notifikasi halaman dan perangkat opsional | Bukan push saat browser ditutup |
 | Refund | Demo simulasi; live cash menunggu konfirmasi uang dikembalikan | Tidak ada klaim transfer/refund otomatis |

@@ -38,7 +38,7 @@ APP_ORIGIN=https://domain-tujuan.example
 ```
 
 4. Buat akun pengelola pertama melalui Admin API, dengan password acak privat serta `app_metadata.role=admin`. Opsional: isi `PORSI_OWNER_USER_ID` dengan UUID Auth akun tersebut. Jangan memberikan hak pengelola berdasarkan email yang diklaim saat pendaftaran. Customer adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API; penjual juga wajib memiliki `app_metadata.outletId` yang cocok dengan gerainya. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
-5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud dimulai tanpa transaksi, produksi, histori, dan penawaran sintetis; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
+5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud baru dimulai tanpa transaksi, produksi, histori, dan penawaran; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Untuk presentasi, data contoh bertanda `sample: true` dapat ditambahkan secara eksplisit (lihat [backend](backend.md)). Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
 6. Uji login setiap peran, penolakan peran yang salah, pembatalan sebelum cutoff, konkurensi slot terakhir, pickup, logout/cookie lama, dan rekonsiliasi pada proyek uji. Jangan menguji reset simulasi terhadap layanan nyata; operasi tersebut memang ditolak.
 7. Jalankan Security/Performance Advisors di dashboard Supabase dan tinjau hasilnya sebelum pilot. Pengujian lokal tidak menggantikan validasi RLS/privilege dan koneksi pada proyek nyata.
 
@@ -64,7 +64,7 @@ Kedua tabel harus memiliki `rowsecurity=true`; ketiga pemeriksaan privilege tera
 - Paket yang dipilih: Vercel Hobby dan Supabase Free. Kuota dan kebijakan layanan mengikuti penyedia; paket gratis bukan jaminan kapasitas produksi. Proyek Supabase Free dapat dijeda karena tidak aktif.
 - Untuk demo hackathon, **Confirm email dimatikan atas pilihan pemilik proyek**. Customer langsung masuk setelah mendaftar. Identitas email/telepon customer belum diverifikasi; aktifkan verifikasi email dan SMTP yang sesuai sebelum pemakaian publik operasional.
 - Pengelola dan penjual memakai akun khusus dari administrator. Publik tidak dapat memilih atau menetapkan peran tersebut melalui pendaftaran.
-- Aktifkan menu dan catat produksi melalui akun penjual sebelum menawarkan makanan. Pembayaran cloud saat ini tunai, dikonfirmasi gerai; pembayaran digital belum terhubung gateway.
+- Aktifkan menu dan catat produksi melalui akun penjual sebelum menawarkan makanan. QRIS, e-wallet, dan transfer adalah simulasi tanpa uang sungguhan; tunai dikonfirmasi gerai. Gateway pembayaran nyata belum terhubung.
 
 ## Container
 

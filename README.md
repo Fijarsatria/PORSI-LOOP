@@ -48,7 +48,7 @@ Buka [localhost:3000/customer](http://localhost:3000/customer). Mode bawaan mema
 | Dapur Bu Ratna | `seller@porsiloop.local`  | `PorsiSeller2026!`  |
 | Pengelola      | `admin@porsiloop.local`   | `PorsiAdmin2026!`   |
 
-Gerai lain: `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada domain `@porsiloop.local`, dengan kata sandi penjual demo yang sama. Kredensial ini hanya default pengembangan. Hosting mode demo memerlukan kredensial sendiri. Akun demo tidak berlaku pada Supabase Auth.
+Gerai lain: `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada domain `@porsiloop.local`, dengan kata sandi penjual demo yang sama. Kredensial ini hanya default pengembangan. Hosting mode demo memerlukan kredensial sendiri. Di Supabase, akun penjual `seller@porsiloop.local` (Dapur Bu Ratna) dan pengelola `admin@porsiloop.local` dibuat dengan kata sandi yang sama khusus untuk presentasi. Ganti kata sandi tersebut sebelum web dipakai untuk data nyata.
 
 </details>
 

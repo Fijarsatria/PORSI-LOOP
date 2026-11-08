@@ -36,7 +36,7 @@ Pengujian SQL di database juga membuktikan penyimpanan revisi benar diterima, re
 
 Pengelola masuk pada `/akses-pengelola`, lalu membuka **Gerai & akses** untuk membuat gerai dan akun penjual. Penjual masuk pada `/masuk/gerai`, memperbarui menu/foto/harga, lalu mencatat stok yang sudah selesai dimasak. Setelah itu customer dapat memilih menu pada `/customer` tanpa wajib login.
 
-Instalasi cloud tidak memuat pesanan atau stok fiktif. Enam gerai dan delapan belas menu awal tidak aktif sampai dikonfigurasi. Mode lokal menyediakan data contoh terpisah untuk mencoba aplikasi tanpa memengaruhi cloud.
+Instalasi cloud dimulai tanpa pesanan atau stok. Untuk presentasi, delapan belas menu diaktifkan dengan harga dan stok contoh, lalu ditambahkan riwayat tujuh hari, pesanan selesai, rating, dan Promo Terbatas contoh. Semuanya bertanda `sample: true`, tampil sebagai “data contoh”, dan bukan hasil pilot. Akun penjual `seller@porsiloop.local` (Dapur Bu Ratna) dan pengelola `admin@porsiloop.local` disediakan untuk presentasi; ganti kata sandinya sebelum dipakai untuk data nyata.
 
 Pemesanan makanan dan promo memerlukan nomor telepon. Dine in dapat menyertakan meja/posisi duduk. Antrean penjual: **Masuk → Diproses → Siap diambil → Selesai**. Penjualan langsung dicatat setelah pembayaran diterima dan makanan diserahkan; posisi duduk tersimpan pada catatan transaksi.
 
@@ -44,6 +44,6 @@ Pemesanan makanan dan promo memerlukan nomor telepon. Dine in dapat menyertakan 
 
 Pendaftaran langsung tanpa verifikasi email dipilih untuk demo gratis. Nomor telepon diperiksa formatnya, belum memakai OTP. Hak pengelola bersumber dari metadata administrator atau UUID Auth yang dikonfigurasi, bukan email yang diklaim customer.
 
-Pembayaran cloud saat ini tunai. Gateway pembayaran digital, kamera QR pada perangkat fisik, pengujian beban banyak kantin, dan pilot kantin belum diverifikasi. Angka contoh bukan hasil pilot atau bukti pengurangan emisi/limbah. Dokumen global dengan revisi cocok untuk demo/pilot terbatas; skala lebih besar memerlukan pemisahan agregat dan pengujian beban.
+QRIS, e-wallet, dan transfer adalah simulasi tanpa uang sungguhan; tunai dikonfirmasi gerai. Gateway pembayaran digital nyata, kamera QR pada perangkat fisik, pengujian beban banyak kantin, dan pilot kantin belum diverifikasi. Angka contoh bukan hasil pilot atau bukti pengurangan emisi/limbah. Dokumen global dengan revisi cocok untuk demo/pilot terbatas; skala lebih besar memerlukan pemisahan agregat dan pengujian beban.
 
 Paket gratis tetap memiliki kuota dan dapat dijeda sesuai kebijakan penyedia. Jangan menyimpan secrets pada GitHub, issue, screenshot atau bundle browser.
