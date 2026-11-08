@@ -5580,3 +5580,24 @@ input[type='range'] {
     min-width: 32px;
   }
 }
+
+/* Chat: thread cards keep their full height (they were squeezed to 72px, so
+   the preview and status spilled out over the next card) and long names stay
+   on one line inside their bars. */
+.chat-list > .chat-thread {
+  flex-shrink: 0;
+  min-height: min-content;
+}
+.order-chat > header strong,
+.chat-bubble strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-ticket-context > span {
+  min-width: 0;
+}
+.chat-ticket-context strong {
+  overflow-wrap: anywhere;
+}
