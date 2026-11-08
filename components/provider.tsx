@@ -193,7 +193,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('focus', sync);
     document.addEventListener('visibilitychange', sync);
     const id = setInterval(() => {
-      if (!inFlight.current) void refresh();
+      // A hidden tab skips polling; it refreshes again when it regains focus.
+      if (!inFlight.current && !document.hidden) void refresh();
     }, 4000);
     return () => {
       window.removeEventListener('focus', sync);
