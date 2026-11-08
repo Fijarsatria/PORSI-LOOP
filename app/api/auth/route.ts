@@ -34,6 +34,6 @@ export async function DELETE(request: NextRequest) {
       else { const { cloudLogout } = await import('../../../lib/server/supabase'); await cloudLogout(token); }
     }
     jar.set(COOKIE, '', { ...cookieOptions(), maxAge: 0 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(await getSnapshot(null), { headers: { 'Cache-Control': 'no-store, private' } });
   } catch (error) { return errorResponse(error); }
 }

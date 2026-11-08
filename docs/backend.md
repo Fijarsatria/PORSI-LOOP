@@ -37,7 +37,7 @@ Buat akun melalui Supabase Auth. Mahasiswa menjadi peran bawaan. Untuk pemilik g
 
 - `GET /api/state`: snapshot terbaru, `Cache-Control: no-store, private`.
 - `POST /api/auth`: `{role, demo:true}` pada simulasi; `{role,email,password}` pada Supabase. Menghasilkan snapshot dan cookie sesi HttpOnly.
-- `DELETE /api/auth`: menghapus sesi dan cookie.
+- `DELETE /api/auth`: menghapus sesi/cookie dan mengembalikan snapshot publik dengan `user:null`.
 - `POST /api/actions`: `{type, ...payload, idempotencyKey}`. Menghasilkan snapshot; kesalahan `{error}` dengan status 400/401/403/409/413/429/503 sesuai kondisi.
 
 Semua endpoint mutasi memeriksa Origin yang sama (atau `APP_ORIGIN` yang dikonfigurasi untuk reverse proxy), membatasi ukuran badan permintaan, dan membaca identitas dari sesi server. Token demo disimpan dalam bentuk hash SHA-256. Cookie memakai SameSite=Lax dan Secure dalam produksi. Masukkan `idempotencyKey` unik per tindakan; pengulangan key dari pengguna yang sama tidak menggandakan transaksi. Idempotency disimpan untuk 1.000 mutasi terbaru agar dokumen MVP tetap terbatas.
