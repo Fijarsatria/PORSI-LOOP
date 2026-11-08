@@ -14,7 +14,6 @@ import {
   ClipboardCheck,
   Clock3,
   DoorOpen,
-  FlaskConical,
   LayoutDashboard,
   Leaf,
   ListChecks,
@@ -40,11 +39,11 @@ import { clock, roleNames, type Role } from '@/lib/domain';
 
 const SellerDashboard = dynamic(
   () => import('@/components/operations').then((m) => m.SellerDashboard),
-  { loading: () => <PageLoading /> },
+  { loading: () => <PageLoading role="seller" /> },
 );
 const AdminDashboard = dynamic(
   () => import('@/components/operations').then((m) => m.AdminDashboard),
-  { loading: () => <PageLoading /> },
+  { loading: () => <PageLoading role="admin" /> },
 );
 const navs: Record<
   Role,
@@ -57,7 +56,7 @@ const navs: Record<
     { id: 'impact', label: 'Loop baikmu', mobile: 'Jejakmu', icon: Leaf },
   ],
   seller: [
-    { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
+    { id: 'overview', label: 'Beranda', icon: LayoutDashboard },
     { id: 'orders', label: 'Pesanan & ambil', mobile: 'Pesanan', icon: Ticket },
     { id: 'scan', label: 'Scan QR', icon: ScanLine },
     { id: 'menu', label: 'Menu gerai', mobile: 'Menu', icon: Utensils },
@@ -114,7 +113,7 @@ export function AppShell({ role }: { role: Role }) {
     return (
       <div className="app-loading-shell">
         <Brand />
-        <PageLoading />
+        <PageLoading role={role} />
       </div>
     );
   if (!state?.user || state.user.role !== role)
@@ -145,7 +144,9 @@ export function AppShell({ role }: { role: Role }) {
           href={
             role === 'admin'
               ? '/akses-pengelola'
-              : `/masuk${role === 'seller' ? '?peran=gerai' : ''}`
+              : role === 'seller'
+                ? '/masuk/gerai'
+                : '/masuk'
           }
         >
           Masuk sebagai {roleNames[role].toLowerCase()} <ArrowRight size={18} />
@@ -162,12 +163,12 @@ export function AppShell({ role }: { role: Role }) {
     state.claims.filter((c) =>
       ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(c.status),
     ).length;
-  const hasPromo = state.rescues.some(
+  const promoCount = state.rescues.filter(
     (b) =>
       b.active &&
       b.available > 0 &&
       new Date(b.expiresAt).getTime() > new Date(state.now).getTime(),
-  );
+  ).length;
   const nav = (mobile = false) =>
     navs[role].map((n) => (
       <Link
@@ -185,12 +186,13 @@ export function AppShell({ role }: { role: Role }) {
         )}
         <n.icon size={mobile ? 21 : 19} />
         <span>{mobile ? n.mobile || n.label : n.label}</span>
-        {n.id === 'rescue' && hasPromo && (
+        {n.id === 'rescue' && promoCount > 0 && (
           <span
-            className="nav-promo-dot"
-            role="img"
-            aria-label="Promo tersedia"
-          />
+            className="nav-count nav-promo-count"
+            aria-label={`${promoCount} promo tersedia`}
+          >
+            {promoCount > 99 ? '99+' : promoCount}
+          </span>
         )}
         {n.id === 'orders' && count > 0 && (
           <span className="nav-count" aria-label={`${count} pesanan aktif`}>
@@ -311,7 +313,16 @@ export function AppShell({ role }: { role: Role }) {
               onClick={() => setNotifications(true)}
             >
               <Bell size={20} />
-              {(notices.length > 0 || count > 0) && <span />}
+              {(notices.length > 0 || count > 0) && (
+                <span
+                  className="notification-count"
+                  aria-label={`${Math.max(notices.length, count)} pembaruan pesanan`}
+                >
+                  {Math.max(notices.length, count) > 99
+                    ? '99+'
+                    : Math.max(notices.length, count)}
+                </span>
+              )}
             </button>
             {!state.user.isGuest && (
               <button
@@ -333,23 +344,6 @@ export function AppShell({ role }: { role: Role }) {
           </div>
         </header>
         <div className="app-content">
-          {state.mode === 'demo' && (
-            <div className="demo-banner">
-              <FlaskConical size={15} />
-              <span>
-                <strong>Mode simulasi</strong>
-                <span className="demo-long">
-                  {' '}
-                  ·{' '}
-                  {state.demoLabel ||
-                    'Data contoh, bukan transaksi atau hasil pilot.'}
-                </span>
-              </span>
-              <Link href="/tentang">
-                Tentang data <ArrowUpRightIcon />
-              </Link>
-            </div>
-          )}
           <AnimatePresence mode="wait" initial={false}>
             <motion.main
               id="main"

@@ -111,7 +111,9 @@ test('guest payment, real QR, seller preparation, notifications and one-time han
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await expect(checkout).toBeVisible();
   await checkout.getByLabel('Nama pemesan').fill('Ayu Uji');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout.getByRole('button', { name: /^Pick up/ }).click();
   await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   await page
@@ -188,7 +190,9 @@ test('dialog error, keyboard focus, accessibility and reduced motion remain usab
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await dialog.getByLabel('Nama pemesan').fill('Uji Error');
-  await dialog.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await dialog
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   const accessibility = await new AxeBuilder({ page })
     .include('dialog[open]')
     .withTags(['wcag2a', 'wcag2aa'])
@@ -288,7 +292,9 @@ test('scheduled Pick up remains orderable after immediate cooked stock is exhaus
   await expect(dialog.getByRole('button', { name: /^Dine in/ })).toBeDisabled();
   await expect(dialog.getByLabel('Waktu ambil')).toHaveValue(/^slot-/);
   await dialog.getByLabel('Nama pemesan').fill('Uji Jadwal');
-  await dialog.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await dialog
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await dialog.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   await expect(
     page.getByRole('dialog', { name: 'Selesaikan pembayaran' }),
@@ -309,7 +315,9 @@ test('Promo Terbatas cash waits for seller verification before issuing the buyer
     .click();
   const checkout = page.getByRole('dialog', { name: 'Pesan Promo Terbatas' });
   await checkout.getByLabel('Nama pemesan').fill('Uji Promo Tunai');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -376,7 +384,9 @@ test('scroll returns after checkout switches to a ticket and navigation returns 
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Uji Gulir');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   const ticket = page.getByRole('dialog', { name: 'Selesaikan pembayaran' });
   await expect(ticket).toBeVisible();
@@ -560,9 +570,25 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
         );
       }),
     ).toBe(true);
-    await expect(dock.locator('.nav-promo-dot')).toHaveCount(1);
+    await expect(dock.locator('.nav-promo-count')).toHaveCount(1);
   }
   await page.setViewportSize({ width: 375, height: 760 });
+  await page.goto('/customer?tab=rescue');
+  await expect(page.locator('.market-promo-grid')).toBeVisible();
+  const columns = await page
+    .locator('.market-promo-grid')
+    .evaluate(
+      (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
+    );
+  expect(columns).toBe(2);
+  await expect(page.locator('.market-promo-badge').first()).toContainText(
+    'HEMAT',
+  );
+  await noOverflow(page);
+  await page.screenshot({
+    path: info.outputPath('compact-mobile-promotions.png'),
+  });
+  await page.goto('/customer');
   await page.getByTestId('menu-card').first().scrollIntoViewIfNeeded();
   await page.screenshot({
     path: info.outputPath('compact-mobile-catalogue.png'),
@@ -570,7 +596,9 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Pembeli mobile');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -580,6 +608,34 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
   await expect(
     page
       .getByRole('navigation', { name: 'Navigasi seluler' })
-      .locator('.nav-count'),
+      .locator('a[href="/customer?tab=orders"] .nav-count'),
   ).toHaveText('1');
+});
+
+test('slow manager data is fetched once and resolves beyond the polling interval', async ({
+  page,
+}) => {
+  test.setTimeout(35000);
+  const auth = await page.request.post('/api/auth', {
+    headers: { Origin: 'http://127.0.0.1:3100' },
+    data: {
+      role: 'admin',
+      email: 'admin@porsiloop.local',
+      password: 'PorsiAdmin2026!',
+      demo: true,
+    },
+  });
+  expect(auth.ok()).toBeTruthy();
+  let requests = 0;
+  await page.route('**/api/state?space=work', async (route) => {
+    requests++;
+    await new Promise((resolve) => setTimeout(resolve, 5500));
+    await route.continue();
+  });
+  await page.goto('/pengelola');
+  await expect(page.locator('.session-splash')).toBeVisible();
+  await expect(page.locator('.role-admin')).toBeVisible({ timeout: 12000 });
+  expect(requests).toBe(1);
+  await expect(page.locator('.session-splash')).toHaveCount(0);
+  await page.unroute('**/api/state?space=work');
 });

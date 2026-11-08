@@ -39,7 +39,7 @@ test('new food and promotion orders require a phone and keep it private to the t
   applyAction(
     state,
     DEMO_USERS.student,
-    { ...payload, phone: '081234567890' },
+    { ...payload, phone: '081234567890', seat: 'Meja 7 dekat jendela' },
     now,
   );
   assert.equal(
@@ -49,6 +49,10 @@ test('new food and promotion orders require a phone and keep it private to the t
   assert.equal(
     snapshot(state, DEMO_USERS.seller, 'demo').orders[0].phone,
     '+6281234567890',
+  );
+  assert.equal(
+    snapshot(state, DEMO_USERS.seller, 'demo').orders[0].seat,
+    'Meja 7 dekat jendela',
   );
   assert.deepEqual(snapshot(state, DEMO_USERS.admin, 'demo').orders, []);
   assert.deepEqual(

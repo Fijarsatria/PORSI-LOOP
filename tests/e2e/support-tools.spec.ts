@@ -37,10 +37,13 @@ test('photos, manual sales, daily history, clear planning and inline promotions 
   await page.getByRole('button', { name: 'Masuk', exact: true }).click();
   await expect(page.locator('.role-seller')).toBeVisible();
   await page
-    .getByRole('button', { name: 'Catat penjualan langsung', exact: true })
+    .getByRole('button', { name: /Penjualan langsung Catat pembelian/ })
     .click();
   const manual = page.getByRole('dialog', { name: 'Catat penjualan langsung' });
   await manual.getByLabel('Harga per porsi (Rp)').fill('17500');
+  await manual
+    .getByLabel('Nomor meja / posisi duduk (opsional)')
+    .fill('Meja 7');
   await manual
     .getByRole('button', { name: 'Catat penjualan', exact: true })
     .click();
@@ -112,7 +115,9 @@ test('guest and seller exchange order messages in a panel clear of navigation', 
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Pembeli chat');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -123,6 +128,12 @@ test('guest and seller exchange order messages in a panel clear of navigation', 
     .click();
   await page.getByRole('button', { name: 'Buka chat pesanan' }).click();
   let chat = page.getByRole('dialog', { name: 'Chat pesanan' });
+  await expect(chat.locator('.chat-thread').first()).toHaveCSS(
+    'border-radius',
+    '20px',
+  );
+  await expect(chat).toHaveCSS('opacity', '1');
+  await page.screenshot({ path: info.outputPath('chat-list-refined.png') });
   await chat.locator('.chat-list>button').first().click();
   await chat
     .getByLabel('Pesan untuk gerai')

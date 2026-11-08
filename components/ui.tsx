@@ -277,6 +277,8 @@ export function LinkButton({
     </Link>
   );
 }
-export function PageLoading() {
-  return <LoadingExperience />;
+export function PageLoading({
+  role,
+}: { role?: 'student' | 'seller' | 'admin' } = {}) {
+  return <LoadingExperience role={role} />;
 }

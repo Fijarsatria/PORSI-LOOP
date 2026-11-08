@@ -1520,6 +1520,7 @@ function applyKitchenAction(
         userId: user.id,
         customer: customerName(action.customer, user),
         phone: requiredPhone(action.phone),
+        seat: text(action.seat, 80),
         menuId: state.menu.id,
         menuName: state.menu.name,
         portion,
@@ -1727,7 +1728,14 @@ function applyKitchenAction(
           : integer(action.price, 'Harga', 0, 1000000);
       state.walkin += quantity;
       state.walkinRevenue += quantity * price;
-      log(state, user, 'Penjualan walk-in', `${quantity} porsi`, now);
+      const seat = text(action.seat, 80);
+      log(
+        state,
+        user,
+        'Penjualan walk-in',
+        `${quantity} porsi${seat ? ` · Meja / posisi: ${seat}` : ''}`,
+        now,
+      );
       break;
     }
     case 'override_plan': {
@@ -2003,6 +2011,7 @@ function applyKitchenAction(
         userId: user.id,
         customer: customerName(action.customer, user),
         phone: requiredPhone(action.phone),
+        seat: text(action.seat, 80),
         batchId: batch.id,
         note: text(action.note, 200),
         menuName: batch.menuName,

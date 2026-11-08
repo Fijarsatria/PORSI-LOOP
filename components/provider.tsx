@@ -42,6 +42,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const space =
     pathname.startsWith('/gerai') ||
+    pathname.startsWith('/masuk/gerai') ||
     pathname.startsWith('/pengelola') ||
     pathname.startsWith('/akses-pengelola')
       ? 'work'
@@ -52,6 +53,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [entering, setEntering] = useState(false);
+  const [entryRole, setEntryRole] = useState<Role>('student');
   const [error, setError] = useState('');
   const [notification, setNotification] = useState('');
   const [notices, setNotices] = useState<string[]>([]);
@@ -62,6 +64,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef(false);
   const generation = useRef(0);
+  const refreshTask = useRef<{
+    space: string;
+    controller: AbortController;
+    promise: Promise<boolean>;
+  } | null>(null);
   const pendingActions = useRef(new Map<string, string>());
   const toast = useCallback((message: string) => {
     setErrorToast(false);
@@ -95,33 +102,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     )
       new Notification('PORSI LOOP', { body: message, icon: '/icon.png' });
   }, [state, toast]);
-  const refresh = useCallback(async () => {
-    if (inFlight.current) return false;
-    setRefreshing(true);
+  const refresh = useCallback((): Promise<boolean> => {
+    if (inFlight.current) return Promise.resolve(false);
+    const requestedSpace = spaceRef.current;
+    if (refreshTask.current?.space === requestedSpace)
+      return refreshTask.current.promise;
+    refreshTask.current?.controller.abort();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const version = ++generation.current;
-    try {
-      const response = await fetch(`/api/state?space=${spaceRef.current}`, {
-        cache: 'no-store',
-        signal: AbortSignal.timeout(15000),
-      });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error || 'Data belum dapat dimuat. Coba lagi.');
-      if (version === generation.current) {
-        setState(result);
-        setError('');
+    setRefreshing(true);
+    const promise = (async () => {
+      try {
+        const response = await fetch(`/api/state?space=${requestedSpace}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const result = await response.json();
+        if (!response.ok)
+          throw new Error(
+            result.error || 'Data belum dapat dimuat. Coba lagi.',
+          );
+        if (version === generation.current) {
+          setState(result);
+          setError('');
+        }
+        return true;
+      } catch (e) {
+        if (version === generation.current)
+          setError(
+            controller.signal.aborted
+              ? 'Koneksi belum merespons. Periksa internet, lalu coba lagi.'
+              : e instanceof Error
+                ? e.message
+                : 'Koneksi terputus. Coba lagi.',
+          );
+        return false;
+      } finally {
+        clearTimeout(timeout);
+        if (refreshTask.current?.controller === controller) {
+          refreshTask.current = null;
+          setRefreshing(false);
+        }
+        if (version === generation.current) setLoading(false);
       }
-      return true;
-    } catch (e) {
-      if (version === generation.current)
-        setError(
-          e instanceof Error ? e.message : 'Koneksi terputus. Coba lagi.',
-        );
-      return false;
-    } finally {
-      setRefreshing(false);
-      if (version === generation.current) setLoading(false);
-    }
+    })();
+    refreshTask.current = { space: requestedSpace, controller, promise };
+    return promise;
   }, []);
   useEffect(() => {
     const sync = () => {
@@ -140,10 +167,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
   useEffect(() => {
+    refreshTask.current?.controller.abort();
+    refreshTask.current = null;
     generation.current++;
+    setState(null);
     setLoading(true);
     void refresh();
-  }, [space, refresh]);
+  }, [space, pathname, refresh]);
   const mutate = async (
     url: string,
     method: string,
@@ -152,7 +182,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (inFlight.current) return false;
     inFlight.current = true;
     setBusy(true);
-    if (url === '/api/auth' && method === 'POST') setEntering(true);
+    const isEntry =
+      method === 'POST' &&
+      (url === '/api/auth' ||
+        (url === '/api/accounts' && payload?.type === 'register'));
+    if (isEntry) {
+      setEntryRole(
+        payload?.role === 'admin' || payload?.role === 'seller'
+          ? payload.role
+          : 'student',
+      );
+      setEntering(true);
+    }
     setError('');
     generation.current += 1;
     try {
@@ -241,11 +282,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }}
       >
         {children}
-        {(loading || entering) && (
-          <div className="session-splash">
-            <LoadingExperience />
-          </div>
-        )}
+        <AnimatePresence>
+          {(loading || entering) && (
+            <motion.div
+              className="session-splash"
+              key="session-entry"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.24 }}
+            >
+              <LoadingExperience
+                role={
+                  entering
+                    ? entryRole
+                    : pathname.startsWith('/pengelola') ||
+                        pathname.startsWith('/akses-pengelola')
+                      ? 'admin'
+                      : pathname.startsWith('/gerai') ||
+                          pathname.startsWith('/masuk/gerai')
+                        ? 'seller'
+                        : 'student'
+                }
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
         {error && !state && !loading && (
           <div className="connection-error" role="alert">
             <WifiOff size={20} />

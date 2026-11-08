@@ -172,16 +172,20 @@ export function SellerDashboard({ tab }: { tab: string }) {
       {tab === 'overview' && (
         <>
           <div className="seller-quick-actions">
-            <Link href="/gerai?tab=scan" className="seller-scan-tile">
+            <button
+              type="button"
+              onClick={() => setWalkin(true)}
+              className="seller-scan-tile"
+            >
               <span>
-                <ScanLine size={32} />
+                <ShoppingBag size={32} />
               </span>
               <div>
-                <strong>Scan & serahkan</strong>
-                <p>Verifikasi QR sekali pakai.</p>
+                <strong>Penjualan langsung</strong>
+                <p>Catat pembelian di gerai.</p>
               </div>
-              <ArrowRight size={21} />
-            </Link>
+              <Plus size={21} />
+            </button>
             <Link href="/gerai?tab=menu" className="seller-menu-tile">
               <Store size={25} />
               <strong>Kelola menu</strong>
@@ -315,6 +319,11 @@ export function SellerDashboard({ tab }: { tab: string }) {
                           : 'Menunggu pembayaran'}
                   </span>
                 </div>
+                {o.seat && (
+                  <div className="seller-order-note">
+                    Meja / posisi: {o.seat}
+                  </div>
+                )}
                 {o.note && <div className="seller-order-note">{o.note}</div>}
                 <div className="seller-order-actions">
                   {o.status === 'pending_payment' &&
@@ -550,6 +559,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
                 menuId: selected.menu.id,
                 quantity: Number(data.get('quantity')),
                 price: Number(data.get('price')),
+                seat: String(data.get('seat') ?? ''),
               })
             ) {
               setWalkin(false);
@@ -579,6 +589,13 @@ export function SellerDashboard({ tab }: { tab: string }) {
               key={selected.menu.id}
               required
               inputMode="numeric"
+            />
+          </Field>
+          <Field label="Nomor meja / posisi duduk (opsional)">
+            <input
+              name="seat"
+              maxLength={80}
+              placeholder="Contoh: Meja 7, dekat jendela"
             />
           </Field>
           <p className="fine-print">

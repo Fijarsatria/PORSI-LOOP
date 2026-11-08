@@ -105,7 +105,9 @@ test('manager creates a seller, seller adds food, shops without logout, then cus
   await page.getByTestId('menu-order-button').click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Customer uji');
-  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
+  await checkout
+    .getByLabel('Nomor telepon', { exact: true })
+    .fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -128,7 +130,7 @@ test('manager creates a seller, seller adds food, shops without logout, then cus
   await page.getByRole('button', { name: /^Diproses/ }).click();
   await queued.getByRole('button', { name: 'Tandai siap' }).click();
   await expect(queued).not.toBeVisible();
-  await page.getByRole('button',{name:/^Siap diambil/}).click();
+  await page.getByRole('button', { name: /^Siap diambil/ }).click();
   await expect(queued).toBeVisible();
   await expect(queued).toContainText('Siap diambil');
   const ready = await (
@@ -229,6 +231,7 @@ test('seller scan is the central mobile action; controls and new dashboards are 
     ]);
     expect(widths[1]).toBeLessThanOrEqual(widths[0]);
   }
+  await expect(page.locator('.session-splash')).toHaveCount(0);
   const axeSeller = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa'])
     .analyze();
@@ -257,6 +260,7 @@ test('seller scan is the central mobile action; controls and new dashboards are 
   await page.keyboard.press('Enter');
   await expect(page.getByRole('listbox')).not.toBeVisible();
   await login(page, 'admin');
+  await expect(page.locator('.session-splash')).toHaveCount(0);
   const axeAdmin = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa'])
     .analyze();

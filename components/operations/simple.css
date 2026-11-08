@@ -475,3 +475,23 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+button.seller-scan-tile {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+button.seller-scan-tile:hover {
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  button.seller-scan-tile {
+    transition: none;
+  }
+}

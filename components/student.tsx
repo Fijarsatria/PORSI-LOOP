@@ -57,7 +57,8 @@ import { Star } from 'lucide-react';
 type Purchase = Order | RescueClaim;
 type PaymentMethod = 'qris' | 'ewallet' | 'bank_transfer' | 'cash';
 type CheckoutSelection =
-  { kind: 'menu'; id: string } | { kind: 'promo'; id: string };
+  | { kind: 'menu'; id: string }
+  | { kind: 'promo'; id: string };
 type TicketSelection = { id: string; promo: boolean };
 const activeStatuses = ['pending_payment', 'confirmed', 'preparing', 'ready'];
 const paymentNames: Record<PaymentMethod, string> = {
@@ -378,6 +379,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
   const [portion, setPortion] = useState<Portion>('regular');
   const [quantity, setQuantity] = useState(1);
   const [slotId, setSlotId] = useState('asap');
+  const [checkoutSeat, setCheckoutSeat] = useState('');
   const [fulfillment, setFulfillment] = useState<'dine_in' | 'pick_up'>(
     'pick_up',
   );
@@ -617,6 +619,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
           customer: customer.trim(),
           phone: normalizePhone(phone),
           fulfillment,
+          seat: fulfillment === 'dine_in' ? checkoutSeat : '',
           paymentMethod,
           note: note.trim(),
         }
@@ -629,6 +632,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
           customer: customer.trim(),
           phone: normalizePhone(phone),
           fulfillment,
+          seat: fulfillment === 'dine_in' ? checkoutSeat : '',
           paymentMethod,
           note: note.trim(),
         };
@@ -1143,13 +1147,16 @@ export function StudentDashboard({ tab }: { tab: string }) {
                       )}
                     />
                     <span className="market-promo-badge">
-                      {Math.max(
-                        0,
-                        Math.round(
-                          (1 - offer.price / offer.originalPrice) * 100,
-                        ),
-                      )}
-                      % lebih hemat
+                      <span>HEMAT</span>
+                      <strong>
+                        {Math.max(
+                          0,
+                          Math.round(
+                            (1 - offer.price / offer.originalPrice) * 100,
+                          ),
+                        )}
+                        %
+                      </strong>
                     </span>
                   </div>
                   <div className="market-card-copy">
@@ -1437,6 +1444,16 @@ export function StudentDashboard({ tab }: { tab: string }) {
               </div>
             </div>
             <AnimatePresence initial={false}>
+              {fulfillment === 'dine_in' && (
+                <Field label="Nomor meja / posisi duduk (opsional)">
+                  <input
+                    value={checkoutSeat}
+                    onChange={(e) => setCheckoutSeat(e.target.value)}
+                    maxLength={80}
+                    placeholder="Contoh: Meja 7, dekat jendela"
+                  />
+                </Field>
+              )}
               {fulfillment === 'pick_up' && !selectedPromo && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -1825,6 +1842,12 @@ export function StudentDashboard({ tab }: { tab: string }) {
                         : 'Belum dibayar'}
                 </dd>
               </div>
+              {currentTicket.seat && (
+                <div>
+                  <dt>Meja / posisi</dt>
+                  <dd>{currentTicket.seat}</dd>
+                </div>
+              )}
               {currentTicket.phone && (
                 <div>
                   <dt>Nomor telepon</dt>

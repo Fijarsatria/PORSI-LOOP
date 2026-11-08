@@ -3,7 +3,11 @@ export type Portion = 'small' | 'regular';
 export type Fulfillment = 'dine_in' | 'pick_up';
 export type PaymentMethod = 'qris' | 'ewallet' | 'bank_transfer' | 'cash';
 export type PaymentStatus =
-  'pending' | 'paid' | 'refund_pending' | 'refunded' | 'expired';
+  | 'pending'
+  | 'paid'
+  | 'refund_pending'
+  | 'refunded'
+  | 'expired';
 export type OrderStatus =
   | 'pending_payment'
   | 'confirmed'
@@ -64,6 +68,7 @@ export interface ChatMessage {
 }
 export interface Order {
   phone?: string;
+  seat?: string;
   messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   outletId?: string;
@@ -109,6 +114,7 @@ export interface RescueBatch {
 }
 export interface RescueClaim {
   phone?: string;
+  seat?: string;
   messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   note?: string;

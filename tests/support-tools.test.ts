@@ -111,7 +111,7 @@ test('daily reconciliation keeps actual manual sales value for later dates', asy
   applyAction(
     state,
     DEMO_USERS.seller,
-    { type: 'record_walkin', quantity: 1, price: 17500 },
+    { type: 'record_walkin', quantity: 1, price: 17500, seat: 'Meja 7' },
     now,
   );
   applyAction(
@@ -122,4 +122,10 @@ test('daily reconciliation keeps actual manual sales value for later dates', asy
   );
   assert.equal(state.history.at(-1)?.revenue, 17500);
   assert.equal(state.history.at(-1)?.walkin, 1);
+  assert.ok(
+    state.logs.some(
+      (entry) =>
+        entry.action === 'Penjualan walk-in' && entry.detail.includes('Meja 7'),
+    ),
+  );
 });
