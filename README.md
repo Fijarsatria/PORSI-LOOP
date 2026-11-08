@@ -1,12 +1,13 @@
 <p align="center"><img src="public/brand/logo.png" alt="PORSI LOOP" width="320" /></p>
-<p align="center"><strong>Porsi pas. Waktu lebih lepas.</strong><br />Platform kantin kampus · Trinity LFA · CR YOUTH 2026</p>
+<h1 align="center">PORSI LOOP</h1>
+<p align="center"><strong>Porsi pas. Waktu lebih lepas.</strong><br />Kantin yang lebih mudah dipesan dan lebih terencana.<br />Trinity LFA · CR YOUTH 2026</p>
 <p align="center"><a href="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml"><img src="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml/badge.svg" alt="Pemeriksaan aplikasi" /></a></p>
 
-PORSI LOOP menghubungkan customer, pemilik gerai, dan pengelola kantin: pesan makanan dari jauh, ambil saat siap, dan rencanakan produksi dengan catatan penjualan serta sisa makanan yang dapat ditelusuri.
+PORSI LOOP membantu customer memesan makanan sebelum tiba di kantin, membantu gerai menyiapkan pesanan, dan membantu pengelola memahami kegiatan kantinnya. Catatan produksi, penjualan, promo, dan sisa makanan mendukung keputusan memasak yang lebih terencana.
 
 [Buka web](https://porsi-loop.vercel.app) · [Mulai lokal](#menjalankan-lokal) · [Dokumentasi](docs/README.md) · [Database](supabase/README.md) · [Kontribusi](CONTRIBUTING.md)
 
-## Tiga ruang, satu alur kantin
+## Satu kantin, tiga ruang
 
 | Ruang            | Fitur utama                                                                                              | Akses                                              |
 | ---------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -17,6 +18,13 @@ PORSI LOOP menghubungkan customer, pemilik gerai, dan pengelola kantin: pesan ma
 Nomor telepon wajib pada pemesanan makanan dan promo. Antrean gerai terdiri dari **Masuk → Diproses → Siap diambil → Selesai**; menandai siap belum menyelesaikan pesanan.
 
 Sesi belanja dan sesi kerja terpisah. Customer hanya mendapat tiket miliknya; penjual hanya mengelola gerainya; laporan pengelola tidak membuka tiket atau chat pribadi customer. Pengambilan memakai QR sekali pakai. Reservasi menahan kuota, sedangkan stok berkurang saat penyerahan atau penjualan langsung dicatat.
+
+## Alur pemesanan
+
+1. Customer memilih menu, mengisi nomor telepon, lalu memilih **Dine in** atau **Pick up**. Akun customer bersifat opsional.
+2. Gerai menerima pesanan dan memperbarui antrean: **Masuk → Diproses → Siap diambil → Selesai**.
+3. Setelah pembayaran diverifikasi dan makanan siap, customer menunjukkan QR. Gerai memindainya untuk mencatat penyerahan satu kali.
+4. Customer dapat menghubungi gerai lewat chat dan memberikan rating setelah pesanan diterima. Gerai mencatat produksi, penjualan langsung, promo, dan sisa makanan untuk perencanaan berikutnya.
 
 ## Menjalankan lokal
 
@@ -74,7 +82,7 @@ npm run test:e2e
 
 Tes browser menggunakan database sementara dan server produksi tersendiri. Cakupan meliputi isolasi pengguna/gerai, pembayaran demo, stok, QR sekali pakai, percakapan, foto menu, navigasi, keyboard dan tampilan mobile/desktop.
 
-## Penyimpanan dan kesiapan layanan
+## Data dan kesiapan layanan
 
 | Mode     | Penyimpanan                                                                    | Penggunaan                                                         |
 | -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
