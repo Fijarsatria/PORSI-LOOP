@@ -139,9 +139,9 @@ export async function body(
   request: NextRequest,
 ): Promise<Record<string, unknown>> {
   const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > 16384) throw new DomainError('Data terlalu besar.', 413);
+  if (contentLength > 131072) throw new DomainError('Data terlalu besar.', 413);
   const raw = await request.text();
-  if (raw.length > 16384) throw new DomainError('Data terlalu besar.', 413);
+  if (raw.length > 131072) throw new DomainError('Data terlalu besar.', 413);
   let value: unknown;
   try {
     value = JSON.parse(raw);
@@ -150,5 +150,12 @@ export async function body(
   }
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new DomainError('Format data tidak valid.');
+  if (
+    raw.length > 16384 &&
+    !['save_menu', 'add_menu'].includes(
+      String((value as Record<string, unknown>).type),
+    )
+  )
+    throw new DomainError('Data terlalu besar.', 413);
   return value as Record<string, unknown>;
 }

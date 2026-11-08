@@ -54,7 +54,16 @@ export interface Slot {
   available: number;
   closed: boolean;
 }
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  role: 'student' | 'seller';
+  name: string;
+  text: string;
+  at: string;
+}
 export interface Order {
+  messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   outletId?: string;
   fulfillment?: Fulfillment;
@@ -98,6 +107,7 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   note?: string;
   outletId?: string;
@@ -200,6 +210,7 @@ export interface Metrics {
   completionRate: number;
 }
 export interface HistoricalSession {
+  revenue?: number;
   id?: string;
   endingStock?: number;
   internal?: number;

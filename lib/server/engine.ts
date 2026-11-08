@@ -657,10 +657,7 @@ export function snapshot(
     },
     slots,
     orders: user
-      ? [
-          ...state.orders,
-          ...(user.role === 'student' ? (state.archivedOrders ?? []) : []),
-        ]
+      ? [...state.orders, ...(state.archivedOrders ?? [])]
           .filter(
             (o) =>
               isSeller || (user.role === 'student' && o.userId === user.id),
@@ -672,10 +669,7 @@ export function snapshot(
       available: r.active ? batchAvailable(state, r) : 0,
     })),
     claims: user
-      ? [
-          ...state.claims,
-          ...(user.role === 'student' ? (state.archivedClaims ?? []) : []),
-        ]
+      ? [...state.claims, ...(state.archivedClaims ?? [])]
           .filter(
             (c) =>
               isSeller || (user.role === 'student' && c.userId === user.id),
@@ -878,6 +872,10 @@ function marketplaceSnapshot(
       const old = historyByDate.get(session.date);
       if (!old) historyByDate.set(session.date, { ...session });
       else {
+        old.revenue =
+          old.revenue !== undefined && session.revenue !== undefined
+            ? old.revenue + session.revenue
+            : undefined;
         for (const key of [
           'produced',
           'preorders',
@@ -962,6 +960,32 @@ function marketplaceSnapshot(
   };
 }
 
+function menuImage(value: unknown): string {
+  if (typeof value !== 'string' || value.length > 90000)
+    throw new DomainError('Foto terlalu besar. Pilih foto lain.');
+  if (
+    /^\/images\/[a-zA-Z0-9_./-]+\.(webp|png|jpe?g)$/.test(value) &&
+    !value.includes('..')
+  )
+    return value;
+  const match = value.match(
+    /^data:image\/(webp|png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/,
+  );
+  if (!match) throw new DomainError('Gunakan foto PNG, JPEG, atau WebP.');
+  const bytes = Buffer.from(match[2], 'base64');
+  const valid =
+    match[1] === 'webp'
+      ? bytes.toString('ascii', 0, 4) === 'RIFF' &&
+        bytes.toString('ascii', 8, 12) === 'WEBP'
+      : match[1] === 'png'
+        ? bytes
+            .subarray(0, 8)
+            .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+        : bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  if (!valid) throw new DomainError('File foto tidak valid.');
+  return value;
+}
+
 const integer = (value: unknown, label: string, min = 1, max = 10000) => {
   if (
     typeof value !== 'number' ||
@@ -1034,7 +1058,11 @@ export function applyAction(
   now: number,
   mode: 'demo' | 'supabase' = 'demo',
 ): StoreState {
-  if (['create_outlet', 'add_menu', 'rate_order'].includes(action.type))
+  if (
+    ['create_outlet', 'add_menu', 'rate_order', 'send_message'].includes(
+      action.type,
+    )
+  )
     return catalogCommand(state, user, action, now);
   if (mode === 'supabase' && action.type === 'pay_order')
     throw new DomainError(
@@ -1110,7 +1138,44 @@ function catalogCommand(
       : '';
   if (key && state.idempotency.includes(key)) return state;
   const kitchens = [state, ...(state.kitchens ?? [])];
-  if (action.type === 'rate_order') {
+  if (action.type === 'send_message') {
+    requireRole(user, ['student', 'seller']);
+    const kitchen = kitchens.find((k) =>
+      [
+        ...k.orders,
+        ...(k.archivedOrders ?? []),
+        ...k.claims,
+        ...(k.archivedClaims ?? []),
+      ].some((o) => o.id === action.orderId),
+    );
+    const ticket =
+      kitchen &&
+      [
+        ...kitchen.orders,
+        ...(kitchen.archivedOrders ?? []),
+        ...kitchen.claims,
+        ...(kitchen.archivedClaims ?? []),
+      ].find((o) => o.id === action.orderId);
+    if (
+      !ticket ||
+      (user.role === 'student'
+        ? ticket.userId !== user.id
+        : kitchen!.menu.outletId !== user.outletId)
+    )
+      throw new DomainError('Percakapan tidak ditemukan.', 403);
+    const message = text(action.message, 1000);
+    if (!message) throw new DomainError('Tulis pesan terlebih dahulu.');
+    if ((ticket.messages?.length ?? 0) >= 300)
+      throw new DomainError('Percakapan ini mencapai batas 300 pesan.');
+    (ticket.messages ??= []).push({
+      id: randomUUID(),
+      senderId: user.id,
+      role: user.role === 'seller' ? 'seller' : 'student',
+      name: user.name,
+      text: message,
+      at: iso(now),
+    });
+  } else if (action.type === 'rate_order') {
     requireRole(user, ['student']);
     if (user.isGuest)
       throw new DomainError('Masuk atau daftar untuk memberi rating.', 401);
@@ -1188,7 +1253,7 @@ function catalogCommand(
       description:
         text(action.description, 300) ||
         'Lengkapi menu sebelum membuka pesanan.',
-      image: '/images/nasi-ayam.webp',
+      image: menuImage(action.image ?? '/images/nasi-ayam.webp'),
       prices: {
         small: integer(action.smallPrice ?? 0, 'Harga kecil', 0, 1000000),
         regular: integer(action.regularPrice ?? 0, 'Harga reguler', 0, 1000000),
@@ -1728,6 +1793,8 @@ function applyKitchenAction(
       }
       if (action.description !== undefined)
         state.menu.description = text(action.description, 500);
+      if (action.image !== undefined)
+        state.menu.image = menuImage(action.image);
       if (action.category !== undefined)
         state.menu.category = text(action.category, 60);
       if (typeof action.active === 'boolean') state.menu.active = action.active;
@@ -2058,6 +2125,7 @@ function applyKitchenAction(
           r.active = false;
         });
       const entry: HistoricalSession = {
+        revenue: snapshot(state, user, mode, now).metrics.revenue,
         id: state.sessionId ?? state.createdAt,
         date: state.businessDate,
         produced: state.produced,
