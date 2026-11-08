@@ -40,7 +40,6 @@ import {
   Field,
   Modal,
   SectionHeading,
-  Stat,
 } from '@/components/ui';
 import {
   clock,
@@ -52,6 +51,7 @@ import {
 } from '@/lib/domain';
 import './student.css';
 import { OrderRating } from './rating';
+import { ImpactPanel } from './student-impact';
 import { Star } from 'lucide-react';
 
 type Purchase = Order | RescueClaim;
@@ -532,12 +532,6 @@ export function StudentDashboard({ tab }: { tab: string }) {
         ? activeStatuses.includes(order.status)
         : !activeStatuses.includes(order.status)),
   );
-  const picked = orders
-    .filter((order) => order.status === 'picked_up')
-    .reduce((sum, order) => sum + order.quantity, 0);
-  const promoPicked = claims
-    .filter((order) => order.status === 'picked_up')
-    .reduce((sum, order) => sum + order.quantity, 0);
   const canCancel = (order: Purchase) => {
     const menuSlots =
       'menuId' in order
@@ -1220,62 +1214,14 @@ export function StudentDashboard({ tab }: { tab: string }) {
       )}
 
       {tab === 'impact' && (
-        <>
-          <SectionHeading
-            eyebrow="PILIHAN KECILMU, TERCATAT DI SINI"
-            title="Loop baikmu"
-            level={1}
-            description="Ringkasan dari pesanan yang sudah kamu ambil."
-          />
-          <div className="market-impact-banner">
-            <Sprout size={43} />
-            <div>
-              <h2>
-                Satu porsi.
-                <br />
-                Satu kebiasaan baik.
-              </h2>
-              <p>
-                Terima kasih sudah memesan secukupnya dan mengambil pesananmu.
-              </p>
-            </div>
-          </div>
-          <div className="stat-grid">
-            <Stat
-              label="Porsi reguler diambil"
-              value={picked}
-              note="Serah terima diverifikasi gerai"
-              icon={Utensils}
-            />
-            <Stat
-              label="Porsi promo diambil"
-              value={promoPicked}
-              note="Dari penawaran stok terbatas"
-              icon={Sprout}
-            />
-            <Stat
-              label="Pesanan aktif"
-              value={activePurchases.length}
-              note="Masih dalam proses"
-              icon={Ticket}
-            />
-          </div>
-          <div className="market-impact-note">
-            <h3>Angkanya jelas, asalnya juga.</h3>
-            <p>
-              Ringkasan ini berasal dari pesanan sesi kamu. Pesanan yang belum
-              diambil, dibatalkan, atau kedaluwarsa tidak masuk hitungan porsi
-              diambil.
-            </p>
-            <div className="market-info-note">
-              <Leaf size={20} />
-              <p>
-                Jumlah porsi tidak otomatis setara dengan makanan yang terhindar
-                dari pembuangan. Berat sisa dicatat terpisah oleh gerai.
-              </p>
-            </div>
-          </div>
-        </>
+        <ImpactPanel
+          orders={orders}
+          claims={claims}
+          community={state.community}
+          businessDate={state.businessDate}
+          name={state.user?.name}
+          guest={!!state.user?.isGuest}
+        />
       )}
 
       <Modal
