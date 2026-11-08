@@ -8,7 +8,15 @@ export const COOKIE = 'porsi_session';
 export const cookieOptions = () => ({ httpOnly: true, secure: process.env.NODE_ENV === 'production' && process.env.PORSI_COOKIE_INSECURE !== 'true', sameSite: 'lax' as const, path: '/', maxAge: 86400 });
 export function checkOrigin(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const allowedOrigin = process.env.APP_ORIGIN ? new URL(process.env.APP_ORIGIN).origin : request.nextUrl.origin;
+  // Next's dev URL can contain the bind address (0.0.0.0) rather than the
+  // hostname the browser requested. Host is the actual HTTP target; forwarded
+  // host/protocol headers are intentionally not trusted for this decision.
+  const host = request.headers.get('host') ?? request.nextUrl.host;
+  const protocol = request.nextUrl.protocol;
+  if (!host || /[\s\/@?#]/.test(host) || !['http:', 'https:'].includes(protocol)) throw new DomainError('Alamat situs tidak valid.', 403);
+  let allowedOrigin: string;
+  try { allowedOrigin = new URL(process.env.APP_ORIGIN || `${protocol}//${host}`).origin; }
+  catch { throw new DomainError('Alamat situs belum dikonfigurasi dengan benar.', 503); }
   if (!origin || origin !== allowedOrigin) throw new DomainError('Permintaan harus berasal dari situs PORSI LOOP yang sama.', 403);
 }
 export async function readUser(): Promise<User | null> {
