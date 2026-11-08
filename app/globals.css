@@ -4766,5 +4766,9 @@ input[type='range'] {
 }
 
 /* Decorative rings stay inside the illustration at small viewport widths. */
-.hero .orbit { transform: none; }
-.hero .orbit-one { inset: 2% 0 3%; }
+.hero .orbit {
+  transform: none;
+}
+.hero .orbit-one {
+  inset: 2% 0 3%;
+}

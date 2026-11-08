@@ -459,7 +459,10 @@ export function snapshot(
         ? 'Simulasi interaktif · data contoh, bukan hasil uji lapangan'
         : null,
     businessDate: state.businessDate,
-    menu: state.menu,
+    menu: {
+      ...state.menu,
+      variableCost: isStaff ? state.menu.variableCost : 0,
+    },
     slots,
     orders: user
       ? [
@@ -1197,7 +1200,7 @@ export function applyAction(
       break;
     }
     case 'reconcile': {
-      requireRole(user, ['seller', 'admin']);
+      requireRole(user, ['seller']);
       if (
         state.orders.some((o) => active(o.status)) ||
         state.claims.some((c) => active(c.status))

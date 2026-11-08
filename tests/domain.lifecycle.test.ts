@@ -334,3 +334,26 @@ test('positive waste portions cannot be presented as a zero-weight measurement',
     /Cocokkan porsi/,
   );
 });
+
+test('menu variable costs are private to staff snapshots', () => {
+  const state = createState(now);
+  assert.equal(snapshot(state, null, 'demo', now).menu.variableCost, 0);
+  assert.equal(snapshot(state, student, 'demo', now).menu.variableCost, 0);
+  assert.equal(snapshot(state, seller, 'demo', now).menu.variableCost, 9000);
+  assert.equal(state.menu.variableCost, 9000);
+});
+
+test('manager cannot submit a seller reconciliation through the API command engine', () => {
+  const state = createState(now, true);
+  assert.throws(
+    () =>
+      applyAction(
+        state,
+        DEMO_USERS.admin,
+        { type: 'reconcile', endingStock: 0 },
+        now,
+      ),
+    /tidak memiliki akses/,
+  );
+  assert.equal(state.closed, false);
+});
