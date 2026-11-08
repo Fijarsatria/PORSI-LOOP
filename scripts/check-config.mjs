@@ -9,18 +9,31 @@ if (
 if (!['demo', 'supabase'].includes(mode))
   errors.push('PORSI_MODE harus demo atau supabase.');
 if (mode === 'demo' && process.env.NODE_ENV === 'production') {
-  for (const key of ['DEMO_ADMIN_EMAIL', 'DEMO_ADMIN_PASSWORD', 'DEMO_SELLER_EMAIL', 'DEMO_SELLER_PASSWORD']) if (!process.env[key]) errors.push(`${key} wajib diisi untuk akun demonstrasi yang dihosting.`);
+  for (const key of [
+    'DEMO_ADMIN_EMAIL',
+    'DEMO_ADMIN_PASSWORD',
+    'DEMO_SELLER_EMAIL',
+    'DEMO_SELLER_PASSWORD',
+  ])
+    if (!process.env[key])
+      errors.push(`${key} wajib diisi untuk akun demonstrasi yang dihosting.`);
 }
 if (mode === 'supabase') {
   for (const key of [
     'SUPABASE_URL',
     'SUPABASE_PUBLISHABLE_KEY',
-    'SUPABASE_SERVICE_ROLE_KEY',
     'SESSION_SECRET',
     'APP_ORIGIN',
   ]) {
     if (!process.env[key]) errors.push(`${key} belum diisi.`);
   }
+  if (
+    !process.env.SUPABASE_SECRET_KEY &&
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+    errors.push(
+      'SUPABASE_SECRET_KEY belum diisi (SUPABASE_SERVICE_ROLE_KEY lama juga didukung).',
+    );
   if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.length < 32)
     errors.push('SESSION_SECRET minimal 32 karakter acak.');
   for (const key of ['SUPABASE_URL', 'APP_ORIGIN']) {

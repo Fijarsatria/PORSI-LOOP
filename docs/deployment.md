@@ -7,7 +7,7 @@
 | `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server                         |
 | `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Adapter cloud tersedia; perlu verifikasi pada proyek tujuan sebelum menerima pengguna nyata |
 
-Handoff sebelumnya mencatat proyek `wcodhmpstpdmjpqbwoeo` pada organisasi Luthfi. Status pemasangan dan akses akun saat ini harus diperiksa langsung; dokumentasi lama bukan bukti koneksi yang aktif. Lihat [kontrak dan pemeriksaan database](../supabase/README.md).
+Proyek aktif: **PORSI LOOP**, organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`. Skema dan pembatasan akses sudah diuji pada database cloud. [Kontrak, bukti dan query verifikasi](../supabase/README.md) tersedia di repositori. Runtime web harus diuji terpisah setelah konfigurasi privat dan deployment selesai.
 
 ## Server Node.js
 
@@ -24,7 +24,7 @@ Mode demo membaca `PORSI_DATA_DIR` (bawaan `.data/`). Pasang volume persisten, g
 
 ## Menghubungkan Supabase
 
-1. Pilih proyek milik tim yang aksesnya sudah diberikan. Ambil project URL, publishable key, serta service role key melalui dashboard. Service role key hanya berada di secrets server.
+1. Pilih proyek milik tim yang aksesnya sudah diberikan. Ambil project URL, publishable key, serta secret key server melalui dashboard. Service role key hanya berada di secrets server.
 2. Tinjau dan pasang `supabase/schemas/porsi.sql` melalui SQL Editor atau workflow skema deklaratif tim. Tabel `porsi_state` dan `porsi_sessions` sengaja tidak dapat dibaca oleh `anon`/`authenticated`; server memakai service role. Fungsi compare-and-swap hanya dapat dijalankan service role dan memakai `SECURITY INVOKER`.
 3. Isi konfigurasi berikut pada host. Buat `SESSION_SECRET` dengan generator kriptografis, minimal 32 karakter. Jangan menggunakan teks contoh sebagai secret.
 
@@ -32,7 +32,7 @@ Mode demo membaca `PORSI_DATA_DIR` (bawaan `.data/`). Pasang volume persisten, g
 PORSI_MODE=supabase
 SUPABASE_URL=https://PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_SECRET_KEY=...
 SESSION_SECRET=...
 APP_ORIGIN=https://domain-tujuan.example
 ```

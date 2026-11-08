@@ -26,7 +26,8 @@ function config() {
     process.env.SUPABASE_PUBLISHABLE_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret =
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (
     !url ||
     !publishable ||
@@ -103,8 +104,16 @@ function unseal(token: string): SessionToken | GuestToken | null {
 export function userFromAuth(user: SupabaseUser): User {
   // Roles are issued only by a trusted administrator, never from user_metadata.
   const rawRole = user.app_metadata?.role;
-  const role: Role =
-    rawRole === 'seller' || rawRole === 'admin' ? rawRole : 'student';
+  const ownerEmail = process.env.PORSI_OWNER_EMAIL?.trim().toLowerCase();
+  const isVerifiedOwner =
+    !!ownerEmail &&
+    !!user.email_confirmed_at &&
+    user.email?.trim().toLowerCase() === ownerEmail;
+  const role: Role = isVerifiedOwner
+    ? 'admin'
+    : rawRole === 'seller' || rawRole === 'admin'
+      ? rawRole
+      : 'student';
   const outletId =
     typeof user.app_metadata?.outletId === 'string'
       ? user.app_metadata.outletId

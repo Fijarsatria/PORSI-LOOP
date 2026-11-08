@@ -19,10 +19,14 @@ Dokumen global dengan revisi sesuai untuk demonstrasi/pilot terbatas. Beban bany
 
 ## Pemasangan dan bukti
 
-1. Masuk ke proyek tujuan menggunakan akun yang berwenang. Referensi yang tercatat pada handoff sebelumnya adalah `wcodhmpstpdmjpqbwoeo`; pastikan proyek tersebut memang milik tim dan bisa diakses sebelum mengubahnya.
+1. Masuk ke proyek tujuan menggunakan akun yang berwenang. Proyek aktif adalah **PORSI LOOP** pada organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`.
 2. Tinjau lalu jalankan `schemas/porsi.sql` di SQL Editor. Skema deklaratif ini tidak menghapus data yang sudah ada. Jangan memasukkan data demo ke proyek nyata.
 3. Jalankan `verify.sql`. Dua tabel harus ditemukan dengan RLS aktif dan dipaksa. `anon`/`authenticated` tidak boleh memiliki akses tabel atau eksekusi fungsi; service role hanya mendapat operasi yang dinyatakan pada skema. Fungsi harus menunjukkan `security_definer=false`.
 4. Tinjau Security/Performance Advisors pada dashboard.
 5. Isi konfigurasi privat berdasarkan [panduan konfigurasi](../docs/configuration.md). Uji koneksi dan alur akun/pemesanan dengan mode `supabase`, bukan `demo`. Hasil query dan pengujian cloud harus dicatat sebelum menyatakan pemasangan terverifikasi.
 
-Saat penyusunan pembaruan ini, dashboard meminta login dan alat database Supabase belum tersedia pada sesi agen. Karena itu dokumen ini tidak menyatakan bahwa SQL telah dijalankan pada proyek cloud dalam pembaruan ini.
+## Status pemasangan cloud
+
+Skema sudah dijalankan pada [proyek PORSI LOOP](https://supabase.com/dashboard/project/eemuhrlpfewujfuflapl). Pemeriksaan SQL menunjukkan kedua tabel memiliki `rls_enabled=true`, `rls_forced=true`, `anon_read=false`, dan `user_update=false`.
+
+[Pengujian transaksi](tests/transaction.sql) juga telah dijalankan di database tersebut dan menghasilkan PASS: service role bisa menyimpan revisi yang benar, revisi lama ditolak, serta role anon/authenticated tidak bisa membaca dokumen. Seluruh data uji di-rollback. Ini membuktikan skema dan pembatasan akses database, terpisah dari verifikasi runtime aplikasi setelah deployment.

@@ -25,6 +25,8 @@ npm ci
 npm run dev
 ```
 
+Pada Windows, Anda juga dapat mengeklik dua kali [`scripts/mulai-lokal.cmd`](scripts/mulai-lokal.cmd). Biarkan jendela server terbuka selama memakai aplikasi.
+
 Buka [localhost:3000/customer](http://localhost:3000/customer). Mode bawaan memakai SQLite persisten dengan **6 gerai dan 18 menu contoh**. Seluruh transaksi demo adalah simulasi.
 
 <details>
