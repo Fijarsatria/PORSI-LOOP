@@ -1,40 +1,62 @@
-# PORSI LOOP
+<p align="center"><img src="public/brand/logo.png" alt="PORSI LOOP" width="320" /></p>
+<p align="center"><strong>Porsi pas. Waktu lebih lepas.</strong><br />Platform kantin kampus · Trinity LFA · CR YOUTH 2026</p>
+<p align="center"><a href="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml"><img src="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml/badge.svg" alt="Pemeriksaan aplikasi" /></a></p>
 
-Platform kantin kampus oleh Trinity LFA untuk CR YOUTH 2026. Customer dapat langsung memesan tanpa wajib login; penjual mengelola gerai melalui akun; pengelola memantau seluruh kantin, menambahkan gerai, dan memberikan akses penjual.
+PORSI LOOP menghubungkan customer, pemilik gerai, dan pengelola kantin: pesan makanan dari jauh, ambil saat siap, dan rencanakan produksi dengan catatan penjualan serta sisa makanan yang dapat ditelusuri.
 
-Versi alur 8 November 2026 menyediakan **6 gerai, 18 menu**, Dine in / Pick up segera atau terjadwal, **Promo Terbatas**, simulasi beberapa metode pembayaran, progres pesanan, QR pengambilan sekali pakai, pemindai kamera penjual, dan insight produksi/penjualan/sisa.
+[Mulai lokal](#menjalankan-lokal) · [Dokumentasi](docs/README.md) · [Database](supabase/README.md) · [Kontribusi](CONTRIBUTING.md)
 
-## Jalankan lokal
+## Tiga ruang, satu alur kantin
 
-Gunakan Node.js minimal 22.13 (disarankan 24 LTS).
+| Ruang            | Fitur utama                                                                                              | Akses                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Customer         | Pesan tanpa wajib login, Dine in/Pick up, tiket QR, chat gerai, promo, rating setelah diterima           | `/customer` · akun opsional `/masuk` dan `/daftar` |
+| Pemilik gerai    | Antrean pesanan, scan QR, foto/menu/stok, penjualan langsung, riwayat harian, promo dan rencana produksi | `/masuk/gerai`                                     |
+| Pengelola kantin | Ringkasan visual, pemasukan, penambahan gerai/akun penjual, laporan produksi dan sisa                    | `/akses-pengelola`                                 |
+
+Sesi belanja dan sesi kerja terpisah. Customer hanya mendapat tiket miliknya; penjual hanya mengelola gerainya; laporan pengelola tidak membuka tiket atau chat pribadi customer. Pengambilan memakai QR sekali pakai. Reservasi menahan kuota, sedangkan stok berkurang saat penyerahan atau penjualan langsung dicatat.
+
+## Menjalankan lokal
+
+Gunakan **Node.js 24 LTS** (minimum 22.13).
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Buka http://localhost:3000/customer. Mode bawaan adalah demo SQLite dengan data sintetis; pembayaran tidak memindahkan uang sungguhan. `/mahasiswa` tetap didukung untuk tautan lama.
+Buka [localhost:3000/customer](http://localhost:3000/customer). Mode bawaan memakai SQLite persisten dengan **6 gerai dan 18 menu contoh**. Seluruh transaksi demo adalah simulasi.
 
-| Ruang          | Alamat               | Kredensial lokal pengembangan                                                                               |
-| -------------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Customer       | `/customer`          | Tanpa login; daftar opsional di `/daftar`, atau akun contoh `student@porsiloop.local` / `PorsiStudent2026!` |
-| Dapur Bu Ratna | `/masuk?peran=gerai` | `seller@porsiloop.local` / `PorsiSeller2026!`                                                               |
-| Gerai lainnya  | `/masuk?peran=gerai` | `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada `@porsiloop.local`; kata sandi penjual yang sama      |
-| Pengelola      | `/akses-pengelola`   | `admin@porsiloop.local` / `PorsiAdmin2026!`                                                                 |
+<details>
+<summary>Akun demo pengembangan</summary>
 
-Kredensial contoh hanya menjadi default pada pengembangan. Server demo produksi wajib memakai DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, DEMO_SELLER_EMAIL, dan DEMO_SELLER_PASSWORD yang dikonfigurasi sendiri. Mode Supabase memakai akun Auth nyata; tidak menerima pintasan akun demo.
+| Akses          | Email                     | Kata sandi lokal    |
+| -------------- | ------------------------- | ------------------- |
+| Customer       | `student@porsiloop.local` | `PorsiStudent2026!` |
+| Dapur Bu Ratna | `seller@porsiloop.local`  | `PorsiSeller2026!`  |
+| Pengelola      | `admin@porsiloop.local`   | `PorsiAdmin2026!`   |
 
-## Alur utama
+Gerai lain: `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada domain `@porsiloop.local`, dengan kata sandi penjual demo yang sama. Kredensial ini hanya default pengembangan. Hosting mode demo memerlukan kredensial sendiri. Akun demo tidak berlaku pada Supabase Auth.
 
-- Customer: pilih gerai dan menu → Dine in/Pick up → jadwal → pembayaran → pantau status → QR pengambilan → rating setelah diterima (perlu akun).
-- Penjual: lihat pesanan/notifikasi → konfirmasi tunai bila perlu → siapkan → siap → Scan QR saat serah terima.
-- Pengelola: perbandingan gerai, trafik pesanan anonim, produksi, penjualan normal, Promo Terbatas terambil, waste, dan rekonsiliasi.
-- Produksi: permintaan terkonfirmasi + estimasi walk-in terpisah + buffer; keputusan penjual tidak menambah stok sampai produksi selesai dicatat.
-- Stok: reservasi menahan kuota; hanya serah terima mengurangi stok dan menambah porsi terlayani. Promo berasal dari surplus aktual yang diperiksa penjual.
+</details>
 
-Sesi belanja terpisah dari sesi kerja. Penjual dapat memesan sebagai customer tanpa logout. Penjual memakai kartu menu dan antrean Masuk/Diproses/Selesai, dengan Scan QR di tengah navigasi bawah. Catatan sisa tersedia dari Menu. Pengelola menambah gerai dan akun melalui **Gerai & akses**. Rincian: [kelanjutan customer dan kantin](docs/customer-canteen-update.md).
+Konfigurasi lokal dibuat sendiri dalam `.env.local`, yang diabaikan Git. Daftar variabel dan contoh tanpa kunci tersedia di [panduan konfigurasi](docs/configuration.md). Tidak ada berkas `.env*` yang dilacak repositori.
 
-## Verifikasi
+## Struktur repositori
+
+```text
+app/                 Halaman Next.js dan API server
+components/          Antarmuka customer, gerai, pengelola dan komponen bersama
+lib/                 Model bisnis, autentikasi dan adapter penyimpanan
+public/              Identitas visual, ilustrasi dan aset statis
+supabase/            Skema database dan pemeriksaan akses
+scripts/             Pemeriksaan konfigurasi
+tests/               Pengujian unit, API dan browser
+docs/                Panduan produk, implementasi dan verifikasi
+.github/workflows/   Pemeriksaan otomatis setiap push dan pull request
+```
+
+## Pemeriksaan
 
 ```bash
 npm run check:config
@@ -46,23 +68,15 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Tes browser menjalankan server produksi dengan kredensial uji tersendiri dan basis data sementara. Tes mencakup tamu, checkout, QR asli yang dapat didekode, persiapan penjual, pengambilan sekali pakai, privasi, dialog keyboard, dan tampilan mobile/desktop.
+Tes browser menggunakan database sementara dan server produksi tersendiri. Cakupan meliputi isolasi pengguna/gerai, pembayaran demo, stok, QR sekali pakai, percakapan, foto menu, navigasi, keyboard dan tampilan mobile/desktop.
 
-## Supabase
+## Penyimpanan dan kesiapan layanan
 
-Proyek **PORSI LOOP** telah dibuat: [buka dashboard](https://supabase.com/dashboard/project/wcodhmpstpdmjpqbwoeo). Skema privat dan pembatasan akses database telah dipasang serta diperiksa. Koneksi aplikasi masih membutuhkan SUPABASE_SERVICE_ROLE_KEY di konfigurasi server yang tidak di-commit. Mode cloud tidak beralih diam-diam ke demo bila konfigurasi tidak lengkap. QRIS/E-wallet/transfer nyata membutuhkan integrasi gateway; mode cloud menyediakan jalur tunai terverifikasi dan menolak simulasi pembayaran.
+| Mode     | Penyimpanan                                                                    | Penggunaan                                                                            |
+| -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Demo     | SQLite di disk lokal                                                           | Demonstrasi dan pengujian dengan data sintetis                                        |
+| Supabase | PostgreSQL, Supabase Auth, sesi server dan transaksi dengan pemeriksaan revisi | Memerlukan pemasangan skema, secrets server dan verifikasi koneksi pada proyek tujuan |
 
-## Dokumen
+Lihat [panduan database](supabase/README.md) dan [deployment](docs/deployment.md) sebelum mengaktifkan cloud. Skema kompatibel dengan aplikasi berada di `supabase/schemas/porsi.sql`. Status pemasangan pada proyek cloud harus dibuktikan dengan query verifikasi; keberadaan berkas SQL bukan bukti database sudah terpasang.
 
-- [Foto menu, penjualan langsung, riwayat, promo, dan chat pesanan](docs/ordering-tools.md)
-
-- [Alur, keamanan, notifikasi, dan batas implementasi terkini](docs/flow-v2.md)
-- [Penyederhanaan penjual, pendaftaran customer, rating, dan gerai](docs/customer-canteen-update.md)
-- [Hasil pemeriksaan kelanjutan dan batas verifikasi](docs/verification-2026-11-08.md)
-- [Audit lengkap PRD dan proposal dengan rujukan halaman](docs/requirements-audit-2026-11-08.md)
-- [Peran penyedia platform, pengelola kantin, dan laporan uang](docs/roles-and-finance.md)
-- [Kontrak backend](docs/backend.md)
-- [Deployment](docs/deployment.md)
-- [Sumber dan batas klaim](docs/research.md)
-
-Data demo bukan hasil pilot. Porsi Promo Terbatas terambil adalah outcome distribusi, bukan otomatis bukti pengurangan waste. Kg waste berasal dari penimbangan; manfaat ekonomi membutuhkan baseline dan biaya yang valid.
+Pembayaran digital masih simulasi di demo dan dinonaktifkan di cloud sampai gateway nyata terintegrasi. Data contoh bukan hasil pilot. Porsi promo yang diambil tidak otomatis membuktikan pengurangan limbah; berat sisa berasal dari penimbangan dan memerlukan baseline pembanding.

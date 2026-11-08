@@ -4,10 +4,10 @@
 
 | Mode       | Kebutuhan                                               | Batas                                                                                       |
 | ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server                            |
+| `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server                         |
 | `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Adapter cloud tersedia; perlu verifikasi pada proyek tujuan sebelum menerima pengguna nyata |
 
-Proyek PORSI LOOP (wcodhmpstpdmjpqbwoeo) telah dibuat pada organisasi LutfiZg's Org di ap-southeast-1. Skema privat sudah dipasang dan akses langsung publik ditolak. Koneksi aplikasi masih membutuhkan kunci rahasia server; pengambilan otomatis melalui browser diblokir karena URL aktif tidak dapat dipastikan. Lihat flow-v2.md untuk status terkini.
+Handoff sebelumnya mencatat proyek `wcodhmpstpdmjpqbwoeo` pada organisasi Luthfi. Status pemasangan dan akses akun saat ini harus diperiksa langsung; dokumentasi lama bukan bukti koneksi yang aktif. Lihat [kontrak dan pemeriksaan database](../supabase/README.md).
 
 ## Server Node.js
 
