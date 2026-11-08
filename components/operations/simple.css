@@ -334,6 +334,27 @@
   color: var(--leaf);
   margin-bottom: 8px;
 }
+@media (max-width: 649px) {
+  .seller-scan-page {
+    gap: 14px;
+    padding: 24px 20px;
+    min-height: 0;
+  }
+  .scan-focus-mark {
+    width: 76px;
+    height: 76px;
+    border-radius: 24px;
+    margin: 0;
+  }
+  .scan-focus-mark svg {
+    width: 44px;
+    height: 44px;
+  }
+  .seller-scan-page > h2 {
+    font-size: 23px;
+    max-width: 22ch;
+  }
+}
 .simple-button-row {
   display: flex;
   gap: 12px;

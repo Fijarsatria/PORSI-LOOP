@@ -228,6 +228,18 @@ test('seller scan is the central mobile action; controls and new dashboards are 
     .withTags(['wcag2a', 'wcag2aa'])
     .analyze();
   expect(axeSeller.violations).toEqual([]);
+  if ((page.viewportSize()?.width ?? 1440) < 1000) {
+    const scanButton = await page
+      .locator('.seller-scan-page')
+      .getByRole('button', { name: 'Scan QR', exact: true })
+      .boundingBox();
+    const bottomNav = await page
+      .getByRole('navigation', { name: 'Navigasi seluler' })
+      .boundingBox();
+    expect(scanButton).not.toBeNull();
+    expect(bottomNav).not.toBeNull();
+    expect(scanButton!.y + scanButton!.height).toBeLessThan(bottomNav!.y - 16);
+  }
   await page.screenshot({
     path: info.outputPath('seller-central-scan.png'),
     fullPage: true,

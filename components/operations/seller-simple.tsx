@@ -398,11 +398,11 @@ export function SellerDashboard({ tab }: { tab: string }) {
           <span className="scan-focus-mark">
             <ScanLine size={64} strokeWidth={1.1} />
           </span>
+          <PickupScanner />
           <h2>Satu scan. Satu serah terima.</h2>
           <p className="muted">
             Pembayaran dan kesiapan diperiksa sebelum stok berkurang.
           </p>
-          <PickupScanner />
           <p className="fine-print">
             Kamera memerlukan izin. Token QR bisa dimasukkan jika kamera tidak
             tersedia.

@@ -16,6 +16,8 @@ Setelah perapian angka ringkasan dan nama aksesibel tombol belanja pada layar ke
 
 Alur browser baru benar-benar membuat gerai dan akun dari panel pengelola, masuk sebagai penjual baru, menambah makanan dengan stok nol, mencatat tiga porsi produksi, memperbarui harga, memesan sebagai customer tanpa mengeluarkan sesi kerja, mengonfirmasi tunai, menyiapkan, menandai siap, memvalidasi token QR, mendaftarkan customer, menautkan pesanan tamu, dan menyimpan rating. Keluar dari akun customer tidak mengeluarkan sesi penjual.
 
+Tombol pembuka scanner ditempatkan sebelum penjelasan panjang dan kartu scan dipadatkan pada ponsel. Tes memeriksa posisi tombol agar tetap berada di atas navigasi bawah pada viewport mobile, tanpa perlu menggulir lebih dahulu.
+
 ## Cara mengulang
 
 ```bash
