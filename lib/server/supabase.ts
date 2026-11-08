@@ -42,11 +42,16 @@ export async function cloudLogin(data: Record<string, unknown>) {
   const client = publicClient();
   const { data: auth, error } = await client.auth.signInWithPassword({ email: data.email.trim(), password: data.password });
   if (error || !auth.session || !auth.user) throw new DomainError('Email atau kata sandi belum sesuai. Periksa kembali dan coba lagi.', 401);
+  const user = userFromAuth(auth.user);
+  if (user.role !== data.role) {
+    await client.auth.signOut({ scope: 'local' });
+    throw new DomainError('Jenis akun tidak sesuai. Pilih akses yang sesuai dengan akunmu.', 403);
+  }
   const id = randomUUID(); const expires = Date.now() + 86400000;
   const stored = await serviceClient().from('porsi_sessions').insert({ id, user_id: auth.user.id, expires_at: new Date(expires).toISOString() });
   if (stored.error) throw new DomainError('Sesi belum dapat disimpan. Hubungi pengelola.', 503);
   const token = seal({ id, access: auth.session.access_token, refresh: auth.session.refresh_token, expires });
-  return { token, user: userFromAuth(auth.user) };
+  return { token, user };
 }
 export async function readCloudSession(token: string): Promise<User | null> {
   config(); const value = unseal(token); if (!value) return null;
@@ -63,7 +68,8 @@ export async function readCloudSession(token: string): Promise<User | null> {
 }
 export async function cloudLogout(token: string) {
   config(); const value = unseal(token); if (!value) return;
-  await serviceClient().from('porsi_sessions').delete().eq('id', value.id);
+  const revoked = await serviceClient().from('porsi_sessions').delete().eq('id', value.id);
+  if (revoked.error) throw new DomainError('Sesi belum berhasil dicabut. Coba keluar lagi sebentar.', 503);
   const client = publicClient(); await client.auth.setSession({ access_token: value.access, refresh_token: value.refresh });
   await client.auth.signOut({ scope: 'local' });
 }

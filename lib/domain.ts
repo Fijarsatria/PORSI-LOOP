@@ -91,7 +91,15 @@ export interface Recommendation {
   source: 'history' | 'manual';
   historyDays: number;
   accepted?: { target: number; at: string };
-  override?: { target: number; reason: string; at: string };
+  override?: { target: number; reason: string; at: string; originalTarget?: number };
+}
+export interface StockMovement {
+  id: string;
+  type: 'opening_balance' | 'production_confirmed' | 'preorder_pickup' | 'walkin_sale' | 'rescue_pickup' | 'internal' | 'waste' | 'reconciliation_correction';
+  quantity: number;
+  reference: string;
+  actor: string;
+  at: string;
 }
 export interface AuditLog {
   id: string;
@@ -115,6 +123,7 @@ export interface Reconciliation {
   recorded?: boolean;
 }
 export interface Metrics {
+  stockouts: number;
   totalOrders: number;
   activeOrders: number;
   preorderPortions: number;
@@ -134,6 +143,10 @@ export interface Metrics {
   completionRate: number;
 }
 export interface HistoricalSession {
+  id?: string;
+  endingStock?: number;
+  internal?: number;
+  difference?: number;
   date: string;
   produced: number;
   preorders: number;
@@ -144,6 +157,8 @@ export interface HistoricalSession {
   closed: boolean;
 }
 export interface Snapshot {
+  sessionId: string;
+  movements: StockMovement[];
   user: User | null;
   mode: 'demo' | 'supabase';
   now: string;

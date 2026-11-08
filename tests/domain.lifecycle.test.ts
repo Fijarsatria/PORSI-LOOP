@@ -1,0 +1,92 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { applyAction, createState, DEMO_USERS, expire, recommendation, snapshot, stock } from '../lib/server/engine';
+
+const now = Date.parse('2026-11-08T10:00:00+07:00');
+const seller = DEMO_USERS.seller;
+const student = DEMO_USERS.student;
+const act = (state: ReturnType<typeof createState>, action: Parameters<typeof applyAction>[2], at = now) => applyAction(state, seller, action, at);
+
+test('live installations start with a closed sample menu and no fabricated demand or production', () => {
+  const state = createState(now, true);
+  assert.equal(state.menu.active, false);
+  assert.equal(state.manualBaseline, 0);
+  assert.equal(recommendation(state).target, 2);
+  assert.equal(stock(state), 0);
+  assert.deepEqual(state.history, []);
+  assert.throws(() => applyAction(state, student, { type: 'preorder', portion: 'regular', slotId: 'slot-1' }, now), /tidak tersedia/);
+});
+
+test('pickup rejects early collection and expires exactly at the end of the slot', () => {
+  const state = createState(now);
+  const order = state.orders.find(o => o.slotId === 'slot-1')!;
+  assert.throws(() => act(state, { type: 'pickup_order', code: order.code }), /belum dimulai/);
+  expire(state, Date.parse(state.slots[0].end));
+  assert.equal(order.status, 'no_show');
+  assert.throws(() => act(state, { type: 'pickup_order', code: order.code }, Date.parse(state.slots[0].end)), /sudah diproses/);
+});
+
+test('rescue expiry is consistent at the exact deadline', () => {
+  const state = createState(now);
+  applyAction(state, student, { type: 'claim_rescue', batchId: state.rescues[0].id }, now);
+  expire(state, Date.parse(state.rescues[0].expiresAt));
+  assert.equal(state.rescues[0].active, false);
+  assert.equal(state.claims[0].status, 'expired');
+});
+
+test('numerical stock ledger records actual pickups, sales and reconciliation corrections once', () => {
+  const state = createState(now);
+  const later = now + 240 * 60000;
+  expire(state, later);
+  act(state, { type: 'record_production', quantity: 8, idempotencyKey: 'production' }, later);
+  act(state, { type: 'record_production', quantity: 8, idempotencyKey: 'production' }, later);
+  act(state, { type: 'record_walkin', quantity: 10 }, later);
+  act(state, { type: 'record_waste', quantity: 2, weightKg: 0.4, reason: 'Hasil penimbangan sisa' }, later);
+  act(state, { type: 'reconcile', internal: 1, waste: 3, wasteKg: 0.6, endingStock: 26 }, later);
+  assert.equal(state.closed, true);
+  assert.equal(state.movements!.reduce((sum, movement) => sum + movement.quantity, 0), 26);
+  assert.equal(stock(state), 26);
+  assert.equal(state.movements!.filter(m => m.type === 'production_confirmed').length, 2);
+  assert.ok(state.movements!.every(m => m.reference));
+  assert.deepEqual(snapshot(state, student, 'demo', now).movements, []);
+});
+
+test('incomplete reconciliation is retained and corrected in place; completed sessions inform the next session', () => {
+  const state = createState(now);
+  const initialHistory = state.history.length;
+  const later = now + 240 * 60000;
+  const firstId = state.sessionId;
+  applyAction(state, student, { type: 'preorder', portion: 'regular', slotId: 'slot-1' }, now);
+  expire(state, later);
+  act(state, { type: 'reconcile', endingStock: 31 }, later);
+  assert.equal(state.history.length, initialHistory + 1);
+  assert.equal(state.history.at(-1)!.closed, false);
+  assert.equal(recommendation(state).historyDays, initialHistory);
+  act(state, { type: 'reconcile', endingStock: 32 }, later);
+  assert.equal(state.history.length, initialHistory + 1, 'correction must replace the same session');
+  assert.equal(state.history.at(-1)!.closed, true);
+  assert.throws(() => applyAction(state, student, { type: 'start_session' }, later), /tidak memiliki akses/);
+  act(state, { type: 'start_session', businessDate: '2026-11-08', cutoffTime: '14:30', pickupStart: '15:00', idempotencyKey: 'next' }, later);
+  act(state, { type: 'start_session', businessDate: '2026-11-08', cutoffTime: '14:30', pickupStart: '15:00', idempotencyKey: 'next' }, later);
+  assert.notEqual(state.sessionId, firstId);
+  assert.equal(state.closed, false);
+  assert.equal(stock(state), 0, 'old ending stock must not become new production');
+  assert.equal(state.history.at(-1)!.endingStock, 32);
+  assert.equal(recommendation(state).historyDays, 7);
+  assert.equal(state.orders.length, 0);
+  assert.equal(snapshot(state, student, 'demo', now).orders.length, 1);
+  assert.equal(snapshot(state, { ...student, id: 'another' }, 'demo', now).orders.length, 0);
+  assert.equal(state.menu.outlet, 'Dapur Bu Ratna');
+  assert.throws(() => act(state, { type: 'start_session', businessDate: '2026-11-08', cutoffTime: '14:30', pickupStart: '15:00' }, later), /harus lengkap/);
+});
+
+test('stockout requires unavailable walk-in stock; override retains the original recommendation', () => {
+  const state = createState(now, true);
+  act(state, { type: 'record_stockout', reason: 'Satu pembeli tidak terlayani' });
+  assert.equal(snapshot(state, seller, 'demo', now).metrics.stockouts, 1);
+  const target = recommendation(state).target;
+  act(state, { type: 'override_plan', target: 5, manualBaseline: 3, reason: 'Menyesuaikan jadwal kuliah' });
+  assert.equal(state.override!.originalTarget, target);
+  act(state, { type: 'record_production', quantity: 5 });
+  assert.throws(() => act(state, { type: 'record_stockout', reason: 'Masih ada porsi tersedia' }), /Masih ada stok/);
+});

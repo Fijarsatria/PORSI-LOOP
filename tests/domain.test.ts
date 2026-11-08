@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import { applyAction, availableStock, batchAvailable, createState, DEMO_USERS, DomainError, expire, recommendation, snapshot, stock } from '../lib/server/engine';
 
 const fixed = new Date('2026-11-08T03:00:00.000Z').getTime();
-const fresh = () => createState(fixed, true);
+const fresh = () => {
+  const state = createState(fixed, true);
+  state.menu.active = true;
+  state.menu.prices = { small: 13000, regular: 18000 };
+  return state;
+};
 const seller = DEMO_USERS.seller;
 const student = DEMO_USERS.student;
 
@@ -74,7 +79,7 @@ test('the complete PRD ledger reconciles 50 = 23 pre-order + 20 walk-in + 3 resc
   const state = fresh();
   applyAction(state, seller, { type: 'record_production', quantity: 50 }, fixed);
   for (let i = 0; i < 24; i++) applyAction(state, { ...student, id: `student-${i}` }, { type: 'preorder', slotId: `slot-${i % 3 + 1}`, portion: 'regular', quantity: 1 }, fixed);
-  for (const order of state.orders.slice(0, 23)) applyAction(state, seller, { type: 'pickup_order', orderId: order.id }, fixed + 90 * 60000);
+  for (const order of state.orders.slice(0, 23).sort((a, b) => a.slotId.localeCompare(b.slotId))) applyAction(state, seller, { type: 'pickup_order', orderId: order.id }, new Date(state.slots.find(s => s.id === order.slotId)!.start).getTime());
   const afterSession = fixed + 181 * 60000;
   expire(state, afterSession);
   assert.equal(state.orders.filter(o => o.status === 'no_show').length, 1);

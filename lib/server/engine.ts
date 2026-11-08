@@ -1,11 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import type { Action, AuditLog, HistoricalSession, Menu, Order, Recommendation, RescueBatch, RescueClaim, Role, Slot, Snapshot, User } from '../domain';
+import type { Action, AuditLog, HistoricalSession, Menu, Order, Recommendation, RescueBatch, RescueClaim, Role, Slot, Snapshot, StockMovement, User } from '../domain';
 
 export class DomainError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 export interface StoreState {
   schema: 1;
+  sessionId?: string;
+  movements?: StockMovement[];
+  archivedOrders?: Order[];
+  archivedClaims?: RescueClaim[];
+  stockouts?: number;
   createdAt: string;
   demoClock: string;
   businessDate: string;
@@ -25,7 +30,7 @@ export interface StoreState {
   manualBaseline: number;
   history: HistoricalSession[];
   logs: AuditLog[];
-  override?: { target: number; reason: string; at: string };
+  override?: { target: number; reason: string; at: string; originalTarget?: number };
   acceptedPlan?: { target: number; at: string };
   closed: boolean;
   endingStock?: number;
@@ -53,10 +58,15 @@ export function createState(at = Date.now(), empty = false): StoreState {
   const orders: Order[] = empty ? [] : Array.from({ length: 12 }, (_, i) => ({
     id: `seed-order-${i + 1}`, code: `PL-${(7100 + i).toString()}`, userId: `seed-student-${i + 1}`, customer: `Mahasiswa ${String(i + 1).padStart(2, '0')}`, menuId: menu.id, menuName: menu.name, portion: i % 3 === 0 ? 'small' : 'regular', quantity: 2, price: i % 3 === 0 ? 13000 : 18000, slotId: slots[i % 3].id, slotLabel: slots[i % 3].label, status: 'confirmed', note: '', createdAt: iso(clock - (30 - i) * 60000),
   }));
+  if (empty) {
+    Object.assign(menu, { name: 'Menu gerai Anda', description: 'Lengkapi nama, harga, komposisi, dan alergen sebelum membuka pemesanan.', outlet: 'Gerai kampus', location: 'Lokasi belum diatur', active: false, tags: [], allergens: [], prices: { small: 0, regular: 0 } });
+  }
   const history = empty ? [] : [22, 28, 23, 25, 22, 24, 24].map((walkin, i) => ({ date: iso(clock - (7 - i) * 86400000).slice(0, 10), produced: 50, preorders: 20, walkin, rescue: 2, waste: Math.max(0, 50 - 20 - walkin - 2), wasteKg: Math.round(Math.max(0, 50 - 20 - walkin - 2) * 0.18 * 100) / 100, closed: true }));
-  return { schema: 1, createdAt: iso(at), demoClock: iso(clock), businessDate: date, menu, slots, orders,
+  return { schema: 1, sessionId: randomUUID(), stockouts: 0,
+    movements: empty ? [] : [{ id: 'seed-production', type: 'production_confirmed', quantity: 32, reference: 'seed-production', actor: 'Fixture simulasi', at: iso(clock) }],
+    archivedOrders: [], archivedClaims: [], createdAt: iso(at), demoClock: iso(clock), businessDate: date, menu, slots, orders,
     rescues: empty ? [] : [{ id: 'rescue-today', menuId: menu.id, menuName: menu.name, description: 'Porsi matang yang tersedia lebih awal. Lauk dan sayur mengikuti ketersediaan gerai.', quantity: 6, available: 6, price: 10000, originalPrice: 18000, expiresAt: iso(clock + 210 * 60000), publishedAt: iso(clock), foodChecked: true, active: true }],
-    claims: [], produced: empty ? 0 : 32, walkin: 0, walkinRevenue: 0, internal: 0, waste: 0, wasteKg: 0, capacity: 50, buffer: 2, manualBaseline: 24, history, logs: [], closed: false, idempotency: [] };
+    claims: [], produced: empty ? 0 : 32, walkin: 0, walkinRevenue: 0, internal: 0, waste: 0, wasteKg: 0, capacity: 50, buffer: 2, manualBaseline: empty ? 0 : 24, history, logs: [], closed: false, idempotency: [] };
 }
 
 export function serverNow(state: StoreState, mode: 'demo' | 'supabase', realNow = Date.now()) {
@@ -65,10 +75,10 @@ export function serverNow(state: StoreState, mode: 'demo' | 'supabase', realNow 
 export function expire(state: StoreState, now: number) {
   for (const order of state.orders) {
     const slot = state.slots.find(s => s.id === order.slotId);
-    if (active(order.status) && slot && now > new Date(slot.end).getTime()) order.status = 'no_show';
+    if (active(order.status) && slot && now >= new Date(slot.end).getTime()) order.status = 'no_show';
   }
-  for (const claim of state.claims) if (active(claim.status) && now > new Date(claim.expiresAt).getTime()) claim.status = 'expired';
-  for (const batch of state.rescues) if (now > new Date(batch.expiresAt).getTime()) batch.active = false;
+  for (const claim of state.claims) if (active(claim.status) && now >= new Date(claim.expiresAt).getTime()) claim.status = 'expired';
+  for (const batch of state.rescues) if (now >= new Date(batch.expiresAt).getTime()) batch.active = false;
 }
 export function stock(state: StoreState) {
   return state.produced - sum(state.orders.filter(o => o.status === 'picked_up'), o => o.quantity) - state.walkin - sum(state.claims.filter(c => c.status === 'picked_up'), c => c.quantity) - state.internal - state.waste;
@@ -86,7 +96,7 @@ const newCode = (state: StoreState, prefix: string) => {
 };
 export const availableStock = (state: StoreState) => Math.max(0, stock(state) - preorderHeld(state) - rescueHeld(state));
 export function recommendation(state: StoreState): Recommendation {
-  const history = state.history.filter(h => h.closed).slice(-7);
+  const history = state.history.filter(h => h.closed && h.id !== (state.sessionId ?? state.createdAt) && Number.isFinite(h.walkin)).slice(-7);
   const historyEnough = history.length >= 3;
   const walkinEstimate = historyEnough ? Math.round(sum(history, h => h.walkin) / history.length) : state.manualBaseline;
   const preorders = sum(state.orders.filter(o => !['cancelled', 'expired'].includes(o.status)), o => o.quantity);
@@ -111,12 +121,14 @@ export function snapshot(state: StoreState, user: User | null, mode: 'demo' | 's
   const pickupRate = eligible ? Math.round(picked / eligible * 100) : 0;
   const rescueRevenue = sum(state.claims.filter(c => c.status === 'picked_up'), c => c.price * c.quantity);
   return {
+    sessionId: state.sessionId ?? state.createdAt,
+    movements: isStaff ? state.movements ?? [] : [],
     user, mode, now: iso(now), demoLabel: mode === 'demo' ? 'Simulasi interaktif · data contoh, bukan hasil uji lapangan' : null, businessDate: state.businessDate, menu: state.menu, slots,
-    orders: user ? state.orders.filter(o => isSeller || (user.role === 'student' && o.userId === user.id)) : [],
+    orders: user ? [...state.orders, ...(user.role === 'student' ? state.archivedOrders ?? [] : [])].filter(o => isSeller || (user.role === 'student' && o.userId === user.id)) : [],
     rescues: state.rescues.map(r => ({ ...r, available: r.active ? batchAvailable(state, r) : 0 })),
-    claims: user ? state.claims.filter(c => isSeller || (user.role === 'student' && c.userId === user.id)) : [],
+    claims: user ? [...state.claims, ...(user.role === 'student' ? state.archivedClaims ?? [] : [])].filter(c => isSeller || (user.role === 'student' && c.userId === user.id)) : [],
     recommendation: recommendation(state),
-    metrics: { totalOrders: state.orders.length, activeOrders: state.orders.filter(o => active(o.status)).length, preorderPortions: preorderHeld(state), produced: state.produced, walkin: state.walkin, rescued, rescueReserved: sum(state.claims.filter(c => active(c.status)), c => c.quantity), stock: stock(state), availableStock: availableStock(state), waste: state.waste, wasteKg: state.wasteKg, revenue: isStaff ? sum(state.orders.filter(o => o.status === 'picked_up'), o => o.price * o.quantity) + rescueRevenue + state.walkinRevenue : 0, rescueRevenue: isStaff ? rescueRevenue : 0, pickupRate, preorderEligible: eligible, noShow: sum(state.orders.filter(o => o.status === 'no_show'), o => o.quantity), completionRate: pickupRate },
+    metrics: { stockouts: state.stockouts ?? 0, totalOrders: state.orders.length, activeOrders: state.orders.filter(o => active(o.status)).length, preorderPortions: preorderHeld(state), produced: state.produced, walkin: state.walkin, rescued, rescueReserved: sum(state.claims.filter(c => active(c.status)), c => c.quantity), stock: stock(state), availableStock: availableStock(state), waste: state.waste, wasteKg: state.wasteKg, revenue: isStaff ? sum(state.orders.filter(o => o.status === 'picked_up'), o => o.price * o.quantity) + rescueRevenue + state.walkinRevenue : 0, rescueRevenue: isStaff ? rescueRevenue : 0, pickupRate, preorderEligible: eligible, noShow: sum(state.orders.filter(o => o.status === 'no_show'), o => o.quantity), completionRate: pickupRate },
     logs: isStaff ? state.logs.slice(0, 100) : [], reconciliation, history: isStaff ? state.history : [],
   };
 }
@@ -134,8 +146,39 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
   expire(state, now);
   const key = text(action.idempotencyKey, 100);
   if (key && state.idempotency.includes(`${user.id}:${key}`)) return state;
-  if (state.closed && action.type !== 'reset_demo') throw new DomainError('Sesi sudah direkonsiliasi. Mulai sesi baru sebelum mencatat transaksi.');
+  // Existing installations retain their measured balance without fabricating
+  // individual historical production or sale events during this upgrade.
+  if (!state.movements) state.movements = [{ id: randomUUID(), type: 'opening_balance', quantity: stock(state), reference: state.createdAt, actor: 'system-upgrade', at: iso(now) }];
+  const beforeStock = stock(state); const beforeInternal = state.internal; const beforeWaste = state.waste;
+  let reference = '';
+  if (state.closed && !['reset_demo', 'start_session'].includes(action.type)) throw new DomainError('Sesi sudah direkonsiliasi. Mulai sesi baru sebelum mencatat transaksi.');
   switch (action.type) {
+    case 'start_session': {
+      requireRole(user, ['seller']);
+      if (!state.closed) throw new DomainError('Rekonsiliasi sesi berjalan harus lengkap sebelum membuka sesi berikutnya.');
+      const date = text(action.businessDate, 10); const startTime = text(action.pickupStart, 5); const cutoffTime = text(action.cutoffTime, 5);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(cutoffTime)) throw new DomainError('Isi tanggal, batas pesan, dan awal pickup dalam WIB.');
+      const start = Date.parse(`${date}T${startTime}:00+07:00`); const cutoff = Date.parse(`${date}T${cutoffTime}:00+07:00`);
+      if (!Number.isFinite(start) || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(start)) !== date || cutoff <= now || cutoff > start || start + 90 * 60000 >= Date.parse(`${date}T23:59:59+07:00`)) throw new DomainError('Jadwal harus valid: batas pesan masih di depan, sebelum pickup, dan seluruh slot di hari yang sama.');
+      const previous = { history: state.history, archivedOrders: [...state.archivedOrders ?? [], ...state.orders], archivedClaims: [...state.archivedClaims ?? [], ...state.claims], menu: state.menu, logs: state.logs, capacity: state.capacity, buffer: state.buffer, manualBaseline: state.manualBaseline, slots: state.slots };
+      const next = createState(now, true);
+      next.slots = previous.slots.map((slot, i) => {
+        const from = start + i * 30 * 60000; const until = from + 30 * 60000;
+        const fmt = (ms: number) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
+        return { ...slot, start: iso(from), end: iso(until), cutoff: iso(cutoff), label: `${fmt(from)}–${fmt(until)}`, reserved: 0, available: slot.capacity, closed: false };
+      });
+      Object.assign(state, next, { history: previous.history, archivedOrders: previous.archivedOrders, archivedClaims: previous.archivedClaims, menu: previous.menu, logs: previous.logs, capacity: previous.capacity, buffer: previous.buffer, manualBaseline: previous.manualBaseline, businessDate: date, demoClock: iso(now), idempotency: state.idempotency });
+      delete state.endingStock; delete state.override; delete state.acceptedPlan;
+      log(state, user, 'Sesi baru dibuka', `${date} · pickup ${startTime} WIB · stok awal baru 0; stok akhir lama tetap di arsip`, now);
+      break;
+    }
+    case 'record_stockout': {
+      requireRole(user, ['seller']);
+      if (availableStock(state) > 0) throw new DomainError('Masih ada stok bebas. Stockout hanya dicatat saat stok bebas habis.');
+      const reason = requireReason(action.reason);
+      state.stockouts = (state.stockouts ?? 0) + 1;
+      log(state, user, 'Permintaan walk-in tidak terpenuhi', reason, now); break;
+    }
     case 'preorder': {
       requireRole(user, ['student']);
       if (!state.menu.active) throw new DomainError('Menu sedang tidak tersedia. Pilih menu lain nanti.');
@@ -161,8 +204,10 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
     case 'pickup_order': {
       requireRole(user, ['seller']); const order = state.orders.find(o => o.id === action.orderId || o.code.toUpperCase() === text(action.code).toUpperCase());
       if (!order || !active(order.status)) throw new DomainError('Kode tidak ditemukan atau pesanan sudah diproses.');
+      const slot = state.slots.find(s => s.id === order.slotId);
+      if (!slot || now < new Date(slot.start).getTime()) throw new DomainError('Slot pengambilan belum dimulai. Ambil sesuai waktu pada tiket.');
       if (stock(state) - rescueHeld(state) < order.quantity) throw new DomainError('Stok fisik belum cukup. Catat produksi sebelum memvalidasi pengambilan.');
-      order.status = 'picked_up'; order.pickedUpAt = iso(now); log(state, user, 'Pengambilan pre-order', `${order.code} · ${order.quantity} porsi`, now); break;
+      reference = order.id; order.status = 'picked_up'; order.pickedUpAt = iso(now); log(state, user, 'Pengambilan pre-order', `${order.code} · ${order.quantity} porsi`, now); break;
     }
     case 'ready_order': {
       requireRole(user, ['seller']); const order = state.orders.find(o => o.id === action.orderId);
@@ -183,11 +228,12 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
     }
     case 'override_plan': {
       requireRole(user, ['seller']); const reason = requireReason(action.reason);
+      const originalTarget = recommendation(state).target;
       if (action.capacity !== undefined) state.capacity = integer(action.capacity, 'Kapasitas', Math.max(state.produced, preorderHeld(state)), 500);
       if (action.buffer !== undefined) state.buffer = integer(action.buffer, 'Buffer', 0, 50);
       if (action.manualBaseline !== undefined) state.manualBaseline = integer(action.manualBaseline, 'Baseline walk-in', 0, 500);
       const target = integer(action.target, 'Target produksi', Math.min(state.capacity, preorderHeld(state)), state.capacity);
-      state.override = { target, reason, at: iso(now) }; log(state, user, 'Penyesuaian rencana', `Target ${target} porsi · ${reason}`, now); break;
+      state.override = { target, reason, at: iso(now), originalTarget }; log(state, user, 'Penyesuaian rencana', `Target ${target} porsi · ${reason}`, now); break;
     }
     case 'accept_plan': {
       requireRole(user, ['seller']); const target = recommendation(state).target;
@@ -198,12 +244,15 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
     case 'save_menu': {
       requireRole(user, ['seller']);
       if (action.name !== undefined) { const name = text(action.name, 100); if (name.length < 3) throw new DomainError('Nama menu sedikitnya 3 karakter.'); state.menu.name = name; }
+      if (action.outlet !== undefined) { const outlet = text(action.outlet, 100); if (!outlet) throw new DomainError('Isi nama gerai.'); state.menu.outlet = outlet; }
+      if (action.location !== undefined) { const location = text(action.location, 150); if (!location) throw new DomainError('Isi lokasi gerai.'); state.menu.location = location; }
       if (action.description !== undefined) state.menu.description = text(action.description, 500);
       if (typeof action.active === 'boolean') state.menu.active = action.active;
       if (action.smallPrice !== undefined) state.menu.prices.small = integer(action.smallPrice, 'Harga porsi kecil', 0, 1000000);
       if (action.regularPrice !== undefined) state.menu.prices.regular = integer(action.regularPrice, 'Harga porsi reguler', 0, 1000000);
       if (action.variableCost !== undefined) state.menu.variableCost = integer(action.variableCost, 'Biaya variabel per porsi', 0, 1000000);
       if (Array.isArray(action.allergens)) state.menu.allergens = action.allergens.filter(a => typeof a === 'string').map(a => text(a, 50)).slice(0, 10);
+      if (state.menu.active && (!state.menu.description || state.menu.prices.small <= 0 || state.menu.prices.regular <= 0)) throw new DomainError('Lengkapi deskripsi dan harga positif sebelum membuka menu.');
       log(state, user, 'Perubahan menu', state.menu.name, now); break;
     }
     case 'save_slot': {
@@ -248,7 +297,7 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       requireRole(user, ['seller']); const claim = state.claims.find(c => c.id === action.claimId || c.code.toUpperCase() === text(action.code).toUpperCase());
       if (!claim || !active(claim.status) || new Date(claim.expiresAt).getTime() <= now) throw new DomainError('Kode rescue tidak ditemukan, kedaluwarsa, atau sudah digunakan.');
       if (stock(state) < claim.quantity) throw new DomainError('Stok fisik tidak mencukupi. Periksa pencatatan stok.');
-      claim.status = 'picked_up'; claim.pickedUpAt = iso(now); log(state, user, 'Rescue diambil', `${claim.code} · ${claim.quantity} porsi`, now); break;
+      reference = claim.id; claim.status = 'picked_up'; claim.pickedUpAt = iso(now); log(state, user, 'Rescue diambil', `${claim.code} · ${claim.quantity} porsi`, now); break;
     }
     case 'record_waste':
     case 'record_internal': {
@@ -274,12 +323,28 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       const difference = stock(state) - endingStock;
       state.endingStock = endingStock; state.closed = difference === 0;
       if (state.closed) state.rescues.forEach(r => { r.active = false; });
+      const entry: HistoricalSession = { id: state.sessionId ?? state.createdAt, date: state.businessDate, produced: state.produced, preorders: sum(state.orders.filter(o => o.status === 'picked_up'), o => o.quantity), walkin: state.walkin, rescue: sum(state.claims.filter(c => c.status === 'picked_up'), c => c.quantity), waste: state.waste, wasteKg: state.wasteKg, internal: state.internal, endingStock, difference, closed: state.closed };
+      const existing = state.history.findIndex(h => h.id === entry.id);
+      if (existing < 0) state.history.push(entry); else state.history[existing] = entry;
       log(state, user, state.closed ? 'Rekonsiliasi sesi lengkap' : 'Rekonsiliasi belum lengkap', `Stok akhir ${endingStock} porsi · selisih ${difference} · internal ${state.internal} · waste ${state.waste} porsi/${state.wasteKg} kg`, now); break;
     }
     case 'reset_demo': throw new DomainError('Reset ditangani penyimpanan demo.');
     default: throw new DomainError('Tindakan tidak dikenali.');
   }
   if (stock(state) < 0) throw new DomainError('Transaksi ditolak karena stok akan negatif.', 409);
+  if (action.type !== 'start_session') {
+    const movement = (type: StockMovement['type'], quantity: number) => {
+      if (!quantity) return;
+      (state.movements ??= []).push({ id: randomUUID(), type, quantity, reference: reference || state.logs[0]?.id || randomUUID(), actor: user.id, at: iso(now) });
+    };
+    if (action.type === 'reconcile') {
+      movement('reconciliation_correction', beforeInternal - state.internal);
+      movement('reconciliation_correction', beforeWaste - state.waste);
+    } else {
+      const kinds: Record<string, StockMovement['type']> = { record_production: 'production_confirmed', pickup_order: 'preorder_pickup', record_walkin: 'walkin_sale', pickup_rescue: 'rescue_pickup', record_internal: 'internal', record_waste: 'waste' };
+      if (kinds[action.type]) movement(kinds[action.type], stock(state) - beforeStock);
+    }
+  }
   if (key) state.idempotency = [...state.idempotency.slice(-999), `${user.id}:${key}`];
   return state;
 }

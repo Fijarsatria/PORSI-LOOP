@@ -71,6 +71,7 @@ function useOperations() {
     advance_demo:
       "Waktu simulasi dimajukan. Status pesanan dan reservasi diperbarui.",
     reconcile: "Catatan rekonsiliasi disimpan.",
+    record_stockout: "Satu permintaan yang tidak terlayani dicatat.",
   };
   return {
     ...context,
@@ -340,6 +341,7 @@ function WalkinForm({ state }: { state: Snapshot }) {
         Stok bebas komitmen: {state.metrics.availableStock} porsi. Kanal ini
         dicatat terpisah dari pre-order.
       </p>
+      {state.metrics.availableStock === 0 && <Button type="button" variant="ghost" disabled={busy} onClick={() => action({ type: "record_stockout", reason: "Satu permintaan walk-in tidak terpenuhi karena stok bebas habis." })}>Catat 1 permintaan tak terlayani</Button>}
     </form>
   );
 }
@@ -363,6 +365,10 @@ function MenuSettings({
             type: "save_menu",
             name: data.get("name"),
             description: data.get("description"),
+            outlet: data.get("outlet"),
+            location: data.get("location"),
+            allergens: String(data.get("allergens") ?? "").split(",").map(value => value.trim()).filter(Boolean),
+            variableCost: number(data.get("variableCost")),
             regularPrice: number(data.get("regularPrice")),
             smallPrice: number(data.get("smallPrice")),
             active: data.get("active") === "on",
@@ -371,6 +377,10 @@ function MenuSettings({
           onDone();
       }}
     >
+      <div className="form-grid">
+        <Field label="Nama gerai"><input name="outlet" defaultValue={state.menu.outlet} maxLength={100} required /></Field>
+        <Field label="Lokasi pengambilan"><input name="location" defaultValue={state.menu.location} maxLength={150} required /></Field>
+      </div>
       <Field label="Nama menu">
         <input
           name="name"
@@ -379,6 +389,8 @@ function MenuSettings({
           required
         />
       </Field>
+      <Field label="Alergen yang diketahui" hint="Pisahkan dengan koma. Jika belum diketahui, konfirmasikan komposisi sebelum membuka menu."><input name="allergens" defaultValue={state.menu.allergens.join(", ")} maxLength={500} placeholder="Contoh: kedelai, gandum, telur" /></Field>
+      <Field label="Biaya variabel per porsi (Rp)" hint="Biaya bahan dan biaya variabel aktual; bukan harga jual."><input name="variableCost" type="number" min="0" max="1000000" step="1" defaultValue={state.menu.variableCost} required /></Field>
       <Field label="Deskripsi menu">
         <textarea
           name="description"
@@ -662,6 +674,7 @@ function Planning({ state }: { state: Snapshot }) {
                   Anda menyesuaikan menjadi {r.override.target} porsi
                 </strong>
                 <p>{r.override.reason}</p>
+                {r.override.originalTarget !== undefined && <small>Saran awal saat keputusan: {r.override.originalTarget} porsi.</small>}
                 <small>Tercatat pukul {clock(r.override.at)} WIB</small>
               </div>
             </div>
@@ -1435,6 +1448,35 @@ function Rescue({ state }: { state: Snapshot }) {
   );
 }
 
+function SessionStart({ state }: { state: Snapshot }) {
+  const { action, busy, toast } = useApp();
+  const tomorrow = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date(Date.parse(state.now) + 86400000));
+  return <section className="panel stack">
+    <PanelHeading title="Siapkan sesi berikutnya" description="Histori sesi ini tetap tersimpan. Produksi sesi baru dimulai dari nol." />
+    <div className="callout"><Info size={20}/><p>Stok akhir {state.reconciliation.endingStock} porsi tetap tercatat pada sesi lama. Stok tersebut tidak otomatis dipindahkan atau dianggap sebagai produksi baru.</p></div>
+    <form className="stack" onSubmit={async event => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      if (await action({ type: "start_session", businessDate: data.get("businessDate"), cutoffTime: data.get("cutoffTime"), pickupStart: data.get("pickupStart") })) toast("Sesi baru dibuka. Menu dan pengaturan gerai tetap tersimpan.");
+    }}>
+      <Field label="Tanggal pelayanan (WIB)"><input name="businessDate" type="date" defaultValue={tomorrow} required /></Field>
+      <div className="form-grid">
+        <Field label="Batas pemesanan (WIB)"><input name="cutoffTime" type="time" defaultValue="10:30" required /></Field>
+        <Field label="Awal slot pengambilan (WIB)" hint="Tiga slot, masing-masing 30 menit."><input name="pickupStart" type="time" defaultValue="11:30" required /></Field>
+      </div>
+      <Button loading={busy} type="submit"><Plus size={17}/>Buka sesi baru</Button>
+    </form>
+  </section>;
+}
+
+function MovementLedger({ state }: { state: Snapshot }) {
+  const labels = { opening_balance: "Saldo saat pembaruan sistem", production_confirmed: "Produksi selesai", preorder_pickup: "Pre-order diambil", walkin_sale: "Penjualan langsung", rescue_pickup: "Rescue diambil", internal: "Konsumsi internal", waste: "Makanan dibuang", reconciliation_correction: "Koreksi rekonsiliasi" };
+  return <section className="panel">
+    <PanelHeading title="Pergerakan stok fisik" description="Porsi bertambah setelah produksi dan berkurang setelah penyerahan atau pencatatan penggunaan." />
+    {state.movements.length ? <div className="ops-table-wrap"><table className="ops-table"><thead><tr><th scope="col">Waktu (WIB)</th><th scope="col">Pergerakan</th><th scope="col">Porsi</th><th scope="col">Referensi</th></tr></thead><tbody>{state.movements.slice().reverse().map(movement => <tr key={movement.id}><td>{clock(movement.at)}</td><td>{labels[movement.type]}</td><td>{movement.quantity > 0 ? "+" : ""}{movement.quantity}</td><td><code title={movement.reference}>{movement.reference.slice(0, 8)}</code></td></tr>)}</tbody></table></div> : <p className="muted">Belum ada pergerakan stok pada sesi ini.</p>}
+  </section>;
+}
+
 function Closing({ state }: { state: Snapshot }) {
   const { action, busy } = useOperations();
   const r = state.reconciliation;
@@ -1476,6 +1518,7 @@ function Closing({ state }: { state: Snapshot }) {
           {r.complete ? "Rekonsiliasi lengkap" : "Perlu rekonsiliasi"}
         </Badge>
       </div>
+      {r.complete && <SessionStart state={state} />}
       <div className="ops-planning-layout">
         <section className="panel">
           <PanelHeading
@@ -1628,7 +1671,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
   if (tab === "planning") return <Planning state={state} />;
   if (tab === "orders") return <Orders state={state} />;
   if (tab === "rescue") return <Rescue state={state} />;
-  if (tab === "closing") return <Closing state={state} />;
+  if (tab === "closing") return <Closing key={state.sessionId} state={state} />;
   return <SellerOverview state={state} />;
 }
 
@@ -1910,8 +1953,8 @@ function Impact({ state }: { state: Snapshot }) {
             value={eligible ? `${state.metrics.pickupRate}%` : "—"}
             note={
               eligible
-                ? `${r.preorderPickedUp} dari ${eligible} porsi selesai/terlewat`
-                : "Belum ada porsi yang selesai/terlewat"
+                ? `${r.preorderPickedUp} dari ${eligible} porsi dikonfirmasi (termasuk yang masih menunggu)`
+                : "Belum ada pre-order terkonfirmasi"
             }
             icon={TicketCheck}
           />
@@ -1929,6 +1972,7 @@ function Impact({ state }: { state: Snapshot }) {
           />
         </div>
       </section>
+      <div className="callout"><Info size={20}/><p><strong>{state.metrics.stockouts} permintaan walk-in tidak terpenuhi</strong> dicatat gerai pada sesi ini. Angka hanya mencakup kejadian yang benar-benar dicatat, bukan perkiraan permintaan hilang.</p></div>
       <div className="grid-2">
         <section className="panel ops-environment-card">
           <div className="ops-round-icon">
@@ -2097,6 +2141,7 @@ function Ledger({ state }: { state: Snapshot }) {
         />
         <StockFlow state={state} />
       </section>
+      <MovementLedger state={state} />
       <section className="panel">
         <div className="ops-table-toolbar">
           <h2>Log aktivitas</h2>

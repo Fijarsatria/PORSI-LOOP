@@ -27,20 +27,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef(false);
   const generation = useRef(0);
+  const pendingActions = useRef(new Map<string, string>());
   const toast = useCallback((message: string) => {
     setNotification(message);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setNotification(""), 5000);
   }, []);
   const refresh = useCallback(async () => {
-    const version = generation.current;
+    if (inFlight.current) return;
+    const version = ++generation.current;
     try {
       const response = await fetch("/api/state", { cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Data belum dapat dimuat. Coba lagi.");
       if (version === generation.current) { setState(result); setError(""); }
-    } catch (e) { setError(e instanceof Error ? e.message : "Koneksi terputus. Coba lagi."); }
-    finally { setLoading(false); }
+    } catch (e) { if (version === generation.current) setError(e instanceof Error ? e.message : "Koneksi terputus. Coba lagi."); }
+    finally { if (version === generation.current) setLoading(false); }
   }, []);
   useEffect(() => { void refresh(); const id = setInterval(() => { if (!document.hidden && !inFlight.current) void refresh(); }, 15000); return () => { clearInterval(id); if (timer.current) clearTimeout(timer.current); }; }, [refresh]);
   const mutate = async (url: string, method: string, payload?: Record<string, unknown>) => {
@@ -53,9 +55,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error(result.error || "Perubahan belum tersimpan. Coba lagi.");
       setState(result); return true;
     } catch (e) { const message = e instanceof Error ? e.message : "Koneksi terputus. Coba lagi."; setError(message); toast(message); return false; }
-    finally { inFlight.current = false; setBusy(false); }
+    finally { inFlight.current = false; setBusy(false); setLoading(false); }
   };
-  return <MotionConfig reducedMotion="user"><AppContext.Provider value={{ state, loading, busy, error, refresh, toast, action: payload => mutate("/api/actions", "POST", { ...payload, idempotencyKey: crypto.randomUUID() }), login: (role, demo, email, password) => mutate("/api/auth", "POST", { role, demo, email, password }), logout: async () => { await mutate("/api/auth", "DELETE"); } }}>
+  const action = async (payload: Record<string, unknown>) => {
+    // A lost response is ambiguous: retry the same intent with the same key.
+    // Clear it only after the server confirms success, including a replay.
+    const intent = JSON.stringify([state?.sessionId, payload]);
+    const key = pendingActions.current.get(intent) ?? crypto.randomUUID();
+    pendingActions.current.set(intent, key);
+    const success = await mutate("/api/actions", "POST", { ...payload, idempotencyKey: key });
+    if (success) pendingActions.current.delete(intent);
+    return success;
+  };
+  return <MotionConfig reducedMotion="user"><AppContext.Provider value={{ state, loading, busy, error, refresh, toast, action, login: async (role, demo, email, password) => { const success = await mutate("/api/auth", "POST", { role, demo, email, password }); if (success) pendingActions.current.clear(); return success; }, logout: async () => { if (await mutate("/api/auth", "DELETE")) pendingActions.current.clear(); } }}>
     {children}
     {error && !state && !loading && <div className="connection-error" role="alert"><WifiOff size={20}/><span>{error}</span><button onClick={() => void refresh()}>Coba lagi</button></div>}
     <div className="toast-region" role="status" aria-live="polite" aria-atomic="true"><AnimatePresence>{notification && <motion.div className="toast" initial={{ opacity: 0, y: 20, scale: .96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12 }}><CheckCircle2 size={21}/><span>{notification}</span><button aria-label="Tutup pemberitahuan" onClick={() => setNotification("")}><X size={18}/></button></motion.div>}</AnimatePresence></div>
