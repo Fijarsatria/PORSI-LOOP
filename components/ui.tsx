@@ -12,7 +12,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from './provider';
-import { LoadingExperience } from './loading-experience';
+import { LoadingExperience } from './landing/loading-experience';
 import { lockPageScroll } from '@/lib/client/scroll-lock';
 
 export function Brand({

@@ -7,7 +7,7 @@
 | `demo`     | Node.js 24 LTS dan disk persisten                       | Kredensial staf wajib, seluruh angka simulasi, satu instance server  |
 | `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Aktif pada Vercel; skema, akses dan alur transaksi cloud sudah diuji |
 
-Proyek aktif: **PORSI LOOP**, organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`. Skema dan pembatasan akses sudah diuji pada database cloud. [Kontrak, bukti dan query verifikasi](../supabase/README.md) tersedia di repositori. Runtime web aktif di [porsi-loop.vercel.app](https://porsi-loop.vercel.app). Pengujian HTTPS pada aplikasi publik dan database Supabase sudah lulus; lihat [bukti rilis](release-status.md).
+Proyek aktif: **PORSI LOOP**, organisasi **Fijarsatria**, region Singapore, referensi `eemuhrlpfewujfuflapl`. Skema dan pembatasan akses sudah diuji pada database cloud. [Kontrak, bukti dan query verifikasi](../../supabase/README.md) tersedia di repositori. Runtime web aktif di [porsi-loop.vercel.app](https://porsi-loop.vercel.app). Pengujian HTTPS pada aplikasi publik dan database Supabase sudah lulus; lihat [bukti rilis](../release-status.md).
 
 ## Server Node.js
 
@@ -26,19 +26,10 @@ Mode demo membaca `PORSI_DATA_DIR` (bawaan `.data/`). Pasang volume persisten, g
 
 1. Pilih proyek milik tim yang aksesnya sudah diberikan. Ambil project URL, publishable key, serta secret key server melalui dashboard. Service role key hanya berada di secrets server.
 2. Tinjau dan pasang `supabase/schemas/porsi.sql` melalui SQL Editor atau workflow skema deklaratif tim. Tabel `porsi_state` dan `porsi_sessions` sengaja tidak dapat dibaca oleh `anon`/`authenticated`; server memakai service role. Fungsi compare-and-swap hanya dapat dijalankan service role dan memakai `SECURITY INVOKER`.
-3. Isi konfigurasi berikut pada host. Buat `SESSION_SECRET` dengan generator kriptografis, minimal 32 karakter. Jangan menggunakan teks contoh sebagai secret.
-
-```dotenv
-PORSI_MODE=supabase
-SUPABASE_URL=https://PROJECT.supabase.co
-SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-SUPABASE_SECRET_KEY=...
-SESSION_SECRET=...
-APP_ORIGIN=https://domain-tujuan.example
-```
+3. Isi konfigurasi privat pada host dengan mengikuti [panduan konfigurasi](configuration.md). Buat `SESSION_SECRET` menggunakan generator kriptografis dengan minimal 32 karakter. Jangan menaruh file environment atau nilai kredensial di repository.
 
 4. Buat akun pengelola pertama melalui Admin API, dengan password acak privat serta `app_metadata.role=admin`. Opsional: isi `PORSI_OWNER_USER_ID` dengan UUID Auth akun tersebut. Jangan memberikan hak pengelola berdasarkan email yang diklaim saat pendaftaran. Customer adalah peran bawaan. Administrator tepercaya menetapkan `app_metadata.role` menjadi `seller` atau `admin` menggunakan Admin API; penjual juga wajib memiliki `app_metadata.outletId` yang cocok dengan gerainya. `user_metadata` dan pilihan peran pada formulir tidak memberikan hak akses.
-5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud baru dimulai tanpa transaksi, produksi, histori, dan penawaran; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Untuk presentasi, data contoh bertanda `sample: true` dapat ditambahkan secara eksplisit (lihat [backend](backend.md)). Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
+5. Jalankan pemeriksaan konfigurasi, build, lalu server. Instalasi cloud baru dimulai tanpa transaksi, produksi, histori, dan penawaran; delapan belas menu awal pada enam gerai tidak aktif dan perlu dikonfigurasi. Untuk presentasi, data contoh bertanda `sample: true` dapat ditambahkan secara eksplisit (lihat [backend](../reference/backend.md)). Gerai harus mengisi nama, lokasi, harga, deskripsi, dan informasi alergen sebelum mengaktifkan menu.
 6. Uji login setiap peran, penolakan peran yang salah, pembatalan sebelum cutoff, konkurensi slot terakhir, pickup, logout/cookie lama, dan rekonsiliasi pada proyek uji. Jangan menguji reset simulasi terhadap layanan nyata; operasi tersebut memang ditolak.
 7. Jalankan Security/Performance Advisors di dashboard Supabase dan tinjau hasilnya sebelum pilot. Pengujian lokal tidak menggantikan validasi RLS/privilege dan koneksi pada proyek nyata.
 

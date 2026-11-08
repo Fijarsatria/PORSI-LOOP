@@ -10,7 +10,7 @@ import {
   Utensils,
   ShoppingBag,
 } from 'lucide-react';
-import { useApp } from './provider';
+import { useApp } from '../provider';
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { clock, statusNames } from '@/lib/domain';

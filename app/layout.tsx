@@ -3,8 +3,8 @@ import '@fontsource-variable/plus-jakarta-sans';
 import '@fontsource-variable/dm-sans';
 import './globals.css';
 import { AppProvider } from '@/components/provider';
-import { IntroSplash } from '@/components/intro-splash';
-import { introGate } from '@/components/intro-gate';
+import { IntroSplash } from '@/components/landing/intro-splash';
+import { introGate } from '@/components/landing/intro-gate';
 
 export const metadata: Metadata = {
   title: {

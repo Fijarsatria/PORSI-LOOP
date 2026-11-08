@@ -7,7 +7,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Brand } from '@/components/ui';
-import { Founders } from '@/components/founders';
+import { Founders } from '@/components/landing/founders';
 export const metadata = { title: 'Tentang & sumber data' };
 export default function Page() {
   return (

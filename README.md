@@ -1,83 +1,94 @@
-<p align="center"><img src="public/brand/logo.png" alt="PORSI LOOP" width="320" /></p>
+<p align="center">
+  <img src="public/brand/logo.png" alt="Logo PORSI LOOP" width="280" />
+</p>
+
 <h1 align="center">PORSI LOOP</h1>
-<p align="center"><strong>Porsi pas. Waktu lebih lepas.</strong><br />Kantin yang lebih mudah dipesan dan lebih terencana.<br />Trinity LFA · CR YOUTH 2026</p>
-<p align="center"><a href="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml"><img src="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml/badge.svg" alt="Pemeriksaan aplikasi" /></a></p>
+<p align="center"><strong>Porsi pas. Waktu lebih lepas.</strong></p>
+<p align="center">Pemesanan makanan kantin yang membantu pembeli, gerai, dan pengelola bekerja lebih terencana.</p>
+<p align="center">
+  <a href="https://porsi-loop.vercel.app">Lihat aplikasi</a> ·
+  <a href="#cara-menjalankan">Jalankan lokal</a> ·
+  <a href="docs/README.md">Dokumentasi</a>
+</p>
+<p align="center">
+  <a href="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml">
+    <img src="https://github.com/Fijarsatria/PORSI-LOOP/actions/workflows/ci.yml/badge.svg" alt="Status CI" />
+  </a>
+</p>
 
-PORSI LOOP membantu customer memesan makanan sebelum tiba di kantin, membantu gerai menyiapkan pesanan, dan membantu pengelola memahami kegiatan kantinnya. Catatan produksi, penjualan, promo, dan sisa makanan mendukung keputusan memasak yang lebih terencana.
+## Tentang proyek
 
-[Buka web](https://porsi-loop.vercel.app) · [Mulai lokal](#menjalankan-lokal) · [Dokumentasi](docs/README.md) · [Database](supabase/README.md) · [Kontribusi](CONTRIBUTING.md)
+**PORSI LOOP** membantu customer memesan makanan sebelum datang ke kantin, gerai mengatur pesanan dan stok, serta pengelola memantau aktivitas kantin. Produksi, penjualan, promo, dan sisa makanan dicatat agar keputusan memasak tidak hanya berdasarkan perkiraan.
 
-## Satu kantin, tiga ruang
+Proyek **Trinity LFA · CR YOUTH 2026** ini memiliki tiga ruang utama:
 
-| Ruang            | Fitur utama                                                                                              | Akses                                              |
-| ---------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Customer         | Pesan tanpa wajib login, Dine in/Pick up, tiket QR, chat gerai, promo, rating setelah diterima           | `/customer` · akun opsional `/masuk` dan `/daftar` |
-| Pemilik gerai    | Antrean pesanan, scan QR, foto/menu/stok, penjualan langsung, riwayat harian, promo dan rencana produksi | `/masuk/gerai`                                     |
-| Pengelola kantin | Ringkasan visual, pemasukan, penambahan gerai/akun penjual, laporan produksi dan sisa                    | `/akses-pengelola`                                 |
+| Pengguna | Yang bisa dilakukan | Halaman |
+| --- | --- | --- |
+| **Customer** | Lihat menu, pesan **Dine in/Pick up**, cek status dan QR pengambilan, chat, beri rating | [`/customer`](https://porsi-loop.vercel.app/customer) |
+| **Gerai** | Kelola menu/stok, antrean, scan QR, penjualan langsung, promo, dan rencana produksi | [`/masuk/gerai`](https://porsi-loop.vercel.app/masuk/gerai) |
+| **Pengelola** | Pantau ringkasan kantin, laporan, gerai, dan akun penjual | [`/akses-pengelola`](https://porsi-loop.vercel.app/akses-pengelola) |
 
-Nomor telepon wajib pada pemesanan makanan dan promo. Antrean gerai terdiri dari **Masuk → Diproses → Siap diambil → Selesai**; menandai siap belum menyelesaikan pesanan.
+Customer dapat memesan sebagai tamu; akun bersifat opsional. Pemesanan meminta nomor telepon dan pilihan pengambilan.
 
-Sesi belanja dan sesi kerja terpisah. Customer hanya mendapat tiket miliknya; penjual hanya mengelola gerainya; laporan pengelola tidak membuka tiket atau chat pribadi customer. Pengambilan memakai QR sekali pakai. Reservasi menahan kuota, sedangkan stok berkurang saat penyerahan atau penjualan langsung dicatat.
+### Alur singkat
 
-## Alur pemesanan
+1. **Customer** memilih menu, jumlah porsi, waktu, serta metode pemesanan.
+2. **Gerai** mengelola antrean: **Masuk → Diproses → Siap diambil → Selesai**.
+3. **Customer** menunjukkan tiket QR setelah pesanan siap dan pembayaran terverifikasi.
+4. **Gerai** memindai QR untuk mencatat penyerahan sekali saja. Data stok dan riwayat ikut diperbarui.
 
-1. Customer memilih menu, mengisi nomor telepon, lalu memilih **Dine in** atau **Pick up**. Akun customer bersifat opsional.
-2. Gerai menerima pesanan dan memperbarui antrean: **Masuk → Diproses → Siap diambil → Selesai**.
-3. Setelah pembayaran diverifikasi dan makanan siap, customer menunjukkan QR. Gerai memindainya untuk mencatat penyerahan satu kali.
-4. Customer dapat menghubungi gerai lewat chat dan memberikan rating setelah pesanan diterima. Gerai mencatat produksi, penjualan langsung, promo, dan sisa makanan untuk perencanaan berikutnya.
+> **Catatan:** Pembayaran digital pada versi demo masih **simulasi**, bukan transaksi uang sungguhan. Angka dan menu contoh juga bukan hasil uji lapangan.
 
-## Memulai dari web publik
+## Cara menjalankan
 
-1. Buka [PORSI LOOP](https://porsi-loop.vercel.app) dan pilih **Jelajahi menu** untuk melihat katalog sebagai customer.
-2. Pengelola masuk melalui [akses pengelola](https://porsi-loop.vercel.app/akses-pengelola), kemudian membuat gerai dan akun penjual di **Gerai & akses**.
-3. Penjual masuk melalui [akses gerai](https://porsi-loop.vercel.app/masuk/gerai), melengkapi menu dan mencatat stok sebelum menerima pesanan.
-
-Menu awal cloud perlu dikonfigurasi sebelum dapat dipesan. Untuk mencoba data contoh langsung, gunakan mode lokal berikut.
-
-## Menjalankan lokal
-
-Gunakan **Node.js 24 LTS** (minimum 22.13).
+Siapkan **Node.js 24 LTS** (minimum **22.13**), lalu jalankan dari folder proyek:
 
 ```bash
+git clone https://github.com/Fijarsatria/PORSI-LOOP.git
+cd PORSI-LOOP
 npm ci
 npm run dev
 ```
 
-Pada Windows, Anda juga dapat mengeklik dua kali [`scripts/mulai-lokal.cmd`](scripts/mulai-lokal.cmd). Biarkan jendela server terbuka selama memakai aplikasi.
+Buka **http://localhost:3000/customer** di browser. Secara bawaan, aplikasi berjalan dalam **mode demo** dengan data contoh dan penyimpanan SQLite lokal. Tidak perlu menyiapkan Supabase untuk mencoba aplikasi.
 
-Buka [localhost:3000/customer](http://localhost:3000/customer). Mode bawaan memakai SQLite persisten dengan **6 gerai dan 18 menu contoh**. Seluruh transaksi demo adalah simulasi.
+Pengguna Windows juga dapat menggunakan [`scripts/mulai-lokal.cmd`](scripts/mulai-lokal.cmd) setelah dependensi terpasang.
 
-<details>
-<summary>Akun demo pengembangan</summary>
+### Menggunakan Supabase
 
-| Akses          | Email                     | Kata sandi lokal    |
-| -------------- | ------------------------- | ------------------- |
-| Customer       | `student@porsiloop.local` | `PorsiStudent2026!` |
-| Dapur Bu Ratna | `seller@porsiloop.local`  | `PorsiSeller2026!`  |
-| Pengelola      | `admin@porsiloop.local`   | `PorsiAdmin2026!`   |
+Untuk menjalankan mode cloud, siapkan konfigurasi privat di perangkat atau pengaturan environment variables hosting sesuai [panduan konfigurasi](docs/guides/configuration.md).
 
-Gerai lain: `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada domain `@porsiloop.local`, dengan kata sandi penjual demo yang sama. Kredensial ini hanya default pengembangan. Hosting mode demo memerlukan kredensial sendiri. Di Supabase, akun penjual `seller@porsiloop.local` (Dapur Bu Ratna) dan pengelola `admin@porsiloop.local` dibuat dengan kata sandi yang sama khusus untuk presentasi. Ganti kata sandi tersebut sebelum web dipakai untuk data nyata.
+**File environment dan kredensial tidak boleh dimasukkan ke Git.** Panduan pemasangan skema dan pemeriksaannya ada di [folder Supabase](supabase/README.md).
 
-</details>
-
-Konfigurasi lokal dibuat sendiri dalam `.env.local`, yang diabaikan Git. Daftar variabel dan contoh tanpa kunci tersedia di [panduan konfigurasi](docs/configuration.md). Tidak ada berkas `.env*` yang dilacak repositori.
-
-## Struktur repositori
+## Struktur proyek
 
 ```text
-app/                 Halaman Next.js dan API server
-components/          Antarmuka customer, gerai, pengelola dan komponen bersama
-lib/                 Model bisnis, autentikasi dan adapter penyimpanan
-public/              Identitas visual, ilustrasi dan aset statis
-supabase/            Skema database dan pemeriksaan akses
-scripts/             Pemeriksaan konfigurasi
-tests/               Pengujian unit, API dan browser
-docs/                Panduan produk dan operasional
-docs/riwayat/        Catatan pembaruan terdahulu
-.github/workflows/   Pemeriksaan otomatis setiap push dan pull request
+PORSI-LOOP/
+├── app/                 Halaman, layout, dan API Next.js
+├── components/
+│   ├── customer/        UI pemesanan dan pengalaman customer
+│   ├── landing/         Beranda, intro, dan bagian pengenalan
+│   ├── operations/      Antarmuka gerai dan pengelola
+│   └── ...              Komponen bersama, autentikasi, provider
+├── lib/
+│   ├── client/          Utilitas untuk browser
+│   └── server/          Logika server, sesi, transaksi, database
+├── public/              Logo, ikon, dan gambar menu
+├── supabase/            Skema SQL dan verifikasi database
+├── scripts/             Perintah bantu pengembangan
+├── tests/               Tes unit, integrasi, dan end-to-end
+├── docs/
+│   ├── guides/          Cara konfigurasi, demo, dan deployment
+│   ├── reference/       Alur sistem, backend, dan aturan bisnis
+│   └── riwayat/         Catatan perubahan dan audit terdahulu
+└── .github/workflows/   Pemeriksaan otomatis (CI)
 ```
 
-## Pemeriksaan
+Folder `app/` mengikuti **Next.js App Router**; lokasi dan nama route sengaja tidak diubah agar URL aplikasi tetap sama. `components/` dikelompokkan menurut bagian aplikasi, sedangkan `lib/` menyimpan aturan dan akses data. Aset publik tetap berada di `public/`.
+
+**Teknologi:** Next.js 16, React 19, TypeScript, SQLite (demo), PostgreSQL/Supabase (cloud), serta Playwright untuk pengujian browser.
+
+## Pemeriksaan proyek
 
 ```bash
 npm run check:config
@@ -89,17 +100,21 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Tes browser menggunakan database sementara dan server produksi tersendiri. Cakupan meliputi isolasi pengguna/gerai, pembayaran demo, stok, QR sekali pakai, percakapan, foto menu, navigasi, keyboard dan tampilan mobile/desktop.
+Perintah ini juga menjadi dasar pemeriksaan di GitHub Actions. Tes browser memakai server dan data pengujian terpisah; hasil CI terbaru dapat dilihat melalui badge di atas.
 
-## Data dan kesiapan layanan
+## Panduan lebih lanjut
 
-| Mode     | Penyimpanan                                                                    | Penggunaan                                                         |
-| -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Demo     | SQLite di disk lokal                                                           | Demonstrasi dan pengujian dengan data sintetis                     |
-| Supabase | PostgreSQL, Supabase Auth, sesi server dan transaksi dengan pemeriksaan revisi | Aktif pada web publik; alur cloud dan pembatasan akses sudah diuji |
+| Bacaan | Isi |
+| --- | --- |
+| [Indeks dokumentasi](docs/README.md) | Semua panduan dalam satu halaman |
+| [Skenario demo](docs/guides/demo.md) | Langkah mencoba alur customer hingga pengelola |
+| [Konfigurasi](docs/guides/configuration.md) | Environment variables dan pengaturan mode |
+| [Deployment](docs/guides/deployment.md) | Menjalankan server, Docker, dan Supabase |
+| [Alur dan arsitektur](docs/reference/flow-v2.md) | Alur utama dan batas implementasi |
+| [Status rilis](docs/release-status.md) | Hasil pemeriksaan dan hal yang belum didukung |
 
-Web publik memakai **Vercel Hobby dan Supabase Free**. Skema, transaksi, isolasi akses, dan alur pemesanan cloud sudah diuji. Lihat [status rilis](docs/release-status.md), [panduan database](supabase/README.md), dan [deployment](docs/deployment.md).
+## Batas penggunaan
 
-Pengelola memakai akun privat, lalu membuat gerai dan akun penjual dari **Gerai & akses**. Akun demo localhost tidak berlaku di web publik. Menu awal cloud sengaja tidak aktif sampai pengelola/penjual mengonfigurasi informasi dan mencatat stok nyata. Pendaftaran customer demo langsung masuk tanpa verifikasi email; nomor telepon wajib saat memesan, tanpa OTP.
+Aplikasi publik menggunakan Vercel dan Supabase. Akun serta izin kerja dibatasi berdasarkan peran. Namun, **gateway pembayaran nyata belum terintegrasi**, data contoh tidak membuktikan dampak pengurangan limbah, dan identitas customer pada demo belum melalui verifikasi OTP. Lihat [status rilis](docs/release-status.md) sebelum memakai proyek untuk pilot atau operasional nyata.
 
-Pembayaran digital masih simulasi di demo dan dinonaktifkan di cloud sampai gateway nyata terintegrasi. Data contoh bukan hasil pilot. Porsi promo yang diambil tidak otomatis membuktikan pengurangan limbah; berat sisa berasal dari penimbangan dan memerlukan baseline pembanding.
+Untuk berkontribusi, baca [CONTRIBUTING.md](CONTRIBUTING.md). Jangan menyertakan password, token, database lokal, atau data customer asli dalam commit.

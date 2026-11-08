@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { OrderChat } from './order-chat';
+import { OrderChat } from './customer/order-chat';
 import dynamic from 'next/dynamic';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -34,7 +34,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { useApp } from '@/components/provider';
 import { Brand, Badge, Button, Modal } from '@/components/ui';
-import { StudentDashboard } from '@/components/student';
+import { StudentDashboard } from '@/components/customer';
 import { clock, roleNames, type Role } from '@/lib/domain';
 
 const SellerDashboard = dynamic(

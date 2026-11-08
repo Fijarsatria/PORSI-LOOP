@@ -14,7 +14,7 @@ import type { Role, Snapshot } from '@/lib/domain';
 import { createIdempotencyKey } from '@/lib/client/idempotency';
 import { orderNotices } from '@/lib/client/notifications';
 import { usePathname } from 'next/navigation';
-import { LoadingExperience } from './loading-experience';
+import { LoadingExperience } from './landing/loading-experience';
 
 interface AppContextValue {
   state: Snapshot | null;

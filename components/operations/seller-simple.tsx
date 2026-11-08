@@ -35,7 +35,7 @@ import { Closing, Planning, Rescue } from './seller';
 import { OperationsScope } from './shared';
 import { PickupScanner } from './pickup-scanner';
 import './simple.css';
-import { MenuPhoto } from '../menu-photo';
+import { MenuPhoto } from '../customer/menu-photo';
 import { SalesHistory, SimplePromo } from './seller-extras';
 
 export function SellerDashboard({ tab }: { tab: string }) {
