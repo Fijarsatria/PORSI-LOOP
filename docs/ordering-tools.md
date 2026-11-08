@@ -33,3 +33,11 @@ Server memeriksa kepemilikan tiket customer dan kepemilikan gerai penjual pada s
 ## Batas verifikasi
 
 Pemeriksaan memakai mode demo lokal. Gateway pembayaran nyata, provisioning/runtime Supabase cloud, dan kamera perangkat fisik belum diverifikasi pada pembaruan ini. Data contoh bukan hasil penjualan atau pilot kantin nyata.
+
+## Pemeriksaan pembaruan
+
+- 53 pengujian unit lulus, termasuk privasi chat, kepemilikan gerai, pengiriman pesan idempoten, validasi foto dan nilai penjualan pada rekonsiliasi harian.
+- 5 pengujian API produksi lulus.
+- 28 pengujian browser Chromium mobile/desktop lulus. Cakupan tambahan: unggah dan simpan foto, penjualan langsung beserta harga, pilihan tanggal riwayat, penerbitan/penghentian promo, kata-kata rencana, logout, serta percakapan dua arah tamu dan penjual.
+- Panel chat lulus pemeriksaan axe WCAG 2 A/AA yang diotomatisasi. Posisi panel mobile diperiksa agar tetap di atas navigasi bawah. Ini bukan audit aksesibilitas manual lengkap.
+- Build produksi dan TypeScript lulus. Pilihan durasi promo memakai empat kolom agar tidak tersisa satu tombol pada baris terpisah di ponsel.

@@ -5211,3 +5211,15 @@ input[type='range'] {
   align-items: center;
   justify-content: center;
 }
+.promo-duration {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.promo-duration button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}

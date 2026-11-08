@@ -163,7 +163,7 @@ export function SimplePromo({ state }: { state: Snapshot }) {
           </Field>
         </div>
         <Field label="Berlaku selama">
-          <div className="segmented">
+          <div className="segmented promo-duration">
             {['15', '30', '45', '60'].map((n) => (
               <button
                 type="button"
