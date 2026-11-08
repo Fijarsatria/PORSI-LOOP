@@ -10,7 +10,7 @@ create table if not exists public.porsi_state (
 
 alter table public.porsi_state enable row level security;
 alter table public.porsi_state force row level security;
-revoke all on public.porsi_state from anon, authenticated;
+revoke all on public.porsi_state from public, anon, authenticated;
 grant select, insert, update on public.porsi_state to service_role;
 
 -- Revocable server sessions prevent an old encrypted cookie remaining usable
@@ -24,7 +24,7 @@ create index if not exists porsi_sessions_user_id_idx on public.porsi_sessions(u
 create index if not exists porsi_sessions_expires_at_idx on public.porsi_sessions(expires_at);
 alter table public.porsi_sessions enable row level security;
 alter table public.porsi_sessions force row level security;
-revoke all on public.porsi_sessions from anon, authenticated;
+revoke all on public.porsi_sessions from public, anon, authenticated;
 grant select, insert, delete on public.porsi_sessions to service_role;
 
 -- SECURITY INVOKER is deliberate. The service role already has the necessary
