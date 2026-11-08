@@ -1,64 +1,998 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Check, CheckCheck, Clock3, Copy, Leaf, MapPin, Minus, Plus, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Sprout, Ticket, Utensils } from "lucide-react";
-import { useApp } from "@/components/provider";
-import { Badge, Button, EmptyState, Field, Modal, SectionHeading, Stat } from "@/components/ui";
-import { clock, rupiah, statusNames, type Order, type Portion, type RescueClaim } from "@/lib/domain";
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  CheckCheck,
+  Clock3,
+  Copy,
+  Leaf,
+  MapPin,
+  Minus,
+  Plus,
+  Search,
+  ShieldCheck,
+  ShoppingBag,
+  SlidersHorizontal,
+  Sprout,
+  Ticket,
+  Utensils,
+} from 'lucide-react';
+import { useApp } from '@/components/provider';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  Modal,
+  SectionHeading,
+  Stat,
+} from '@/components/ui';
+import {
+  clock,
+  rupiah,
+  statusNames,
+  type Order,
+  type Portion,
+  type RescueClaim,
+} from '@/lib/domain';
 
 export function StudentDashboard({ tab }: { tab: string }) {
   const { state, action, busy, toast } = useApp();
   const [checkout, setCheckout] = useState(false);
-  const [portion, setPortion] = useState<Portion>("regular");
+  const [portion, setPortion] = useState<Portion>('regular');
   const [quantity, setQuantity] = useState(1);
-  const [slotId, setSlotId] = useState("");
-  const [note, setNote] = useState("");
-  const [search, setSearch] = useState("");
+  const [slotId, setSlotId] = useState('');
+  const [note, setNote] = useState('');
+  const [search, setSearch] = useState('');
   const [details, setDetails] = useState<Order | RescueClaim | null>(null);
-  const [cancelId, setCancelId] = useState<{ id: string; rescue: boolean } | null>(null);
-  const [rescueId, setRescueId] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [cancelId, setCancelId] = useState<{
+    id: string;
+    rescue: boolean;
+  } | null>(null);
+  const [rescueId, setRescueId] = useState('');
+  const [filter, setFilter] = useState('all');
   const [portionInfo, setPortionInfo] = useState(false);
-  const [localError, setLocalError] = useState("");
+  const [localError, setLocalError] = useState('');
   if (!state) return null;
   const { menu, slots, orders, rescues, claims } = state;
-  const dateLabel = (date: string) => new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", year: "numeric" }).format(new Date(date));
-  const selectedSlot = slots.find(s => s.id === slotId);
-  const selectedRescue = rescues.find(r => r.id === rescueId);
-  const currentDetails = details && ([...orders, ...claims].find(o => o.id === details.id) || details);
-  const activeOrders = orders.filter(o => ["confirmed", "ready"].includes(o.status));
-  const activeClaims = claims.filter(c => c.status === "confirmed");
-  const availableSlots = slots.filter(s => !s.closed && s.available > 0);
-  const picked = orders.filter(o => o.status === "picked_up").reduce((sum, o) => sum + o.quantity, 0);
-  const rescued = claims.filter(o => o.status === "picked_up").reduce((sum, o) => sum + o.quantity, 0);
-  const openCheckout = () => { setSlotId(availableSlots[0]?.id || ""); setQuantity(1); setLocalError(""); setCheckout(true); };
-  const preorder = async () => {
-    if (!slotId) { setLocalError("Pilih waktu ambil yang tersedia."); return; }
-    if (await action({ type: "preorder", quantity, portion, slotId, note })) { setCheckout(false); setNote(""); toast("Pesanan terkonfirmasi. Kode ambil ada di Pesananmu."); }
+  const dateLabel = (date: string) =>
+    new Intl.DateTimeFormat('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(date));
+  const selectedSlot = slots.find((s) => s.id === slotId);
+  const selectedRescue = rescues.find((r) => r.id === rescueId);
+  const currentDetails =
+    details &&
+    ([...orders, ...claims].find((o) => o.id === details.id) || details);
+  const activeOrders = orders.filter((o) =>
+    ['confirmed', 'ready'].includes(o.status),
+  );
+  const activeClaims = claims.filter((c) => c.status === 'confirmed');
+  const availableSlots = slots.filter((s) => !s.closed && s.available > 0);
+  const picked = orders
+    .filter((o) => o.status === 'picked_up')
+    .reduce((sum, o) => sum + o.quantity, 0);
+  const rescued = claims
+    .filter((o) => o.status === 'picked_up')
+    .reduce((sum, o) => sum + o.quantity, 0);
+  const openCheckout = () => {
+    setSlotId(availableSlots[0]?.id || '');
+    setQuantity(1);
+    setLocalError('');
+    setCheckout(true);
   };
-  const copyCode = async (code: string) => { try { await navigator.clipboard.writeText(code); toast("Kode pengambilan disalin."); } catch { toast(`Kode pengambilanmu: ${code}`); } };
-  const orderTicket = (order: Order | RescueClaim, rescue = false) => <article className={`order-ticket ${order.status === "picked_up" ? "ticket-complete" : ""}`} key={order.id}><div className="order-ticket-top"><span className="order-kind">{rescue ? <Sprout size={16}/> : <ShoppingBag size={16}/>} {rescue ? "RESCUE" : "PRE-ORDER"}</span><Badge tone={order.status === "picked_up" ? "neutral" : ["cancelled", "expired", "no_show"].includes(order.status) ? "orange" : "green"}>{statusNames[order.status]}</Badge></div><div className="order-ticket-body"><div className="order-thumb"><Image src="/images/nasi-ayam.webp" width={90} height={90} alt=""/></div><div><h3>{order.menuName}</h3><p>{order.quantity} porsi · {"portion" in order ? menu.portionLabels[order.portion] : "Rescue"}</p><span><Clock3 size={14}/>{dateLabel(order.serviceDate ?? order.createdAt)} · {"slotLabel" in order ? order.slotLabel : `Ambil sebelum ${clock(order.expiresAt)}`}</span></div></div><div className="ticket-tear"/><div className="order-ticket-bottom"><div><small>Kode ambil</small><strong>{order.code}</strong></div><Button variant="secondary" onClick={() => setDetails(order)}>Lihat tiket <ArrowUpRight size={16}/></Button></div></article>;
+  const preorder = async () => {
+    if (!slotId) {
+      setLocalError('Pilih waktu ambil yang tersedia.');
+      return;
+    }
+    if (await action({ type: 'preorder', quantity, portion, slotId, note })) {
+      setCheckout(false);
+      setNote('');
+      toast('Pesanan terkonfirmasi. Kode ambil ada di Pesananmu.');
+    }
+  };
+  const copyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('Kode pengambilan disalin.');
+    } catch {
+      toast(`Kode pengambilanmu: ${code}`);
+    }
+  };
+  const orderTicket = (order: Order | RescueClaim, rescue = false) => (
+    <article
+      className={`order-ticket ${order.status === 'picked_up' ? 'ticket-complete' : ''}`}
+      key={order.id}
+    >
+      <div className="order-ticket-top">
+        <span className="order-kind">
+          {rescue ? <Sprout size={16} /> : <ShoppingBag size={16} />}{' '}
+          {rescue ? 'RESCUE' : 'PRE-ORDER'}
+        </span>
+        <Badge
+          tone={
+            order.status === 'picked_up'
+              ? 'neutral'
+              : ['cancelled', 'expired', 'no_show'].includes(order.status)
+                ? 'orange'
+                : 'green'
+          }
+        >
+          {statusNames[order.status]}
+        </Badge>
+      </div>
+      <div className="order-ticket-body">
+        <div className="order-thumb">
+          <Image src="/images/nasi-ayam.webp" width={90} height={90} alt="" />
+        </div>
+        <div>
+          <h3>{order.menuName}</h3>
+          <p>
+            {order.quantity} porsi ·{' '}
+            {'portion' in order ? menu.portionLabels[order.portion] : 'Rescue'}
+          </p>
+          <span>
+            <Clock3 size={14} />
+            {dateLabel(order.serviceDate ?? order.createdAt)} ·{' '}
+            {'slotLabel' in order
+              ? order.slotLabel
+              : `Ambil sebelum ${clock(order.expiresAt)}`}
+          </span>
+        </div>
+      </div>
+      <div className="ticket-tear" />
+      <div className="order-ticket-bottom">
+        <div>
+          <small>Kode ambil</small>
+          <strong>{order.code}</strong>
+        </div>
+        <Button variant="secondary" onClick={() => setDetails(order)}>
+          Lihat tiket <ArrowUpRight size={16} />
+        </Button>
+      </div>
+    </article>
+  );
 
-  return <>
-    {tab === "menu" && <><div className="student-welcome"><div><span className="eyebrow">WAKTUNYA RENCANAKAN MAKAN SIANG</span><h1>Porsi pas untuk<br className="mobile-only"/> harimu<span className="text-leaf">.</span></h1><p className="muted">Pilih yang kamu suka. Ambil di waktu yang pas. Sesi {dateLabel(state.businessDate)}.</p></div><div className="location-pill"><MapPin size={17}/><div>{menu.outlet}<small>{menu.location}</small></div></div></div><section className="student-banner"><div><Badge><Leaf size={13}/> LOOP BAIK DIMULAI DARIMU</Badge><h2>Istirahat sebentar.<br/>Makan yang benar.</h2><p>Pre-order dulu, nikmati nanti.<br/>Biar makan siang punya rencana.</p><button className="text-link" onClick={openCheckout}>Lihat pilihan porsi <ArrowRight size={17}/></button></div><div className="banner-food"><Image src="/images/nasi-ayam.webp" alt="Ilustrasi nasi ayam panggang" width={400} height={400} priority/><span className="glass banner-food-tag"><Clock3 size={14}/>Tentukan waktu ambilmu</span></div></section>
-      {(activeOrders.length > 0 || activeClaims.length > 0) && <Link className="active-order-callout" href="/mahasiswa?tab=orders"><span className="round-icon"><Ticket size={20}/></span><span><strong>{activeOrders.length + activeClaims.length} pesanan menunggumu</strong><small>Tunjukkan kode pesanan saat mengambil di gerai.</small></span><ArrowRight size={20}/></Link>}
-      <SectionHeading title="Mau makan apa di sesi ini?" description="Satu menu pilihan. Dua ukuran porsi." action={<button className="text-link" onClick={() => setPortionInfo(true)}><SlidersHorizontal size={16}/>Panduan porsi</button>}/><div className="catalogue-tools"><div className="catalogue-tabs"><button className="chip active" aria-pressed="true">Semua menu</button><Link className="chip" href="/mahasiswa?tab=rescue"><Sprout size={15}/>Rescue</Link></div><label className="search-field"><Search size={18}/><input aria-label="Cari menu atau gerai" placeholder="Cari menu atau gerai..." value={search} onChange={e => setSearch(e.target.value)}/></label></div>
-      <div className="catalogue-grid">{`${menu.name} ${menu.outlet} ${menu.category}`.toLowerCase().includes(search.toLowerCase()) ? <article className="menu-card"><div className="menu-card-image"><div className="menu-image-disc"/><Image src="/images/nasi-ayam.webp" alt={`Ilustrasi ${menu.name}`} width={360} height={360}/><Badge><span className="live-dot"/>{menu.active && availableSlots.length ? "Pre-order tersedia" : "Pre-order ditutup"}</Badge><span className="image-note">Ilustrasi penyajian</span></div><div className="menu-card-content"><div className="menu-outlet"><StoreIcon/>{menu.outlet}</div><h3>{menu.name}</h3><p>{menu.description}</p><div className="menu-tags">{menu.tags.map(t => <span key={t}>{t}</span>)}</div><div className="menu-card-footer"><div><small>Mulai dari</small><strong>{rupiah(menu.prices.small)}</strong></div><Button onClick={openCheckout} disabled={!menu.active || !availableSlots.length}>Pilih porsi <Plus size={18}/></Button></div></div></article> : <EmptyState icon={Search} title="Menu belum ditemukan" description="Coba kata kunci nasi, ayam, atau nama gerai."/>}<aside className="catalogue-aside"><div className="small-section-heading"><CalendarIcon/><h3>Slot ambil hari ini</h3></div><p>Pilih slot saat memesan. Kuota diperbarui dari pesanan yang masuk.</p><div className="slot-preview-list">{slots.map(s => <div key={s.id} className={s.closed ? "slot-closed" : ""}><span><Clock3 size={15}/>{s.label}</span><Badge tone={s.closed || !s.available ? "neutral" : "green"}>{s.closed ? "Ditutup" : `${s.available} porsi`}</Badge></div>)}</div><div className="callout"><ShieldCheck size={19}/><span>Bayar langsung di gerai saat mengambil. Tidak ada pembayaran online dalam demo ini.</span></div><Link href="/mahasiswa?tab=rescue" className="rescue-teaser"><span className="round-icon"><Sprout size={22}/></span><div><strong>Masih enak, masih berarti.</strong><p>Cek rescue dari stok layak yang tersisa.</p></div><ArrowUpRight size={19}/></Link></aside></div></>}
+  return (
+    <>
+      {tab === 'menu' && (
+        <>
+          <div className="student-welcome">
+            <div>
+              <span className="eyebrow">WAKTUNYA RENCANAKAN MAKAN SIANG</span>
+              <h1>
+                Porsi pas untuk
+                <br className="mobile-only" /> harimu
+                <span className="text-leaf">.</span>
+              </h1>
+              <p className="muted">
+                Pilih yang kamu suka. Ambil di waktu yang pas. Sesi{' '}
+                {dateLabel(state.businessDate)}.
+              </p>
+            </div>
+            <div className="location-pill">
+              <MapPin size={17} />
+              <div>
+                {menu.outlet}
+                <small>{menu.location}</small>
+              </div>
+            </div>
+          </div>
+          <section className="student-banner">
+            <div>
+              <Badge>
+                <Leaf size={13} /> LOOP BAIK DIMULAI DARIMU
+              </Badge>
+              <h2>
+                Istirahat sebentar.
+                <br />
+                Makan yang benar.
+              </h2>
+              <p>
+                Pre-order dulu, nikmati nanti.
+                <br />
+                Biar makan siang punya rencana.
+              </p>
+              <button className="text-link" onClick={openCheckout}>
+                Lihat pilihan porsi <ArrowRight size={17} />
+              </button>
+            </div>
+            <div className="banner-food">
+              <Image
+                src="/images/nasi-ayam.webp"
+                alt="Ilustrasi nasi ayam panggang"
+                width={400}
+                height={400}
+                priority
+              />
+              <span className="glass banner-food-tag">
+                <Clock3 size={14} />
+                Tentukan waktu ambilmu
+              </span>
+            </div>
+          </section>
+          {(activeOrders.length > 0 || activeClaims.length > 0) && (
+            <Link className="active-order-callout" href="/mahasiswa?tab=orders">
+              <span className="round-icon">
+                <Ticket size={20} />
+              </span>
+              <span>
+                <strong>
+                  {activeOrders.length + activeClaims.length} pesanan menunggumu
+                </strong>
+                <small>Tunjukkan kode pesanan saat mengambil di gerai.</small>
+              </span>
+              <ArrowRight size={20} />
+            </Link>
+          )}
+          <SectionHeading
+            title="Mau makan apa di sesi ini?"
+            description="Satu menu pilihan. Dua ukuran porsi."
+            action={
+              <button
+                className="text-link"
+                onClick={() => setPortionInfo(true)}
+              >
+                <SlidersHorizontal size={16} />
+                Panduan porsi
+              </button>
+            }
+          />
+          <div className="catalogue-tools">
+            <div className="catalogue-tabs">
+              <button className="chip active" aria-pressed="true">
+                Semua menu
+              </button>
+              <Link className="chip" href="/mahasiswa?tab=rescue">
+                <Sprout size={15} />
+                Rescue
+              </Link>
+            </div>
+            <label className="search-field">
+              <Search size={18} />
+              <input
+                aria-label="Cari menu atau gerai"
+                placeholder="Cari menu atau gerai..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="catalogue-grid">
+            {`${menu.name} ${menu.outlet} ${menu.category}`
+              .toLowerCase()
+              .includes(search.toLowerCase()) ? (
+              <article className="menu-card">
+                <div className="menu-card-image">
+                  <div className="menu-image-disc" />
+                  <Image
+                    src="/images/nasi-ayam.webp"
+                    alt={`Ilustrasi ${menu.name}`}
+                    width={360}
+                    height={360}
+                  />
+                  <Badge>
+                    <span className="live-dot" />
+                    {menu.active && availableSlots.length
+                      ? 'Pre-order tersedia'
+                      : 'Pre-order ditutup'}
+                  </Badge>
+                  <span className="image-note">Ilustrasi penyajian</span>
+                </div>
+                <div className="menu-card-content">
+                  <div className="menu-outlet">
+                    <StoreIcon />
+                    {menu.outlet}
+                  </div>
+                  <h3>{menu.name}</h3>
+                  <p>{menu.description}</p>
+                  <div className="menu-tags">
+                    {menu.tags.map((t) => (
+                      <span key={t}>{t}</span>
+                    ))}
+                  </div>
+                  <div className="menu-card-footer">
+                    <div>
+                      <small>Mulai dari</small>
+                      <strong>{rupiah(menu.prices.small)}</strong>
+                    </div>
+                    <Button
+                      onClick={openCheckout}
+                      disabled={!menu.active || !availableSlots.length}
+                    >
+                      Pilih porsi <Plus size={18} />
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            ) : (
+              <EmptyState
+                icon={Search}
+                title="Menu belum ditemukan"
+                description="Coba kata kunci nasi, ayam, atau nama gerai."
+              />
+            )}
+            <aside className="catalogue-aside">
+              <div className="small-section-heading">
+                <CalendarIcon />
+                <h3>Slot ambil sesi ini</h3>
+              </div>
+              <p>
+                Pilih slot saat memesan. Kuota diperbarui dari pesanan yang
+                masuk.
+              </p>
+              <div className="slot-preview-list">
+                {slots.map((s) => (
+                  <div key={s.id} className={s.closed ? 'slot-closed' : ''}>
+                    <span>
+                      <Clock3 size={15} />
+                      {s.label}
+                    </span>
+                    <Badge
+                      tone={s.closed || !s.available ? 'neutral' : 'green'}
+                    >
+                      {s.closed ? 'Ditutup' : `${s.available} porsi`}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <div className="callout">
+                <ShieldCheck size={19} />
+                <span>
+                  Bayar langsung di gerai saat mengambil. Tidak ada pembayaran
+                  online dalam demo ini.
+                </span>
+              </div>
+              <Link href="/mahasiswa?tab=rescue" className="rescue-teaser">
+                <span className="round-icon">
+                  <Sprout size={22} />
+                </span>
+                <div>
+                  <strong>Masih enak, masih berarti.</strong>
+                  <p>Cek rescue dari stok layak yang tersisa.</p>
+                </div>
+                <ArrowUpRight size={19} />
+              </Link>
+            </aside>
+          </div>
+        </>
+      )}
 
-    {tab === "orders" && <><SectionHeading eyebrow="TINGGAL DATANG, TUNJUKKAN KODE" title="Pesananmu" description="Pre-order dan rescue, semuanya ada di sini."/><div className="segmented order-filters" role="group" aria-label="Filter pesanan"><button className={filter === "all" ? "selected" : ""} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>Semua</button><button className={filter === "active" ? "selected" : ""} aria-pressed={filter === "active"} onClick={() => setFilter("active")}>Aktif <span>{activeOrders.length + activeClaims.length}</span></button><button className={filter === "done" ? "selected" : ""} aria-pressed={filter === "done"} onClick={() => setFilter("done")}>Riwayat</button></div><div className="orders-grid">{orders.filter(o => filter === "all" || (filter === "active" ? ["confirmed", "ready"].includes(o.status) : !["confirmed", "ready"].includes(o.status))).map(o => orderTicket(o))}{claims.filter(o => filter === "all" || (filter === "active" ? o.status === "confirmed" : o.status !== "confirmed")).map(o => orderTicket(o, true))}</div>{![...orders, ...claims].some(o => filter === "all" || (filter === "active" ? ["confirmed", "ready"].includes(o.status) : !["confirmed", "ready"].includes(o.status))) && <div className="panel"><EmptyState icon={ShoppingBag} title={filter === "done" ? "Riwayatmu dimulai di sini" : "Belum ada pesanan di sini"} description="Pilih menu dan slot ambil. Tiket pengambilanmu akan muncul di halaman ini."/><Link className="button button-primary centered" href="/mahasiswa">Lihat menu <ArrowRight size={18}/></Link></div>}<div className="callout"><Clock3 size={20}/><span>Datang sesuai slot dan tunjukkan kode ke gerai. Pesanan hanya tercatat diambil setelah gerai memvalidasi serah terima.</span></div></>}
+      {tab === 'orders' && (
+        <>
+          <SectionHeading
+            eyebrow="TINGGAL DATANG, TUNJUKKAN KODE"
+            title="Pesananmu"
+            level={1}
+            description="Pre-order dan rescue, semuanya ada di sini."
+          />
+          <div
+            className="segmented order-filters"
+            role="group"
+            aria-label="Filter pesanan"
+          >
+            <button
+              className={filter === 'all' ? 'selected' : ''}
+              aria-pressed={filter === 'all'}
+              onClick={() => setFilter('all')}
+            >
+              Semua
+            </button>
+            <button
+              className={filter === 'active' ? 'selected' : ''}
+              aria-pressed={filter === 'active'}
+              onClick={() => setFilter('active')}
+            >
+              Aktif <span>{activeOrders.length + activeClaims.length}</span>
+            </button>
+            <button
+              className={filter === 'done' ? 'selected' : ''}
+              aria-pressed={filter === 'done'}
+              onClick={() => setFilter('done')}
+            >
+              Riwayat
+            </button>
+          </div>
+          <div className="orders-grid">
+            {orders
+              .filter(
+                (o) =>
+                  filter === 'all' ||
+                  (filter === 'active'
+                    ? ['confirmed', 'ready'].includes(o.status)
+                    : !['confirmed', 'ready'].includes(o.status)),
+              )
+              .map((o) => orderTicket(o))}
+            {claims
+              .filter(
+                (o) =>
+                  filter === 'all' ||
+                  (filter === 'active'
+                    ? o.status === 'confirmed'
+                    : o.status !== 'confirmed'),
+              )
+              .map((o) => orderTicket(o, true))}
+          </div>
+          {![...orders, ...claims].some(
+            (o) =>
+              filter === 'all' ||
+              (filter === 'active'
+                ? ['confirmed', 'ready'].includes(o.status)
+                : !['confirmed', 'ready'].includes(o.status)),
+          ) && (
+            <div className="panel">
+              <EmptyState
+                icon={ShoppingBag}
+                title={
+                  filter === 'done'
+                    ? 'Riwayatmu dimulai di sini'
+                    : 'Belum ada pesanan di sini'
+                }
+                description="Pilih menu dan slot ambil. Tiket pengambilanmu akan muncul di halaman ini."
+              />
+              <Link
+                className="button button-primary centered"
+                href="/mahasiswa"
+              >
+                Lihat menu <ArrowRight size={18} />
+              </Link>
+            </div>
+          )}
+          <div className="callout">
+            <Clock3 size={20} />
+            <span>
+              Datang sesuai slot dan tunjukkan kode ke gerai. Pesanan hanya
+              tercatat diambil setelah gerai memvalidasi serah terima.
+            </span>
+          </div>
+        </>
+      )}
 
-    {tab === "rescue" && <><div className="rescue-page-intro"><span className="rescue-intro-icon"><Sprout size={32}/></span><div><p className="eyebrow">SEMPATKAN SATU LOOP LAGI</p><h1>Masih enak.<br/>Masih punya kesempatan.</h1><p>Stok makanan layak yang tersisa di gerai. Klaim secukupnya dan ambil sebelum waktunya habis.</p></div></div><div className="callout rescue-safety"><ShieldCheck size={22}/><span>Gerai memeriksa kelayakan makanan sebelum menawarkannya. Periksa informasi alergen dan ambil pada waktu yang ditentukan.</span></div><div className="rescue-cards">{rescues.filter(r => r.active && r.available > 0).map(r => <article className="rescue-card" key={r.id}><div className="rescue-card-visual"><Image src="/images/nasi-ayam.webp" width={300} height={300} alt={`Ilustrasi ${r.menuName}`}/><Badge tone="orange"><Sprout size={14}/>{r.available} porsi tersedia</Badge><span className="image-note">Ilustrasi penyajian</span></div><div className="rescue-card-body"><span className="eyebrow">{menu.outlet}</span><h2>{r.menuName}</h2><p>{r.description}</p><div className="rescue-meta"><span><Clock3 size={16}/>Ambil sebelum <strong>{clock(r.expiresAt)} WIB</strong></span><span><ShieldCheck size={16}/>{r.foodChecked ? "Kelayakan diperiksa gerai" : "Menunggu pemeriksaan"}</span></div><div className="rescue-card-footer"><div><del>{rupiah(r.originalPrice)}</del><strong>{rupiah(r.price)}</strong><small>per porsi · bayar di gerai</small></div><Button onClick={() => setRescueId(r.id)} disabled={!r.foodChecked}>Klaim rescue <ArrowRight size={17}/></Button></div></div></article>)}</div>{!rescues.some(r => r.active && r.available > 0) && <div className="panel"><EmptyState icon={Leaf} title="Belum ada rescue yang tersedia" description="Rescue hanya ditawarkan saat ada stok layak yang benar-benar tersisa. Kamu tetap bisa melihat menu pre-order."/><Link className="button button-secondary centered" href="/mahasiswa">Lihat menu hari ini <ArrowRight size={17}/></Link></div>}<p className="fine-print">Batas waktu pengambilan membantu operasional gerai dan bukan jaminan keamanan makanan. Reservasi belum dihitung sebagai porsi rescue diambil.</p></>}
+      {tab === 'rescue' && (
+        <>
+          <div className="rescue-page-intro">
+            <span className="rescue-intro-icon">
+              <Sprout size={32} />
+            </span>
+            <div>
+              <p className="eyebrow">SEMPATKAN SATU LOOP LAGI</p>
+              <h1>
+                Masih enak.
+                <br />
+                Masih punya kesempatan.
+              </h1>
+              <p>
+                Stok makanan layak yang tersisa di gerai. Klaim secukupnya dan
+                ambil sebelum waktunya habis.
+              </p>
+            </div>
+          </div>
+          <div className="callout rescue-safety">
+            <ShieldCheck size={22} />
+            <span>
+              Gerai memeriksa kelayakan makanan sebelum menawarkannya. Periksa
+              informasi alergen dan ambil pada waktu yang ditentukan.
+            </span>
+          </div>
+          <div className="rescue-cards">
+            {rescues
+              .filter((r) => r.active && r.available > 0)
+              .map((r) => (
+                <article className="rescue-card" key={r.id}>
+                  <div className="rescue-card-visual">
+                    <Image
+                      src="/images/nasi-ayam.webp"
+                      width={300}
+                      height={300}
+                      alt={`Ilustrasi ${r.menuName}`}
+                    />
+                    <Badge tone="orange">
+                      <Sprout size={14} />
+                      {r.available} porsi tersedia
+                    </Badge>
+                    <span className="image-note">Ilustrasi penyajian</span>
+                  </div>
+                  <div className="rescue-card-body">
+                    <span className="eyebrow">{menu.outlet}</span>
+                    <h2>{r.menuName}</h2>
+                    <p>{r.description}</p>
+                    <div className="rescue-meta">
+                      <span>
+                        <Clock3 size={16} />
+                        Ambil sebelum <strong>{clock(r.expiresAt)} WIB</strong>
+                      </span>
+                      <span>
+                        <ShieldCheck size={16} />
+                        {r.foodChecked
+                          ? 'Kelayakan diperiksa gerai'
+                          : 'Menunggu pemeriksaan'}
+                      </span>
+                    </div>
+                    <div className="rescue-card-footer">
+                      <div>
+                        <del>{rupiah(r.originalPrice)}</del>
+                        <strong>{rupiah(r.price)}</strong>
+                        <small>per porsi · bayar di gerai</small>
+                      </div>
+                      <Button
+                        onClick={() => setRescueId(r.id)}
+                        disabled={
+                          !r.foodChecked ||
+                          claims.some(
+                            (claim) =>
+                              claim.batchId === r.id &&
+                              ['confirmed', 'ready'].includes(claim.status),
+                          )
+                        }
+                      >
+                        {claims.some(
+                          (claim) =>
+                            claim.batchId === r.id &&
+                            ['confirmed', 'ready'].includes(claim.status),
+                        )
+                          ? 'Sudah direservasi'
+                          : 'Klaim rescue'}{' '}
+                        <ArrowRight size={17} />
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+          </div>
+          {!rescues.some((r) => r.active && r.available > 0) && (
+            <div className="panel">
+              <EmptyState
+                icon={Leaf}
+                title="Belum ada rescue yang tersedia"
+                description="Rescue hanya ditawarkan saat ada stok layak yang benar-benar tersisa. Kamu tetap bisa melihat menu pre-order."
+              />
+              <Link
+                className="button button-secondary centered"
+                href="/mahasiswa"
+              >
+                Lihat menu hari ini <ArrowRight size={17} />
+              </Link>
+            </div>
+          )}
+          <p className="fine-print">
+            Batas waktu pengambilan membantu operasional gerai dan bukan jaminan
+            keamanan makanan. Reservasi belum dihitung sebagai porsi rescue
+            diambil.
+          </p>
+        </>
+      )}
 
-    {tab === "impact" && <><SectionHeading eyebrow="SETIAP PILIHAN, PUNYA JEJAK" title="Loop baikmu" description="Ringkasan pesananmu yang benar-benar sudah diambil."/><div className="impact-student-banner"><span className="round-icon"><Sprout size={32}/></span><div><h2>Kebiasaan baik,<br/>satu porsi setiap kali.</h2><p>Jejak di sini berasal dari pengambilan yang sudah divalidasi gerai.</p></div></div><div className="stat-grid"><Stat label="Pre-order diambil" value={picked} note="Porsi yang sudah diserahkan" icon={Utensils}/><Stat label="Rescue diambil" value={rescued} note="Setelah validasi kode gerai" icon={Sprout}/><Stat label="Pesanan aktif" value={activeOrders.length + activeClaims.length} note="Menunggu pengambilan" icon={Ticket}/></div><div className="panel"><h3>Angka kecil, maknanya jelas.</h3><p className="muted">Reservasi yang belum diambil tidak masuk hitungan. Porsi rescue adalah hasil distribusi; angka ini tidak otomatis membuktikan berapa makanan yang terhindar dari pembuangan.</p><div className="callout"><Leaf size={21}/><span>Kami tidak mengubah jumlah porsi menjadi klaim kilogram atau emisi. Berat sisa dicatat terpisah oleh gerai.</span></div></div></>}
+      {tab === 'impact' && (
+        <>
+          <SectionHeading
+            eyebrow="SETIAP PILIHAN, PUNYA JEJAK"
+            title="Loop baikmu"
+            level={1}
+            description="Ringkasan pesananmu yang benar-benar sudah diambil."
+          />
+          <div className="impact-student-banner">
+            <span className="round-icon">
+              <Sprout size={32} />
+            </span>
+            <div>
+              <h2>
+                Kebiasaan baik,
+                <br />
+                satu porsi setiap kali.
+              </h2>
+              <p>
+                Jejak di sini berasal dari pengambilan yang sudah divalidasi
+                gerai.
+              </p>
+            </div>
+          </div>
+          <div className="stat-grid">
+            <Stat
+              label="Pre-order diambil"
+              value={picked}
+              note="Porsi yang sudah diserahkan"
+              icon={Utensils}
+            />
+            <Stat
+              label="Rescue diambil"
+              value={rescued}
+              note="Setelah validasi kode gerai"
+              icon={Sprout}
+            />
+            <Stat
+              label="Pesanan aktif"
+              value={activeOrders.length + activeClaims.length}
+              note="Menunggu pengambilan"
+              icon={Ticket}
+            />
+          </div>
+          <div className="panel">
+            <h3>Angka kecil, maknanya jelas.</h3>
+            <p className="muted">
+              Reservasi yang belum diambil tidak masuk hitungan. Porsi rescue
+              adalah hasil distribusi; angka ini tidak otomatis membuktikan
+              berapa makanan yang terhindar dari pembuangan.
+            </p>
+            <div className="callout">
+              <Leaf size={21} />
+              <span>
+                Kami tidak mengubah jumlah porsi menjadi klaim kilogram atau
+                emisi. Berat sisa dicatat terpisah oleh gerai.
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
-    <Modal open={checkout} onClose={() => setCheckout(false)} title="Rencanakan makan siangmu"><div className="checkout-menu"><Image src="/images/nasi-ayam.webp" width={85} height={85} alt=""/><div><span className="eyebrow">{menu.outlet}</span><h3>{menu.name}</h3><span className="muted">{menu.location}</span></div></div><div className="checkout-section"><h3>Porsi yang pas untukmu</h3><div className="portion-options">{(["small", "regular"] as Portion[]).map(p => <button className={portion === p ? "selected" : ""} onClick={() => setPortion(p)} key={p} aria-pressed={portion === p}><span>{menu.portionLabels[p]}<small>{p === "small" ? "Nasi lebih sedikit, lauk tetap" : "Porsi nasi standar gerai"}</small></span><strong>{rupiah(menu.prices[p])}</strong>{portion === p && <Check size={16}/>}</button>)}</div></div><div className="checkout-section"><h3>Waktu ambil <span className="muted">· WIB</span></h3><p className="fine-print">{dateLabel(state.businessDate)}</p><div className="checkout-slots" role="group" aria-label="Pilih waktu ambil">{slots.map(s => <button key={s.id} disabled={s.closed || s.available < quantity} aria-pressed={slotId === s.id} className={slotId === s.id ? "selected" : ""} onClick={() => setSlotId(s.id)}><Clock3 size={17}/><strong>{s.label}</strong><small>{s.closed ? "Ditutup" : s.available === 0 ? "Penuh" : `${s.available} porsi tersisa`}</small></button>)}</div>{selectedSlot && <p className="fine-print">Pesan atau batalkan sebelum {clock(selectedSlot.cutoff)} WIB.</p>}</div><div className="quantity-field"><span>Jumlah porsi</span><div className="quantity-stepper"><button aria-label="Kurangi jumlah porsi" disabled={quantity <= 1} onClick={() => setQuantity(q => q - 1)}><Minus size={17}/></button><strong aria-live="polite">{quantity}</strong><button aria-label="Tambah jumlah porsi" disabled={quantity >= Math.min(5, selectedSlot?.available || 5)} onClick={() => setQuantity(q => q + 1)}><Plus size={17}/></button></div></div><Field label="Catatan untuk gerai (opsional)" hint="Untuk alergi, konfirmasikan langsung kepada gerai."><textarea placeholder="Contoh: sambal dipisah, ya." maxLength={200} rows={2} value={note} onChange={e => setNote(e.target.value)}/></Field><div className="allergen-note"><ShieldCheck size={16}/><span>Alergen: {menu.allergens.join(", ") || "Tanyakan pada gerai"}.</span></div>{localError && <p className="form-error" role="alert">{localError}</p>}<div className="checkout-total"><span>Total · bayar di gerai<strong>{rupiah(menu.prices[portion] * quantity)}</strong></span><Button onClick={() => void preorder()} loading={busy} disabled={!menu.active || !availableSlots.length}>Konfirmasi pesanan <ArrowRight size={17}/></Button></div></Modal>
-    <Modal open={!!currentDetails} onClose={() => setDetails(null)} title="Tiket pengambilan">{currentDetails && <div className="ticket-detail"><Badge tone={currentDetails.status === "picked_up" ? "neutral" : "green"}>{statusNames[currentDetails.status]}</Badge><h3>{currentDetails.menuName}</h3><p>{currentDetails.quantity} porsi · {rupiah(currentDetails.price * currentDetails.quantity)}</p><div className="pickup-code-box"><small>TUNJUKKAN KODE INI KE GERAI</small><strong>{currentDetails.code}</strong><div className="barcode" aria-hidden="true"/><Button variant="ghost" onClick={() => void copyCode(currentDetails.code)}><Copy size={16}/>Salin kode</Button></div><div className="ticket-detail-meta"><span><MapPin size={18}/>{currentDetails.outletName ?? menu.outlet} · {currentDetails.pickupLocation ?? menu.location}</span><span><Clock3 size={18}/>{dateLabel(currentDetails.serviceDate ?? currentDetails.createdAt)} · {"slotLabel" in currentDetails ? currentDetails.slotLabel : `Sebelum ${clock(currentDetails.expiresAt)}`} WIB</span></div><div className="callout">Bayar langsung di gerai. Tunjukkan kode, lalu tunggu validasi penjual saat makanan diserahkan.</div>{["confirmed", "ready"].includes(currentDetails.status) && <button className="text-danger" onClick={() => { setCancelId({ id: currentDetails.id, rescue: !("slotId" in currentDetails) }); setDetails(null); }}>Batalkan {"slotId" in currentDetails ? "pesanan" : "reservasi"}</button>}</div>}</Modal>
-    <Modal open={!!cancelId} onClose={() => setCancelId(null)} title="Batalkan rencana ini?"><p className="muted">Kuota akan dilepas agar bisa dipilih orang lain. Pre-order hanya bisa dibatalkan sebelum batas waktu pemesanan.</p><div className="modal-actions"><Button variant="secondary" onClick={() => setCancelId(null)}>Tetap simpan</Button><Button loading={busy} onClick={async () => { if (cancelId && await action({ type: cancelId.rescue ? "cancel_rescue" : "cancel_order", ...(cancelId.rescue ? { claimId: cancelId.id } : { orderId: cancelId.id }) })) { setCancelId(null); toast("Dibatalkan. Kuota sudah dilepas."); } }}>Ya, batalkan</Button></div></Modal>
-    <Modal open={!!selectedRescue} onClose={() => setRescueId("")} title="Satu porsi, satu kesempatan lagi">{selectedRescue && <div className="stack"><div className="checkout-menu"><Image src="/images/nasi-ayam.webp" width={90} height={90} alt=""/><div><h3>{selectedRescue.menuName}</h3><p>{rupiah(selectedRescue.price)} · 1 porsi</p></div></div><div className="callout"><Clock3 size={20}/><span>Ambil sebelum <strong>{clock(selectedRescue.expiresAt)} WIB</strong>. Bayar langsung di {menu.outlet}.</span></div><p>{selectedRescue.description}</p><p className="fine-print">Alergen: {(selectedRescue.allergens ?? menu.allergens).join(", ") || "Konfirmasikan pada gerai"}. Periksa kondisi bersama gerai saat mengambil. Jangan klaim jika kamu tidak bisa datang tepat waktu.</p><Button loading={busy} className="full-width" onClick={async () => { if (await action({ type: "claim_rescue", batchId: selectedRescue.id, quantity: 1 })) { setRescueId(""); toast("Rescue berhasil direservasi. Simpan kode di Pesananmu."); } }}>Klaim 1 porsi · {rupiah(selectedRescue.price)} <ArrowRight size={17}/></Button></div>}</Modal>
-    <Modal open={portionInfo} onClose={() => setPortionInfo(false)} title="Porsi pas itu pilihanmu"><div className="stack"><p className="muted">Pilih nasi sesuai kebutuhanmu. Jumlah lauk pada menu contoh tetap sama.</p><div className="portion-guide"><div><Utensils/><h3>Porsi kecil</h3><p>Nasi lebih sedikit. Cocok saat ingin makan ringan.</p></div><div><Utensils/><h3>Porsi reguler</h3><p>Porsi nasi standar gerai untuk makan siangmu.</p></div></div><div className="callout">Ilustrasi makanan tidak menunjukkan ukuran porsi aktual. Tanyakan komposisi dan alergen kepada gerai.</div><Button onClick={() => { setPortionInfo(false); openCheckout(); }}>Pilih porsiku <ArrowRight size={17}/></Button></div></Modal>
-  </>;
+      <Modal
+        open={checkout}
+        onClose={() => setCheckout(false)}
+        title="Rencanakan makan siangmu"
+      >
+        <div className="checkout-menu">
+          <Image src="/images/nasi-ayam.webp" width={85} height={85} alt="" />
+          <div>
+            <span className="eyebrow">{menu.outlet}</span>
+            <h3>{menu.name}</h3>
+            <span className="muted">{menu.location}</span>
+          </div>
+        </div>
+        <div className="checkout-section">
+          <h3>Porsi yang pas untukmu</h3>
+          <div className="portion-options">
+            {(['small', 'regular'] as Portion[]).map((p) => (
+              <button
+                className={portion === p ? 'selected' : ''}
+                onClick={() => setPortion(p)}
+                key={p}
+                aria-pressed={portion === p}
+              >
+                <span>
+                  {menu.portionLabels[p]}
+                  <small>
+                    {p === 'small'
+                      ? 'Nasi lebih sedikit, lauk tetap'
+                      : 'Porsi nasi standar gerai'}
+                  </small>
+                </span>
+                <strong>{rupiah(menu.prices[p])}</strong>
+                {portion === p && <Check size={16} />}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="checkout-section">
+          <h3>
+            Waktu ambil <span className="muted">· WIB</span>
+          </h3>
+          <p className="fine-print">{dateLabel(state.businessDate)}</p>
+          <div
+            className="checkout-slots"
+            role="group"
+            aria-label="Pilih waktu ambil"
+          >
+            {slots.map((s) => (
+              <button
+                key={s.id}
+                disabled={s.closed || s.available < quantity}
+                aria-pressed={slotId === s.id}
+                className={slotId === s.id ? 'selected' : ''}
+                onClick={() => setSlotId(s.id)}
+              >
+                <Clock3 size={17} />
+                <strong>{s.label}</strong>
+                <small>
+                  {s.closed
+                    ? 'Ditutup'
+                    : s.available === 0
+                      ? 'Penuh'
+                      : `${s.available} porsi tersisa`}
+                </small>
+              </button>
+            ))}
+          </div>
+          {selectedSlot && (
+            <p className="fine-print">
+              Pesan atau batalkan sebelum {clock(selectedSlot.cutoff)} WIB.
+            </p>
+          )}
+        </div>
+        <div className="quantity-field">
+          <span>Jumlah porsi</span>
+          <div className="quantity-stepper">
+            <button
+              aria-label="Kurangi jumlah porsi"
+              disabled={quantity <= 1}
+              onClick={() => setQuantity((q) => q - 1)}
+            >
+              <Minus size={17} />
+            </button>
+            <strong aria-live="polite">{quantity}</strong>
+            <button
+              aria-label="Tambah jumlah porsi"
+              disabled={quantity >= Math.min(5, selectedSlot?.available || 5)}
+              onClick={() => setQuantity((q) => q + 1)}
+            >
+              <Plus size={17} />
+            </button>
+          </div>
+        </div>
+        <Field
+          label="Catatan untuk gerai (opsional)"
+          hint="Untuk alergi, konfirmasikan langsung kepada gerai."
+        >
+          <textarea
+            placeholder="Contoh: sambal dipisah, ya."
+            maxLength={200}
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </Field>
+        <div className="allergen-note">
+          <ShieldCheck size={16} />
+          <span>
+            Alergen: {menu.allergens.join(', ') || 'Tanyakan pada gerai'}.
+          </span>
+        </div>
+        {localError && (
+          <p className="form-error" role="alert">
+            {localError}
+          </p>
+        )}
+        <div className="checkout-total">
+          <span>
+            Total · bayar di gerai
+            <strong>{rupiah(menu.prices[portion] * quantity)}</strong>
+          </span>
+          <Button
+            onClick={() => void preorder()}
+            loading={busy}
+            disabled={
+              !menu.active ||
+              !selectedSlot ||
+              selectedSlot.closed ||
+              selectedSlot.available < quantity
+            }
+          >
+            Konfirmasi pesanan <ArrowRight size={17} />
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        open={!!currentDetails}
+        onClose={() => setDetails(null)}
+        title="Tiket pengambilan"
+      >
+        {currentDetails && (
+          <div className="ticket-detail">
+            <Badge
+              tone={currentDetails.status === 'picked_up' ? 'neutral' : 'green'}
+            >
+              {statusNames[currentDetails.status]}
+            </Badge>
+            <h3>{currentDetails.menuName}</h3>
+            <p>
+              {currentDetails.quantity} porsi ·{' '}
+              {rupiah(currentDetails.price * currentDetails.quantity)}
+            </p>
+            <div className="pickup-code-box">
+              <small>TUNJUKKAN KODE INI KE GERAI</small>
+              <strong>{currentDetails.code}</strong>
+              <div className="barcode" aria-hidden="true" />
+              <Button
+                variant="ghost"
+                onClick={() => void copyCode(currentDetails.code)}
+              >
+                <Copy size={16} />
+                Salin kode
+              </Button>
+            </div>
+            <div className="ticket-detail-meta">
+              <span>
+                <MapPin size={18} />
+                {currentDetails.outletName ?? menu.outlet} ·{' '}
+                {currentDetails.pickupLocation ?? menu.location}
+              </span>
+              <span>
+                <Clock3 size={18} />
+                {dateLabel(
+                  currentDetails.serviceDate ?? currentDetails.createdAt,
+                )}{' '}
+                ·{' '}
+                {'slotLabel' in currentDetails
+                  ? currentDetails.slotLabel
+                  : `Sebelum ${clock(currentDetails.expiresAt)}`}{' '}
+                WIB
+              </span>
+            </div>
+            <div className="callout">
+              Bayar langsung di gerai. Tunjukkan kode, lalu tunggu validasi
+              penjual saat makanan diserahkan.
+            </div>
+            {['confirmed', 'ready'].includes(currentDetails.status) && (
+              <button
+                className="text-danger"
+                onClick={() => {
+                  setCancelId({
+                    id: currentDetails.id,
+                    rescue: !('slotId' in currentDetails),
+                  });
+                  setDetails(null);
+                }}
+                disabled={
+                  'slotId' in currentDetails &&
+                  (!slots.find((s) => s.id === currentDetails.slotId) ||
+                    Date.parse(state.now) >=
+                      Date.parse(
+                        slots.find((s) => s.id === currentDetails.slotId)!
+                          .cutoff,
+                      ))
+                }
+              >
+                Batalkan {'slotId' in currentDetails ? 'pesanan' : 'reservasi'}
+              </button>
+            )}
+          </div>
+        )}
+      </Modal>
+      <Modal
+        open={!!cancelId}
+        onClose={() => setCancelId(null)}
+        title="Batalkan rencana ini?"
+      >
+        <p className="muted">
+          Kuota akan dilepas agar bisa dipilih orang lain. Pre-order hanya bisa
+          dibatalkan sebelum batas waktu pemesanan.
+        </p>
+        <div className="modal-actions">
+          <Button variant="secondary" onClick={() => setCancelId(null)}>
+            Tetap simpan
+          </Button>
+          <Button
+            loading={busy}
+            onClick={async () => {
+              if (
+                cancelId &&
+                (await action({
+                  type: cancelId.rescue ? 'cancel_rescue' : 'cancel_order',
+                  ...(cancelId.rescue
+                    ? { claimId: cancelId.id }
+                    : { orderId: cancelId.id }),
+                }))
+              ) {
+                setCancelId(null);
+                toast('Dibatalkan. Kuota sudah dilepas.');
+              }
+            }}
+          >
+            Ya, batalkan
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        open={!!selectedRescue}
+        onClose={() => setRescueId('')}
+        title="Satu porsi, satu kesempatan lagi"
+      >
+        {selectedRescue && (
+          <div className="stack">
+            <div className="checkout-menu">
+              <Image
+                src="/images/nasi-ayam.webp"
+                width={90}
+                height={90}
+                alt=""
+              />
+              <div>
+                <h3>{selectedRescue.menuName}</h3>
+                <p>{rupiah(selectedRescue.price)} · 1 porsi</p>
+              </div>
+            </div>
+            <div className="callout">
+              <Clock3 size={20} />
+              <span>
+                Ambil sebelum{' '}
+                <strong>{clock(selectedRescue.expiresAt)} WIB</strong>. Bayar
+                langsung di {menu.outlet}.
+              </span>
+            </div>
+            <p>{selectedRescue.description}</p>
+            <p className="fine-print">
+              Alergen:{' '}
+              {(selectedRescue.allergens ?? menu.allergens).join(', ') ||
+                'Konfirmasikan pada gerai'}
+              . Periksa kondisi bersama gerai saat mengambil. Jangan klaim jika
+              kamu tidak bisa datang tepat waktu.
+            </p>
+            <Button
+              loading={busy}
+              disabled={!selectedRescue.active || selectedRescue.available < 1}
+              className="full-width"
+              onClick={async () => {
+                if (
+                  await action({
+                    type: 'claim_rescue',
+                    batchId: selectedRescue.id,
+                    quantity: 1,
+                  })
+                ) {
+                  setRescueId('');
+                  toast(
+                    'Rescue berhasil direservasi. Simpan kode di Pesananmu.',
+                  );
+                }
+              }}
+            >
+              Klaim 1 porsi · {rupiah(selectedRescue.price)}{' '}
+              <ArrowRight size={17} />
+            </Button>
+          </div>
+        )}
+      </Modal>
+      <Modal
+        open={portionInfo}
+        onClose={() => setPortionInfo(false)}
+        title="Porsi pas itu pilihanmu"
+      >
+        <div className="stack">
+          <p className="muted">
+            Pilih nasi sesuai kebutuhanmu. Jumlah lauk pada menu contoh tetap
+            sama.
+          </p>
+          <div className="portion-guide">
+            <div>
+              <Utensils />
+              <h3>Porsi kecil</h3>
+              <p>Nasi lebih sedikit. Cocok saat ingin makan ringan.</p>
+            </div>
+            <div>
+              <Utensils />
+              <h3>Porsi reguler</h3>
+              <p>Porsi nasi standar gerai untuk makan siangmu.</p>
+            </div>
+          </div>
+          <div className="callout">
+            Ilustrasi makanan tidak menunjukkan ukuran porsi aktual. Tanyakan
+            komposisi dan alergen kepada gerai.
+          </div>
+          <Button
+            onClick={() => {
+              setPortionInfo(false);
+              openCheckout();
+            }}
+          >
+            Pilih porsiku <ArrowRight size={17} />
+          </Button>
+        </div>
+      </Modal>
+    </>
+  );
 }
-function StoreIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 10V6l2-3h14l2 3v4M4 10v11h16V10M9 21v-7h6v7M3 10c0 3 4 3 4 0 0 3 5 3 5 0 0 3 5 3 5 0 0 3 4 3 4 0"/></svg>; }
-function CalendarIcon() { return <Clock3 size={20}/>; }
+function StoreIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <path d="M3 10V6l2-3h14l2 3v4M4 10v11h16V10M9 21v-7h6v7M3 10c0 3 4 3 4 0 0 3 5 3 5 0 0 3 5 3 5 0 0 3 4 3 4 0" />
+    </svg>
+  );
+}
+function CalendarIcon() {
+  return <Clock3 size={20} />;
+}

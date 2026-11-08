@@ -1,6 +1,12 @@
 export type Role = 'student' | 'seller' | 'admin';
 export type Portion = 'small' | 'regular';
-export type OrderStatus = 'confirmed' | 'ready' | 'picked_up' | 'cancelled' | 'no_show' | 'expired';
+export type OrderStatus =
+  | 'confirmed'
+  | 'ready'
+  | 'picked_up'
+  | 'cancelled'
+  | 'no_show'
+  | 'expired';
 
 export interface User {
   id: string;
@@ -98,11 +104,25 @@ export interface Recommendation {
   source: 'history' | 'manual';
   historyDays: number;
   accepted?: { target: number; at: string };
-  override?: { target: number; reason: string; at: string; originalTarget?: number };
+  override?: {
+    target: number;
+    reason: string;
+    at: string;
+    originalTarget?: number;
+  };
 }
 export interface StockMovement {
+  sessionId?: string;
   id: string;
-  type: 'opening_balance' | 'production_confirmed' | 'preorder_pickup' | 'walkin_sale' | 'rescue_pickup' | 'internal' | 'waste' | 'reconciliation_correction';
+  type:
+    | 'opening_balance'
+    | 'production_confirmed'
+    | 'preorder_pickup'
+    | 'walkin_sale'
+    | 'rescue_pickup'
+    | 'internal'
+    | 'waste'
+    | 'reconciliation_correction';
   quantity: number;
   reference: string;
   actor: string;
@@ -182,8 +202,33 @@ export interface Snapshot {
   reconciliation: Reconciliation;
   history: HistoricalSession[];
 }
-export type Action = { type: string; idempotencyKey?: string; [key: string]: unknown };
-export const roleNames: Record<Role, string> = { student: 'Mahasiswa', seller: 'Pemilik gerai', admin: 'Pengelola kantin' };
-export const statusNames: Record<OrderStatus, string> = { confirmed: 'Terkonfirmasi', ready: 'Siap diambil', picked_up: 'Sudah diambil', cancelled: 'Dibatalkan', no_show: 'Tidak diambil', expired: 'Kedaluwarsa' };
-export const rupiah = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
-export const clock = (date: string) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).format(new Date(date));
+export type Action = {
+  type: string;
+  idempotencyKey?: string;
+  [key: string]: unknown;
+};
+export const roleNames: Record<Role, string> = {
+  student: 'Mahasiswa',
+  seller: 'Pemilik gerai',
+  admin: 'Pengelola kantin',
+};
+export const statusNames: Record<OrderStatus, string> = {
+  confirmed: 'Terkonfirmasi',
+  ready: 'Siap diambil',
+  picked_up: 'Sudah diambil',
+  cancelled: 'Dibatalkan',
+  no_show: 'Tidak diambil',
+  expired: 'Kedaluwarsa',
+};
+export const rupiah = (amount: number) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(amount);
+export const clock = (date: string) =>
+  new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(date));

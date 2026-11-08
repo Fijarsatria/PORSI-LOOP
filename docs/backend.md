@@ -42,28 +42,28 @@ Buat akun melalui Supabase Auth. Mahasiswa menjadi peran bawaan. Untuk pemilik g
 
 Semua endpoint mutasi memeriksa Origin yang sama (atau `APP_ORIGIN` yang dikonfigurasi untuk reverse proxy), membatasi ukuran badan permintaan, dan membaca identitas dari sesi server. Token demo disimpan dalam bentuk hash SHA-256. Cookie memakai SameSite=Lax dan Secure dalam produksi. Masukkan `idempotencyKey` unik per tindakan; pengulangan key dari pengguna yang sama tidak menggandakan transaksi. Idempotency disimpan untuk 1.000 mutasi terbaru agar dokumen MVP tetap terbatas.
 
-| Peran | Tindakan | Payload |
-| --- | --- | --- |
-| Mahasiswa | `preorder` | `portion: small\|regular`, `quantity:1..5`, `slotId`, `note?` |
-| Mahasiswa | `cancel_order` | `orderId`; hanya sebelum cutoff |
-| Mahasiswa | `claim_rescue` | `batchId`, `quantity:1..2` |
-| Mahasiswa | `cancel_rescue` | `claimId` |
-| Gerai | `record_production` | `quantity` |
-| Gerai | `record_walkin` | `quantity`, `price?` |
-| Gerai | `ready_order` | `orderId` |
-| Gerai | `pickup_order` | `orderId` atau `code` |
-| Gerai | `override_plan` | `target`, `reason`, `capacity?`, `buffer?`, `manualBaseline?` |
-| Gerai | `accept_plan` | `target?`; harus sama dengan saran terbaru |
-| Gerai | `save_menu` | `name?`, `description?`, `active?`, `smallPrice?`, `regularPrice?`, `variableCost?`, `allergens?:string[]` |
-| Gerai | `save_slot` | `slotId`, `capacity`, `cutoff?:ISO` |
-| Gerai | `publish_rescue` | `quantity`, `price`, `foodChecked:true`, `description?`, `durationMinutes` atau `expiresAt` |
-| Gerai | `close_rescue` | `batchId`, `reason`; membatalkan klaim aktif dan melepas cadangan |
-| Gerai | `pickup_rescue` | `claimId` atau `code` |
-| Gerai | `record_waste` | `quantity`, `weightKg`, `reason` |
-| Gerai | `record_internal` | `quantity`, `reason` |
-| Gerai/pengelola | `reconcile` | `endingStock`, `internal?`, `waste?`, `wasteKg?`; hanya tanpa pesanan/klaim aktif; nilai opsional adalah total akhir sesi |
-| Pengelola | `reset_demo` | hanya pada mode demo |
-| Pengelola | `advance_demo` | `minutes:1..240`; hanya pada mode demo, membuat no-show/kedaluwarsa dapat dipresentasikan tanpa menunggu |
+| Peran           | Tindakan            | Payload                                                                                                                   |
+| --------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Mahasiswa       | `preorder`          | `portion: small\|regular`, `quantity:1..5`, `slotId`, `note?`                                                             |
+| Mahasiswa       | `cancel_order`      | `orderId`; hanya sebelum cutoff                                                                                           |
+| Mahasiswa       | `claim_rescue`      | `batchId`, `quantity:1..2`                                                                                                |
+| Mahasiswa       | `cancel_rescue`     | `claimId`                                                                                                                 |
+| Gerai           | `record_production` | `quantity`                                                                                                                |
+| Gerai           | `record_walkin`     | `quantity`, `price?`                                                                                                      |
+| Gerai           | `ready_order`       | `orderId`                                                                                                                 |
+| Gerai           | `pickup_order`      | `orderId` atau `code`                                                                                                     |
+| Gerai           | `override_plan`     | `target`, `reason`, `capacity?`, `buffer?`, `manualBaseline?`                                                             |
+| Gerai           | `accept_plan`       | `target?`; harus sama dengan saran terbaru                                                                                |
+| Gerai           | `save_menu`         | `name?`, `description?`, `active?`, `smallPrice?`, `regularPrice?`, `variableCost?`, `allergens?:string[]`                |
+| Gerai           | `save_slot`         | `slotId`, `capacity`, `cutoff?:ISO`                                                                                       |
+| Gerai           | `publish_rescue`    | `quantity`, `price`, `foodChecked:true`, `description?`, `durationMinutes` atau `expiresAt`                               |
+| Gerai           | `close_rescue`      | `batchId`, `reason`; membatalkan klaim aktif dan melepas cadangan                                                         |
+| Gerai           | `pickup_rescue`     | `claimId` atau `code`                                                                                                     |
+| Gerai           | `record_waste`      | `quantity`, `weightKg`, `reason`                                                                                          |
+| Gerai           | `record_internal`   | `quantity`, `reason`                                                                                                      |
+| Gerai/pengelola | `reconcile`         | `endingStock`, `internal?`, `waste?`, `wasteKg?`; hanya tanpa pesanan/klaim aktif; nilai opsional adalah total akhir sesi |
+| Pengelola       | `reset_demo`        | hanya pada mode demo                                                                                                      |
+| Pengelola       | `advance_demo`      | `minutes:1..240`; hanya pada mode demo, membuat no-show/kedaluwarsa dapat dipresentasikan tanpa menunggu                  |
 
 ## Perhitungan dan batas bukti
 
@@ -92,3 +92,11 @@ Rekonsiliasi: `produksi = pre-order diambil + walk-in + rescue diambil + interna
 - Live mode dimulai dengan menu tidak aktif dan baseline manual nol; pemilik melengkapi konfigurasi operasional. Simulasi tetap memakai fixture yang dilabeli.
 
 `npm run test:integration` menguji endpoint server hasil build, termasuk rollback perubahan invalid, role/origin, kuota bersaing, retry, seluruh siklus layanan, pembukaan sesi berikutnya, dan pencabutan cookie. `npm run test:e2e` disediakan untuk pengujian browser; lihat hasil CI atau jalankan di lingkungan dengan browser yang didukung.
+
+## Penyempurnaan proses dan UX
+
+Kuota slot yang ditampilkan juga dibatasi kapasitas total sesi, termasuk stok rescue yang dicadangkan. Ledger fisik dipertahankan lintas sesi dan dapat dipilih menurut sesi pada panel pengelola. Porsi waste positif memerlukan berat positif; nol kilogram tidak dipakai sebagai pengukuran limbah yang belum ditimbang.
+
+Reset dan pengaturan jam simulasi memakai command engine bersama dengan idempotensi. Retry reset yang sama tidak menghapus transaksi yang dibuat sesudah reset pertama. UI mempertahankan kunci transaksi saat respons hilang, termasuk pada preview HTTP lokal yang tidak menyediakan `crypto.randomUUID`.
+
+Dialog mempertahankan native focus trap dan mengembalikan fokus setelah animasi keluar. Error mutasi tampil di dalam dialog; penutupan sesi memberi petunjuk ketika pesanan masih aktif. Pergantian halaman/tab, kontrol pilihan, dan menu seluler memiliki feedback yang menghormati reduced motion.

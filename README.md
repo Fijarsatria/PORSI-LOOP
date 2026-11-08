@@ -16,12 +16,12 @@ npm run dev
 
 Buka `http://localhost:3000`. Mode bawaan adalah simulasi; tidak memerlukan Supabase atau data pribadi. Jam simulasi dimulai pada 10.00 WIB saat database pertama kali dibuat dan terus bergerak. Data disimpan pada `.data/porsi-loop.sqlite`.
 
-| Ruang | Alamat | Akses demo |
-| --- | --- | --- |
-| Landing | `/` | Publik |
-| Mahasiswa | `/masuk` → `/mahasiswa` | Masuk sebagai mahasiswa |
-| Pemilik gerai | `/masuk?peran=gerai` → `/gerai` | Masuk sebagai pemilik gerai |
-| Pengelola | `/akses-pengelola` → `/pengelola` | Akses terpisah; tidak ditawarkan pada login publik |
+| Ruang         | Alamat                            | Akses demo                                         |
+| ------------- | --------------------------------- | -------------------------------------------------- |
+| Landing       | `/`                               | Publik                                             |
+| Mahasiswa     | `/masuk` → `/mahasiswa`           | Masuk sebagai mahasiswa                            |
+| Pemilik gerai | `/masuk?peran=gerai` → `/gerai`   | Masuk sebagai pemilik gerai                        |
+| Pengelola     | `/akses-pengelola` → `/pengelola` | Akses terpisah; tidak ditawarkan pada login publik |
 
 Akun demo dibagi menurut peran untuk presentasi. Pesanan demo bukan transaksi sungguhan dan angka awal bukan hasil pilot.
 
@@ -63,6 +63,7 @@ Demo SQLite membutuhkan disk persisten pada satu instance server. Untuk deployme
 ## Dokumen
 
 - [Skenario demo langkah demi langkah](docs/demo.md)
+- [Cakupan proposal/PRD dan batas MVP](docs/requirements.md)
 - [Backend, keamanan, dan API](docs/backend.md)
 - [Deployment dan Supabase](docs/deployment.md)
 - [Sumber, lisensi, dan batas klaim](docs/research.md)

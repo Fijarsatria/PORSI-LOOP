@@ -1,0 +1,9 @@
+node_modules
+.next
+.next-qa
+.data
+dist
+outputs
+package-lock.json
+AGENTS.md
+next-env.d.ts

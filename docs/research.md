@@ -4,10 +4,10 @@ Ditinjau pada 8 November 2026. Dokumen ini memisahkan konteks publik dari data o
 
 ## Dua angka yang dapat digunakan
 
-| Angka | Teks Indonesia untuk antarmuka | Cakupan dan batas penggunaan |
-| --- | --- | --- |
+| Angka                | Teks Indonesia untuk antarmuka                                                                                       | Cakupan dan batas penggunaan                                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 23–48 juta ton/tahun | “Di Indonesia, susut dan sisa pangan diperkirakan mencapai 23–48 juta ton per tahun dalam kajian periode 2000–2019.” | Estimasi nasional Bappenas (2021), mencakup rantai pasok pangan. Bukan pengukuran 2026, bukan hanya limbah kantin, dan bukan seluruhnya makanan siap dikonsumsi. |
-| 1,05 miliar ton | “Secara global, 1,05 miliar ton limbah pangan dihasilkan pada 2022, termasuk bagian yang tidak dapat dimakan.” | UNEP Food Waste Index Report 2024; mencakup rumah tangga, layanan makanan, dan ritel. Tidak langsung sebanding dengan cakupan FLW Bappenas. |
+| 1,05 miliar ton      | “Secara global, 1,05 miliar ton limbah pangan dihasilkan pada 2022, termasuk bagian yang tidak dapat dimakan.”       | UNEP Food Waste Index Report 2024; mencakup rumah tangga, layanan makanan, dan ritel. Tidak langsung sebanding dengan cakupan FLW Bappenas.                      |
 
 Sumber pertama: [Bappenas, berita LCDI Week 2021](https://www.bappenas.go.id/id/berita/bahas-urgensi-pembangunan-rendah-karbon-bappenas-helat-lcdi-week-2021-zlS5R), dengan dukungan [laporan kajian Bappenas 2021 berbahasa Inggris](https://lcdi-indonesia.id/wp-content/uploads/2021/07/Report-Kajian-FLW-ENG.pdf) dan [Peta Jalan Pengelolaan Susut dan Sisa Pangan 2024, bagian Kondisi Susut dan Sisa Pangan di Indonesia](https://komens.bappenas.go.id/public/storage/files/Dt.7.1_PETA_JALAN_PENGELOLAAN_SUSUT_DAN_SISA_PANGAN_DALAM_MENDUKUNG_PENCAPAIAN_KETAHANAN_PANGAN_MENUJU_INDONESIA_EMAS_2045_2024.pdf). Halaman berita Bappenas mengembalikan 403 saat dibuka oleh alat riset; angka dan periode diperiksa melalui hasil indeks serta dokumen kajian resmi yang terindeks.
 

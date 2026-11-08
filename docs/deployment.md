@@ -2,9 +2,9 @@
 
 ## Pilihan penyimpanan
 
-| Mode | Kebutuhan | Batas |
-| --- | --- | --- |
-| `demo` | Node.js 24 LTS dan disk persisten | Akun peran bersama, seluruh angka simulasi, satu instance server |
+| Mode       | Kebutuhan                                               | Batas                                                                                       |
+| ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `demo`     | Node.js 24 LTS dan disk persisten                       | Akun peran bersama, seluruh angka simulasi, satu instance server                            |
 | `supabase` | Proyek Supabase, Auth, skema PostgreSQL, secrets server | Adapter cloud tersedia; perlu verifikasi pada proyek tujuan sebelum menerima pengguna nyata |
 
 Tidak ada proyek Supabase yang terlihat pada akun plugin saat kelanjutan 8 November 2026. Tidak ada proyek berbayar, database, akun, atau deployment cloud yang dibuat tanpa target yang terverifikasi.
