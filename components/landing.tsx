@@ -21,10 +21,14 @@ import {
   X,
   ChartNoAxesCombined,
   CalendarClock,
-  Plus,
-  Minus,
+  Wallet,
+  Star,
 } from 'lucide-react';
-import { Brand, LinkButton } from '@/components/ui';
+import { Brand, LinkButton, Badge } from '@/components/ui';
+import { useApp } from '@/components/provider';
+import { rupiah } from '@/lib/domain';
+import { PlanSimulator } from '@/components/plan-simulator';
+import { Founders } from '@/components/founders';
 
 const roles = [
   {
@@ -235,7 +239,8 @@ function Reveal({
 
 export function Landing() {
   const [role, setRole] = useState(0);
-  const [previewP, setPreviewP] = useState(24);
+  const { state } = useApp();
+  const community = state?.community;
   const active = roles[role];
   return (
     <>
@@ -480,72 +485,89 @@ export function Landing() {
                   {active.action}
                 </LinkButton>
               </motion.div>
-              <div className="loop-preview">
-                <div className="preview-top">
-                  <span className="preview-mark">
-                    <Leaf size={20} />
-                  </span>
-                  <span>RENCANA YANG BISA DIPAHAMI</span>
-                  <span className="demo-tag">Simulasi</span>
-                </div>
-                <h4>Berapa porsi hari ini?</h4>
-                <p>Geser rencana lewat jumlah pesanan terjadwal.</p>
-                <div className="demand-equation">
-                  <div>
-                    <strong>{previewP}</strong>
-                    <span>Pick up</span>
-                  </div>
-                  <span>+</span>
-                  <div>
-                    <strong>24</strong>
-                    <span>Walk-in¹</span>
-                  </div>
-                  <span>+</span>
-                  <div>
-                    <strong>2</strong>
-                    <span>Cadangan</span>
-                  </div>
-                </div>
-                <div className="demand-control">
-                  <button
-                    aria-label="Kurangi pesanan terjadwal simulasi"
-                    onClick={() => setPreviewP((n) => Math.max(0, n - 1))}
-                  >
-                    <Minus size={17} />
-                  </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="40"
-                    value={previewP}
-                    aria-label="Jumlah pesanan terjadwal simulasi"
-                    onChange={(e) => setPreviewP(Number(e.target.value))}
-                  />
-                  <button
-                    aria-label="Tambah pesanan terjadwal simulasi"
-                    onClick={() => setPreviewP((n) => Math.min(40, n + 1))}
-                  >
-                    <Plus size={17} />
-                  </button>
-                </div>
-                <div className="demand-result">
-                  <span>
-                    Rencana produksi
-                    <strong>
-                      {Math.min(previewP + 26, 50)} <small>porsi</small>
-                    </strong>
-                  </span>
-                  <span className="result-icon">
-                    <Utensils size={26} />
-                  </span>
-                </div>
-                <p className="preview-footnote">
-                  ¹ Baseline manual contoh. Kapasitas 50 porsi, stok awal 0. Ini
-                  alat bantu keputusan, bukan hasil prediksi AI.
-                </p>
-              </div>
+              <PlanSimulator />
             </div>
           </div>
+        </section>
+
+        <section id="promo" className="container purpose-section">
+          <Reveal className="purpose-copy">
+            <p className="eyebrow">KANTIN MODERN, LEBIH SEDIKIT TERBUANG</p>
+            <h2>
+              Sisa yang layak
+              <br />
+              dapat <span>kesempatan kedua.</span>
+            </h2>
+            <p>
+              PORSI LOOP bukan sekadar tempat memesan makanan. Gerai memasak sesuai rencana,
+              dan kalau tetap ada sisa yang masih layak, Promo Terbatas membuatnya sampai ke
+              piring dengan harga lebih ringan.
+            </p>
+          </Reveal>
+          <Reveal className="purpose-grid">
+            <article className="purpose-card">
+              <span>
+                <Wallet size={21} />
+              </span>
+              <h3>Harga lebih ringan</h3>
+              <p>Customer mendapat makanan matang yang sudah diperiksa gerai dengan harga promo.</p>
+            </article>
+            <article className="purpose-card">
+              <span>
+                <Store size={21} />
+              </span>
+              <h3>Sisa tetap bernilai</h3>
+              <p>Porsi layak tidak langsung dibuang. Gerai tetap memperoleh pemasukan darinya.</p>
+            </article>
+            <article className="purpose-card">
+              <span>
+                <ChartNoAxesCombined size={21} />
+              </span>
+              <h3>Terukur dan jujur</h3>
+              <p>Hanya pengambilan yang diverifikasi QR gerai yang dihitung, tanpa klaim berlebihan.</p>
+            </article>
+          </Reveal>
+          {community && community.servedPortions > 0 && (
+            <Reveal className="purpose-live">
+              <div className="purpose-live-head">
+                <span>
+                  <span className="live-dot" /> MINGGU INI DI KANTIN
+                </span>
+                {community.includesSample && <Badge tone="neutral">Termasuk data contoh</Badge>}
+              </div>
+              <div className="purpose-live-stats">
+                <div>
+                  <strong>{community.servedPortions.toLocaleString('id-ID')}</strong>
+                  <span>porsi dilayani</span>
+                </div>
+                <div>
+                  <strong>{community.promoPortions.toLocaleString('id-ID')}</strong>
+                  <span>porsi lewat Promo Terbatas</span>
+                </div>
+                <div>
+                  <strong>{rupiah(community.promoSavings)}</strong>
+                  <span>dihemat pembeli dari promo</span>
+                </div>
+                <div>
+                  <strong>
+                    {community.ratingCount ? community.ratingAverage.toLocaleString('id-ID') : '—'}{' '}
+                    <Star size={18} style={{ verticalAlign: '-2px' }} />
+                  </strong>
+                  <span>{community.ratingCount} ulasan pembeli</span>
+                </div>
+              </div>
+              <div className="purpose-live-foot">
+                <span>
+                  {community.activePromos
+                    ? `Sekarang ada ${community.activePromos} Promo Terbatas dari ${community.outletsWithPromo} gerai.`
+                    : 'Promo Terbatas muncul saat gerai punya stok layak yang tersisa.'}
+                </span>
+                <LinkButton href="/customer?tab=rescue" variant="lime" arrow>
+                  Lihat Promo Terbatas
+                </LinkButton>
+              </div>
+            </Reveal>
+          )}
         </section>
 
         <section id="dampak" className="section container context-section">
@@ -644,6 +666,7 @@ export function Landing() {
             </div>
           </Reveal>
         </section>
+        <Founders className="container" />
       </main>
       <footer className="public-footer container">
         <div className="footer-top">

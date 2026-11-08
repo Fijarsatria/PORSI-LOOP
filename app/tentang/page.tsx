@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Brand } from '@/components/ui';
+import { Founders } from '@/components/founders';
 export const metadata = { title: 'Tentang & sumber data' };
 export default function Page() {
   return (
@@ -95,6 +96,7 @@ export default function Page() {
           komposisi, alergen, kondisi, dan cara penanganan bersama gerai.
         </p>
       </section>
+      <Founders />
       <Link className="button button-primary" href="/customer">
         Coba alurnya <ArrowUpRight size={17} />
       </Link>
