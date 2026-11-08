@@ -12,7 +12,7 @@ export default function Page() {
   return (
     <main id="main" className="about-page container">
       <Brand />
-      <Link className="text-link" href="/">
+      <Link className="text-link" href="/#top">
         <ArrowLeft size={16} />
         Kembali ke beranda
       </Link>
@@ -24,8 +24,8 @@ export default function Page() {
       </h1>
       <p className="about-lead">
         PORSI LOOP adalah prototipe Trinity LFA untuk CR YOUTH 2026. Fokusnya
-        menghubungkan pilihan porsi dan pre-order dengan perencanaan produksi,
-        rescue makanan layak, dan pencatatan sisa di kantin kampus.
+        menghubungkan pilihan porsi dan pesanan terjadwal dengan perencanaan produksi,
+        Promo Terbatas makanan layak, dan pencatatan sisa di kantin kampus.
       </p>
       <section className="panel">
         <FlaskConical />
@@ -77,9 +77,9 @@ export default function Page() {
         <ShieldCheck />
         <h2>Arti angka dampak</h2>
         <p>
-          Rescue dihitung setelah serah terima divalidasi gerai. Reservasi saja
+          Promo Terbatas dihitung setelah serah terima divalidasi gerai. Reservasi saja
           tidak dihitung. Porsi yang diambil tidak otomatis membuktikan makanan
-          itu akan terbuang tanpa rescue. Aplikasi tidak mengonversi porsi
+          itu akan terbuang tanpa Promo Terbatas. Aplikasi tidak mengonversi porsi
           menjadi klaim emisi.
         </p>
         <p>
@@ -89,12 +89,12 @@ export default function Page() {
           tidak disamakan dengan pendapatan nyata.
         </p>
         <p>
-          Gerai wajib memeriksa kelayakan makanan sebelum menawarkan rescue.
+          Gerai wajib memeriksa kelayakan makanan sebelum menawarkan Promo Terbatas.
           Informasi waktu bukan jaminan keamanan pangan. Periksa komposisi,
           alergen, kondisi, dan cara penanganan bersama gerai.
         </p>
       </section>
-      <Link className="button button-primary" href="/masuk">
+      <Link className="button button-primary" href="/mahasiswa">
         Coba alurnya <ArrowUpRight size={17} />
       </Link>
       <footer className="fine-print">

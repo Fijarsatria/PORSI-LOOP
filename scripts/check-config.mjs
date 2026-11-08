@@ -8,6 +8,9 @@ if (
   errors.push('Gunakan Node.js 22.13 atau lebih baru.');
 if (!['demo', 'supabase'].includes(mode))
   errors.push('PORSI_MODE harus demo atau supabase.');
+if (mode === 'demo' && process.env.NODE_ENV === 'production') {
+  for (const key of ['DEMO_ADMIN_EMAIL', 'DEMO_ADMIN_PASSWORD', 'DEMO_SELLER_EMAIL', 'DEMO_SELLER_PASSWORD']) if (!process.env[key]) errors.push(`${key} wajib diisi untuk akun demonstrasi yang dihosting.`);
+}
 if (mode === 'supabase') {
   for (const key of [
     'SUPABASE_URL',

@@ -1,19 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  FlaskConical,
-  LockKeyhole,
-  Store,
-  Utensils,
-  ShieldCheck,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, ShieldCheck, Store, Utensils } from 'lucide-react';
 import { Brand, Button, Field } from '@/components/ui';
 import { PlateScene } from '@/components/landing';
 import { useApp } from '@/components/provider';
@@ -21,279 +11,56 @@ import type { Role } from '@/lib/domain';
 
 export function Auth({ admin = false }: { admin?: boolean }) {
   const params = useSearchParams();
-  const [role, setRole] = useState<Role>(
-    admin ? 'admin' : params.get('peran') === 'gerai' ? 'seller' : 'student',
-  );
-  const [account, setAccount] = useState(false);
+  const [role, setRole] = useState<Role>(admin ? 'admin' : params.get('peran') === 'gerai' ? 'seller' : 'student');
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { state, loading, busy, error, login } = useApp();
   const router = useRouter();
-  const target =
-    role === 'student'
-      ? '/mahasiswa'
-      : role === 'seller'
-        ? '/gerai'
-        : '/pengelola';
-  useEffect(() => {
-    if (state?.mode === 'supabase') setAccount(true);
-  }, [state?.mode]);
-  const submit = async (demo: boolean) => {
-    if (await login(role, demo, email, password)) router.push(target);
-  };
+  const target = role === 'student' ? '/mahasiswa' : role === 'seller' ? '/gerai' : '/pengelola';
   return (
     <main id="main" className={`auth-page ${admin ? 'auth-admin' : ''}`}>
       <section className="auth-story">
         <Brand />
-        <Link className="auth-back text-link" href="/">
-          <ArrowLeft size={16} /> Kembali ke beranda
-        </Link>
+        <Link className="auth-back text-link" href="/#top"><ArrowLeft size={16} /> Kembali ke beranda</Link>
         <div className="auth-story-copy">
-          <p className="eyebrow">
-            {admin ? 'RUANG PENGELOLA KANTIN' : 'SEBELUM MAKAN SIANG DIMULAI'}
-          </p>
-          <h1>
-            {admin ? (
-              <>
-                Setiap porsi,
-                <br />
-                ada ceritanya.
-              </>
-            ) : (
-              <>
-                Rencana baik.
-                <br />
-                Makan siang
-                <br />
-                <span>lebih santai.</span>
-              </>
-            )}
-          </h1>
-          <p>
-            {admin
-              ? 'Baca alur kantin dari produksi hingga stok akhir, dengan angka yang bisa ditelusuri.'
-              : 'Pilih porsi, atur waktu, dan teruskan lingkar baik dari kantinmu.'}
-          </p>
+          <p className="eyebrow">{admin ? 'PENGELOLA KANTIN' : 'KANTIN DALAM JANGKAUANMU'}</p>
+          <h1>{admin ? <>Pantau kantin.<br /><span>Rencanakan esok.</span></> : <>Pilih sekarang.<br />Nikmati saat<br /><span>istirahat.</span></>}</h1>
+          <p>{admin ? 'Kelola kantin Anda dengan ringkasan penjualan, penerimaan pembayaran, pesanan, dan operasional seluruh gerai.' : 'Pesan dari kelas, pilih waktu ambil, dan pantau kesiapan makananmu.'}</p>
         </div>
-        {admin ? (
-          <div className="auth-admin-art">
-            <ShieldCheck size={100} strokeWidth={0.8} />
-            <span>Terukur. Tertelusur. Terencana.</span>
-          </div>
-        ) : (
-          <PlateScene compact />
-        )}
+        {admin ? <div className="auth-admin-art"><ShieldCheck size={100} strokeWidth={0.8} /><span>Akses khusus pengelola yang terdaftar.</span></div> : <PlateScene compact />}
         <span className="auth-story-foot">Rencanakan. Nikmati. Teruskan.</span>
       </section>
       <section className="auth-form-area">
-        <Link className="auth-mobile-back text-link" href="/">
-          <ArrowLeft size={16} /> Beranda
-        </Link>
+        <Link className="auth-mobile-back text-link" href="/#top"><ArrowLeft size={16} /> Beranda</Link>
         <div className="auth-form-card">
-          <span className="auth-icon">
-            {admin ? (
-              <ShieldCheck size={26} />
-            ) : role === 'student' ? (
-              <Utensils size={26} />
-            ) : (
-              <Store size={26} />
-            )}
-          </span>
-          <p className="eyebrow">
-            {admin ? 'AKSES KHUSUS PENGELOLA' : 'SELAMAT DATANG DI PORSI LOOP'}
-          </p>
-          <h2>
-            {admin ? 'Lihat kantinmu lebih utuh.' : 'Siap buat loop baik?'}
-          </h2>
-          <p className="auth-subtitle">
-            {admin
-              ? 'Masuk untuk memantau operasional dan rekonsiliasi kantin.'
-              : 'Pilih ruangmu. Kita mulai dari sana.'}
-          </p>
-          {!admin && (
-            <div
-              className="auth-role-switch"
-              role="group"
-              aria-label="Pilih peran"
-            >
-              <button
-                onClick={() => setRole('student')}
-                aria-pressed={role === 'student'}
-                className={role === 'student' ? 'selected' : ''}
-              >
-                <Utensils size={18} />
-                Mahasiswa
-              </button>
-              <button
-                onClick={() => setRole('seller')}
-                aria-pressed={role === 'seller'}
-                className={role === 'seller' ? 'selected' : ''}
-              >
-                <Store size={18} />
-                Pemilik gerai
-              </button>
-            </div>
-          )}
-          {account ? (
-            <form
-              className="auth-fields stack"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void submit(false);
-              }}
-            >
-              <Field label="Alamat email">
-                <input
-                  type="email"
-                  autoComplete="email"
-                  placeholder="nama@kampus.ac.id"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  maxLength={200}
-                />
-              </Field>
-              <Field label="Kata sandi">
-                <span className="password-input">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    placeholder="Masukkan kata sandi"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    maxLength={100}
-                  />
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={
-                      showPassword
-                        ? 'Sembunyikan kata sandi'
-                        : 'Tampilkan kata sandi'
-                    }
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-                  </button>
-                </span>
-              </Field>
-              {state?.mode !== 'supabase' && (
-                <div className="callout">
-                  Akun kampus belum dihubungkan pada instalasi ini. Gunakan demo
-                  untuk mencoba seluruh alur.
-                </div>
-              )}
-              {error && (
-                <p className="form-error" role="alert">
-                  {error}
-                </p>
-              )}
-              <Button
-                type="submit"
-                className="full-width"
-                loading={busy}
-                disabled={state?.mode !== 'supabase'}
-              >
-                Masuk <ArrowRight size={18} />
-              </Button>
-              {state?.mode !== 'supabase' && (
-                <button
-                  type="button"
-                  className="text-link centered"
-                  onClick={() => setAccount(false)}
-                >
-                  Kembali ke demo
-                </button>
-              )}
-            </form>
-          ) : (
-            <div className="auth-demo stack">
-              <div className="demo-intro">
-                <span>
-                  <FlaskConical size={20} />
-                </span>
-                <div>
-                  <strong>Coba dulu, tanpa ribet.</strong>
-                  <p>
-                    Jelajahi alur lengkap dengan akun dan data simulasi. Tidak
-                    perlu memasukkan data pribadi.
-                  </p>
-                </div>
-              </div>
-              <div className="auth-demo-features motion-content" key={role}>
-                {(admin
-                  ? [
-                      'Ringkasan operasional kantin',
-                      'Laporan berat sisa dan pendapatan',
-                      'Jejak pencatatan setiap transaksi',
-                    ]
-                  : role === 'student'
-                    ? [
-                        'Pesan menu & pilih slot ambil',
-                        'Simpan kode pengambilan',
-                        'Klaim rescue yang tersedia',
-                      ]
-                    : [
-                        'Rencanakan & catat produksi',
-                        'Atur pesanan dan validasi kode',
-                        'Tawarkan rescue & tutup sesi',
-                      ]
-                ).map((t) => (
-                  <div key={t}>
-                    <span className="feature-check">✓</span>
-                    {t}
-                  </div>
-                ))}
-              </div>
-              <Button
-                className="full-width"
-                onClick={() => void submit(true)}
-                loading={busy}
-                disabled={loading || !state}
-              >
-                Masuk sebagai{' '}
-                {role === 'student'
-                  ? 'mahasiswa'
-                  : role === 'seller'
-                    ? 'pemilik gerai'
-                    : 'pengelola'}
-                <ArrowRight size={18} />
-              </Button>
-              <p className="auth-demo-note">
-                Demo interaktif · transaksi tersimpan sebagai simulasi
-              </p>
-              {error && (
-                <p className="form-error" role="alert">
-                  {error}
-                </p>
-              )}
-              <div className="auth-divider">
-                <span>atau</span>
-              </div>
-              <button
-                className="text-link centered"
-                onClick={() => setAccount(true)}
-              >
-                <LockKeyhole size={15} />
-                Masuk dengan akun
-              </button>
-            </div>
-          )}
-          <div className="auth-bottom">
-            <ShieldCheck size={16} />
-            <span>
-              {admin
-                ? 'Peran pengelola diverifikasi di server.'
-                : 'Cukup identitas seperlunya. Tanpa NIM atau nomor telepon.'}
-            </span>
-          </div>
+          <p className="eyebrow">{admin ? 'AKSES TERBATAS' : 'SELAMAT DATANG'}</p>
+          <h2>{admin ? 'Masuk sebagai pengelola' : role === 'seller' ? 'Ruang pemilik gerai' : 'Mau makan apa hari ini?'}</h2>
+          <p className="muted">{admin ? 'Akses untuk pengelola kantin pelanggan PORSI LOOP. Gunakan akun yang diberikan penyedia platform untuk memantau seluruh gerai kantin Anda.' : role === 'seller' ? 'Masuk dengan akun gerai untuk mengubah menu, mengatur ketersediaan, dan memperbarui status pesanan.' : 'Langsung pesan sebagai tamu. Masuk dengan akun tersedia sebagai pilihan.'}</p>
+          {!admin && <div className="auth-role-switch" aria-label="Pilih ruang">
+            <button type="button" onClick={() => setRole('student')} aria-pressed={role === 'student'} className={role === 'student' ? 'selected' : ''}><Utensils size={18} /> Mahasiswa</button>
+            <button type="button" onClick={() => setRole('seller')} aria-pressed={role === 'seller'} className={role === 'seller' ? 'selected' : ''}><Store size={18} /> Pemilik gerai</button>
+          </div>}
+          {role === 'student' && <div className="stack" style={{ marginBlock: 24 }}>
+            <Link className="button button-primary full-width" href="/mahasiswa">Langsung pilih menu <ArrowRight size={18} /></Link>
+            <p className="muted">Tanpa wajib login. Pesanan tamu tersimpan di browser yang kamu gunakan.</p>
+            <div className="auth-divider"><span>atau masuk dengan akun</span></div>
+          </div>}
+          <form className="auth-fields stack" onSubmit={async (event) => {
+            event.preventDefault();
+            if (await login(role, state?.mode === 'demo', email, password)) router.push(target);
+          }}>
+            <Field label="Alamat email"><input type="email" autoComplete="username" placeholder="Email akun terdaftar" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} /></Field>
+            <Field label="Kata sandi"><span className="password-input">
+              <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Masukkan kata sandi" value={password} onChange={(event) => setPassword(event.target.value)} required maxLength={1024} />
+              <button type="button" aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button>
+            </span></Field>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <Button className="full-width" type="submit" loading={busy} disabled={loading || !state}>Masuk <ArrowRight size={18} /></Button>
+          </form>
+          <div className="auth-bottom"><ShieldCheck size={16} /><span>{role === 'student' ? 'Akun opsional. Cukup nama panggilan saat memesan.' : 'Peran dan kepemilikan gerai diverifikasi oleh server.'}</span></div>
         </div>
-        <span className="auth-copyright">
-          PORSI LOOP · Trinity LFA · CR YOUTH 2026
-        </span>
+        <span className="auth-copyright">PORSI LOOP · Trinity LFA · CR YOUTH 2026</span>
       </section>
     </main>
   );

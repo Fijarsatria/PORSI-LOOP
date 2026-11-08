@@ -1,29 +1,22 @@
-# Cakupan produk dan batas MVP
+# Cakupan produk dan batas implementasi
 
-Sumber kebutuhan: proposal Trinity LFA dan PRD PORSI LOOP. Implementasi ini berfokus pada satu gerai dan satu menu per sesi.
+Acuan terkini adalah permintaan pengguna 8 November 2026, PRD14 halaman, dan proposal21 halaman. Pengguna memperluas MVP satu gerai menjadi kantin dengan banyak gerai; istilah dan kewajiban login mengikuti arahan terbaru. Baca [audit per halaman](requirements-audit-2026-11-08.md) dan [alur terkini](flow-v2.md).
 
-| Kebutuhan        | Implementasi                                                                             | Batas yang tetap perlu diperhatikan                                              |
-| ---------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Tiga peran       | Mahasiswa, gerai, pengelola dengan akses server yang berbeda                             | Akses pengelola terpisah dari login publik                                       |
-| Pre-order        | Porsi, kuota slot dan sesi, cutoff, pembatalan, pickup code                              | Pembayaran di gerai; belum ada payment gateway                                   |
-| Perencanaan      | Pre-order + histori walk-in terpisah/baseline manual + buffer; override dengan alasan    | Aturan transparan, bukan model ML atau jaminan akurasi                           |
-| Stok & rescue    | Produksi aktual, walk-in, cadangan, expiry, pemeriksaan gerai, pickup dan ledger numerik | Timer bukan jaminan keamanan pangan; SOP lapangan tetap diperlukan               |
-| Penutupan sesi   | Persamaan stok, status belum lengkap/lengkap, histori, sesi berikutnya                   | Stok akhir tidak otomatis dipindahkan menjadi produksi baru                      |
-| Jejak audit      | Ledger tetap tersimpan lintas sesi dan dapat dipilih dari panel pengelola                | Reservasi tidak dihitung sebagai pickup                                          |
-| Dampak           | Outcome operasional, penerimaan rescue, berat limbah dan waste intensity terpisah        | Manfaat bersih memerlukan baseline serta biaya; pengurangan emisi tidak dikarang |
-| Ketahanan proses | Transaksi atomik lokal, compare-and-swap cloud, idempotensi dan session revocation       | Adapter Supabase tetap memerlukan pengujian pada proyek tim                      |
-| UX               | Feedback klik, transisi halaman/tab/dialog, error dalam form, fokus dan reduced motion   | Tes otomatis membantu; evaluasi usability lapangan tetap diperlukan              |
+| Kebutuhan | Implementasi | Batas |
+| --- | --- | --- |
+| Mahasiswa tanpa login wajib | Sesi tamu acak server; katalog langsung; akun opsional | Tiket tamu terikat browser; belum ada pemulihan lintas perangkat |
+| Penjual dan pengelola | Kredensial wajib; outletId tepercaya untuk penjual; agregat admin tanpa tiket pribadi | Akun cloud harus diprovisikan melalui Auth |
+| Banyak gerai/menu | Demo6 gerai18 menu; stok/slot/rekonsiliasi per menu | Cloud baru18 menu nonaktif tanpa transaksi/produksi contoh |
+| Dine in/Pick up | Pengambilan segera atau slot terjadwal, cutoff dan kuota server | Tidak ada pengantaran atau pemesanan meja |
+| Promo Terbatas | Surplus aktual, pemeriksaan penjual, expiry, reservasi atomik | Bukan produksi khusus diskon; timer bukan jaminan kelayakan |
+| Pembayaran | Simulator QRIS/E-wallet/transfer demo; tunai dikonfirmasi penjual | Gateway nyata belum terintegrasi; simulasi ditolak pada cloud |
+| QR pengambilan | Token kriptografis hanya pemilik tiket; scanner kamera dan input token, paid+ready+gerai+expiry+sekali pakai | Kamera fisik memerlukan perangkat, HTTPS, dan izin browser |
+| Progres/notifikasi | Status beranimasi; polling4 detik; notifikasi halaman dan perangkat opsional | Bukan push saat browser ditutup |
+| Refund | Demo simulasi; live cash menunggu konfirmasi uang dikembalikan | Tidak ada klaim transfer/refund otomatis |
+| Perencanaan | Permintaan terkonfirmasi + histori walk-in terpisah/baseline manual + buffer; override beralasan | Aturan transparan, bukan klaim model ML atau optimasi |
+| Stok dan insight | Aktual: produksi, normal terambil, promo terambil, waste/internal/stok akhir; contoh50=40+8+2 | Tidak menghitung pesanan belum terambil sebagai porsi terlayani |
+| Rekonsiliasi | Selisih ditandai belum lengkap; histori lengkap menjadi pembanding; ledger lintas sesi | Stok akhir tidak otomatis menjadi produksi baru |
+| Integritas | SQLite transaksi termasuk polling; compare-and-swap cloud; idempotensi; isolasi gerai | Dokumen global cloud dapat mengalami kontensi pada skala besar |
+| Aksesibilitas | Dialog/fokus/Escape, reduced motion, kontras, layout390px dan desktop | Evaluasi pengguna dan kamera perangkat nyata tetap diperlukan |
 
-## Demo yang dapat dibuka
-
-Demo privat yang ditautkan pada README memakai data sintetis dan penyimpanan server persisten. Pemilihan mahasiswa/gerai/pengelola di dalam demo adalah simulasi peran, bukan penerbitan hak akses produksi. Situs privat memerlukan akun pemilik yang memiliki akses.
-
-## Sebelum layanan nyata
-
-- Akun Supabase terhubung belum menampilkan proyek tim; skema cloud belum dipasang atau diuji terhadap proyek nyata.
-- Backend MVP saat ini menyimpan satu dokumen transaksi terversi untuk satu gerai. Model relasional organisasi/gerai dan kebijakan RLS lintas gerai pada PRD belum menjadi implementasi multi-tenant penuh. Jangan memakai satu dokumen ini sebagai bukti keamanan multi-gerai.
-- Klaim pengurangan waste, manfaat ekonomi bersih, dan keberhasilan pilot membutuhkan baseline, biaya, metode timbang, serta hasil lapangan yang sebanding.
-
-## Kebersihan repositori
-
-Git menyimpan sumber aplikasi, tes, lockfile, skema dan panduan penggunaan. Database, secrets, build output, file generate/editor, catatan kerja sementara, dan aset duplikat tidak disimpan sebagai sumber aktif. File yang sebelumnya terlanjur di-commit dihapus dari versi terbaru tanpa menulis ulang riwayat kolaborator.
+Proyek Supabase dan skema telah dibuat serta pembatasan tabel/RPC diuji. Koneksi runtime masih membutuhkan kunci rahasia server yang tidak tersedia melalui plugin; browser menolak pengambilan karena URL aktif tidak dapat dipastikan. Data demo tetap terpisah dari fakta pilot. Tidak ada klaim CO2, kg terhindar, manfaat bersih, atau kemitraan kampus yang dibuat tanpa bukti.

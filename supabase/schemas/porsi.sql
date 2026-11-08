@@ -1,4 +1,4 @@
--- Declarative schema for the single-outlet MVP. All writes go through the
+-- Declarative schema for the multi-outlet server. All writes go through the
 -- authenticated Next.js server and its domain transaction engine.
 -- No user is permitted to read or replace the entire state document directly.
 create table if not exists public.porsi_state (

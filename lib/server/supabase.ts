@@ -10,12 +10,13 @@ import { createClient, type User as SupabaseUser } from '@supabase/supabase-js';
 import type { Action, Role, Snapshot, User } from '../domain';
 import {
   applyAction,
-  createState,
+  createMarketplaceState,
   DomainError,
   snapshot,
   type StoreState,
 } from './engine';
 import { COOKIE, cookieOptions } from './http';
+import { createGuest } from './auth';
 
 function config() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,7 +61,8 @@ interface SessionToken {
   refresh: string;
   expires: number;
 }
-function seal(value: SessionToken) {
+interface GuestToken { kind: 'guest'; user: User; expires: number }
+function seal(value: SessionToken | GuestToken) {
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv);
   const ciphertext = Buffer.concat([
@@ -71,7 +73,7 @@ function seal(value: SessionToken) {
     'base64url',
   );
 }
-function unseal(token: string): SessionToken | null {
+function unseal(token: string): SessionToken | GuestToken | null {
   try {
     if (token.length > 6000) return null;
     const data = Buffer.from(token, 'base64url');
@@ -86,17 +88,19 @@ function unseal(token: string): SessionToken | null {
         decipher.update(data.subarray(28)),
         decipher.final(),
       ]).toString(),
-    ) as SessionToken;
+    ) as SessionToken | GuestToken;
     return value.expires > Date.now() ? value : null;
   } catch {
     return null;
   }
 }
-function userFromAuth(user: SupabaseUser): User {
+export function userFromAuth(user: SupabaseUser): User {
   // Roles are issued only by a trusted administrator, never from user_metadata.
   const rawRole = user.app_metadata?.role;
   const role: Role =
     rawRole === 'seller' || rawRole === 'admin' ? rawRole : 'student';
+  const outletId = typeof user.app_metadata?.outletId === 'string' ? user.app_metadata.outletId : undefined;
+  if (role === 'seller' && (!outletId || !/^[a-zA-Z0-9_-]{1,100}$/.test(outletId))) throw new DomainError('Akun gerai belum memiliki penugasan gerai yang valid.', 403);
   return {
     id: user.id,
     role,
@@ -107,7 +111,19 @@ function userFromAuth(user: SupabaseUser): User {
           ? 'Pemilik gerai'
           : 'Pengelola kantin',
     email: user.email,
+    outletId: role === 'seller' ? outletId : undefined,
   };
+}
+
+export function createCloudGuestSession() {
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) throw new DomainError('Identitas tamu belum selesai dikonfigurasi.', 503);
+  const user = createGuest();
+  return { user, token: seal({ kind: 'guest', user, expires: Date.now() + 86400000 }) };
+}
+export function readCloudGuestSession(token: string): User | null {
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) return null;
+  const value = unseal(token);
+  return value && 'kind' in value && value.kind === 'guest' && value.user.role === 'student' && value.user.isGuest === true && /^guest-[a-f0-9-]{36}$/.test(value.user.id) ? value.user : null;
 }
 export async function cloudLogin(data: Record<string, unknown>) {
   if (
@@ -158,7 +174,7 @@ export async function cloudLogin(data: Record<string, unknown>) {
 export async function readCloudSession(token: string): Promise<User | null> {
   config();
   const value = unseal(token);
-  if (!value) return null;
+  if (!value || 'kind' in value) return null;
   const registered = await serviceClient()
     .from('porsi_sessions')
     .select('user_id')
@@ -195,7 +211,7 @@ export async function readCloudSession(token: string): Promise<User | null> {
 export async function cloudLogout(token: string) {
   config();
   const value = unseal(token);
-  if (!value) return;
+  if (!value || 'kind' in value) return;
   const revoked = await serviceClient()
     .from('porsi_sessions')
     .delete()
@@ -221,9 +237,9 @@ async function load() {
     .eq('id', 'main')
     .single();
   if (error?.code === 'PGRST116') {
-    const initial = createState(Date.now(), true);
+    const initial = createMarketplaceState(Date.now(), true);
     // A live installation starts empty, with slots relative to actual server time.
-    initial.slots = initial.slots.map((slot, i) => {
+    for (const kitchen of [initial, ...(initial.kitchens ?? [])]) kitchen.slots = kitchen.slots.map((slot, i) => {
       const start = Date.now() + (60 + i * 30) * 60000;
       const end = start + 30 * 60000;
       const fmt = (date: number) =>
@@ -256,7 +272,7 @@ async function load() {
     if (reloaded.error)
       throw new DomainError('Penyimpanan belum tersedia.', 503);
     return {
-      state: reloaded.data.document as StoreState,
+      state: upgradeCloudState(reloaded.data.document as StoreState),
       revision: Number(reloaded.data.revision),
     };
   }
@@ -266,9 +282,22 @@ async function load() {
       503,
     );
   return {
-    state: data.document as StoreState,
+    state: upgradeCloudState(data.document as StoreState),
     revision: Number(data.revision),
   };
+}
+function upgradeCloudState(state: StoreState): StoreState {
+  if (!state.kitchens) {
+    const empty = createMarketplaceState(Date.now(), true);
+    state.kitchens = empty.kitchens;
+    state.menu.outletId ??= 'outlet-bu-ratna';
+    for (const kitchen of state.kitchens ?? []) kitchen.slots = kitchen.slots.map((slot, i) => {
+      const start = Date.now() + (60 + i * 30) * 60000;
+      const format = (time: number) => new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).format(new Date(time));
+      return { ...slot, start: new Date(start).toISOString(), end: new Date(start + 30 * 60000).toISOString(), cutoff: new Date(Date.now() + 30 * 60000).toISOString(), label: `${format(start)}–${format(start + 30 * 60000)}` };
+    });
+  }
+  return state;
 }
 export async function cloudSnapshot(user: User | null): Promise<Snapshot> {
   const { state } = await load();
@@ -285,7 +314,7 @@ export async function cloudMutate(
     );
   for (let attempt = 0; attempt < 5; attempt++) {
     const { state, revision } = await load();
-    applyAction(state, user, action, Date.now());
+    applyAction(state, user, action, Date.now(), 'supabase');
     const { data, error } = await serviceClient().rpc(
       'porsi_compare_and_swap',
       { expected_revision: revision, next_document: state },

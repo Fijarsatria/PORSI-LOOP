@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from './provider';
+import { lockPageScroll } from '@/lib/client/scroll-lock';
 
 export function Brand({
   light = false,
@@ -22,7 +23,7 @@ export function Brand({
 }) {
   return (
     <Link
-      href="/"
+      href="/#top"
       className={`brand ${light ? 'brand-light' : ''}`}
       aria-label="PORSI LOOP, beranda"
     >
@@ -165,11 +166,7 @@ export function Modal({
   }, [open, clearError]);
   useEffect(() => {
     if (!present) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
+    return lockPageScroll();
   }, [present]);
   const finishExit = () => {
     if (!openRef.current) {

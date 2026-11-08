@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 import { CookingPot, Info } from 'lucide-react';
 import { useApp } from '../provider';
@@ -23,17 +23,29 @@ export const number = (value: FormDataEntryValue | null) => Number(value ?? 0);
 export const statusTone = (status: OrderStatus) =>
   status === 'picked_up' || status === 'ready'
     ? ('green' as const)
-    : status === 'confirmed'
+    : status === 'confirmed' || status === 'pending_payment' || status === 'preparing'
       ? ('orange' as const)
       : ('neutral' as const);
 export const safePercent = (part: number, total: number) =>
   total > 0 ? Math.round((part / total) * 100) : 0;
 
+const OperationsContext = createContext<Snapshot | null>(null);
+
+export function OperationsScope({ state, children }: { state: Snapshot; children: React.ReactNode }) {
+  return <OperationsContext.Provider value={state}>{children}</OperationsContext.Provider>;
+}
+
 export function useOperations() {
   const context = useApp();
+  const scoped = useContext(OperationsContext);
+  const state = scoped ?? context.state;
   const messages: Record<string, string> = {
-    pickup_order: 'Pengambilan pre-order dikonfirmasi.',
-    pickup_rescue: 'Pengambilan rescue dikonfirmasi.',
+    pickup_order: 'Pengambilan Pick up dikonfirmasi.',
+    pickup_rescue: 'Pengambilan Promo Terbatas dikonfirmasi.',
+    scan_pickup: 'QR valid. Penyerahan makanan berhasil dicatat satu kali.',
+    prepare_order: 'Pesanan sedang disiapkan. Status mahasiswa diperbarui.',
+    verify_cash_payment: 'Pembayaran tunai dikonfirmasi.',
+    confirm_cash_refund: 'Pengembalian uang tunai dikonfirmasi. Status pembeli diperbarui.',
     ready_order: 'Pesanan ditandai siap diambil.',
     record_production: 'Produksi selesai dicatat. Stok siap jual diperbarui.',
     record_walkin: 'Penjualan langsung dicatat.',
@@ -41,8 +53,8 @@ export function useOperations() {
     save_slot: 'Kuota slot pengambilan disimpan.',
     override_plan: 'Keputusan perencanaan disimpan.',
     accept_plan: 'Saran persiapan diterima. Stok belum berubah.',
-    publish_rescue: 'Penawaran rescue diterbitkan.',
-    close_rescue: 'Penawaran rescue ditutup dan sisa kuota dilepas.',
+    publish_rescue: 'Penawaran Promo Terbatas diterbitkan.',
+    close_rescue: 'Penawaran Promo Terbatas ditutup dan sisa kuota dilepas.',
     advance_demo:
       'Waktu simulasi dimajukan. Status pesanan dan reservasi diperbarui.',
     reconcile: 'Catatan rekonsiliasi disimpan.',
@@ -50,14 +62,16 @@ export function useOperations() {
   };
   return {
     ...context,
+    state,
     busy:
       context.busy ||
       Boolean(
-        context.state?.user?.role === 'seller' &&
-          context.state.reconciliation.complete,
+        state?.user?.role === 'seller' &&
+          state.reconciliation.complete,
       ),
     action: async (payload: Record<string, unknown>) => {
-      const success = await context.action(payload);
+      const orderAction = ['prepare_order', 'ready_order', 'verify_cash_payment', 'confirm_cash_refund', 'scan_pickup'].includes(String(payload.type));
+      const success = await context.action({ ...(scoped && !orderAction ? { menuId: scoped.menu.id } : {}), ...payload });
       if (success && messages[String(payload.type)])
         context.toast(messages[String(payload.type)]);
       return success;
@@ -94,12 +108,12 @@ export function StockFlow({ state }: { state: Snapshot }) {
   const total = r.openingStock + r.produced;
   const items = [
     {
-      label: 'Pre-order diambil',
+      label: 'Pesanan normal diserahkan',
       value: r.preorderPickedUp,
       className: 'preorder',
     },
     { label: 'Pembeli langsung', value: r.walkin, className: 'walkin' },
-    { label: 'Rescue diambil', value: r.rescuePickedUp, className: 'rescue' },
+    { label: 'Promo Terbatas diambil', value: r.rescuePickedUp, className: 'rescue' },
     { label: 'Konsumsi internal', value: r.internal, className: 'internal' },
     { label: 'Makanan dibuang', value: r.waste, className: 'waste' },
     {
@@ -152,6 +166,31 @@ export function StockFlow({ state }: { state: Snapshot }) {
   );
 }
 
+export function ProductionInsight({ state }: { state: Snapshot }) {
+  const r = state.reconciliation;
+  const normal = r.preorderPickedUp + r.walkin;
+  const total = r.openingStock + r.produced;
+  const outputs = [
+    { label: 'Terjual normal', value: normal, style: 'normal' },
+    { label: 'Promo Terbatas diambil', value: r.rescuePickedUp, style: 'promo' },
+    { label: 'Dibuang', value: r.waste, style: 'waste' },
+    { label: 'Konsumsi internal', value: r.internal, style: 'internal' },
+    { label: 'Stok tersisa', value: state.metrics.stock, style: 'remaining' },
+  ];
+  return <section className="panel ops-production-insight">
+    <PanelHeading title="Ke mana porsi produksi tersalurkan?" description="Hanya penyerahan yang selesai dihitung sebagai penjualan. Pembayaran dan reservasi belum termasuk.">
+      <Badge tone={r.complete ? 'green' : 'neutral'}>{r.complete ? 'Sesi lengkap' : 'Sesi berjalan'}</Badge>
+    </PanelHeading>
+    <div className="ops-insight-equation"><div><strong>{r.produced}</strong><span>porsi diproduksi</span>{r.openingStock > 0 && <small>+ {r.openingStock} stok awal</small>}</div><b aria-hidden="true">=</b><p>{normal} normal + {r.rescuePickedUp} promo + {r.waste} dibuang + {r.internal} internal + {state.metrics.stock} tersisa</p></div>
+    {total > 0 ? <div className="ops-insight-track" aria-label={`Distribusi ${total} porsi`}>
+      {outputs.filter((item) => item.value > 0).map((item) => <span key={item.style} className={`ops-segment-${item.style}`} style={{ flex: item.value }} title={`${item.label}: ${item.value} porsi`} />)}
+    </div> : <p className="ops-footnote">Belum ada produksi tercatat. Konfirmasikan produksi selesai untuk mulai memantau porsi.</p>}
+    <div className="ops-insight-values">{outputs.map((item) => <div key={item.style}><span className={`ops-insight-key ops-segment-${item.style}`} /><span>{item.label}</span><strong>{item.value}</strong></div>)}</div>
+    {r.difference !== 0 && <p className="ops-footnote">Selisih rekonsiliasi tersimpan: {r.difference} porsi. Lengkapi catatan akhir sebelum menggunakan sesi sebagai pembanding.</p>}
+    <details className="ops-example"><summary>Contoh rekonsiliasi: 50 = 40 + 8 + 2</summary><p><strong>Simulasi terpisah dari sesi di atas:</strong> 50 porsi diproduksi, 40 terjual normal, 8 Promo Terbatas diambil, dan 2 dibuang. Stok akhir serta konsumsi internal nol; 48 porsi benar-benar terlayani. Contoh ini bukan hasil pilot atau klaim pengurangan limbah.</p></details>
+  </section>;
+}
+
 export function MovementLedger({ state }: { state: Snapshot }) {
   const [selection, setSelection] = useState('');
   const session = selection || state.sessionId;
@@ -161,9 +200,9 @@ export function MovementLedger({ state }: { state: Snapshot }) {
   const labels = {
     opening_balance: 'Saldo saat pembaruan sistem',
     production_confirmed: 'Produksi selesai',
-    preorder_pickup: 'Pre-order diambil',
+    preorder_pickup: 'Pesanan normal diserahkan',
     walkin_sale: 'Penjualan langsung',
-    rescue_pickup: 'Rescue diambil',
+    rescue_pickup: 'Promo Terbatas diambil',
     internal: 'Konsumsi internal',
     waste: 'Makanan dibuang',
     reconciliation_correction: 'Koreksi rekonsiliasi',

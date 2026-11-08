@@ -1,77 +1,62 @@
 # PORSI LOOP
 
-**Rencanakan sebelum memasak. Selamatkan bila tersisa. Ukur dampaknya.**
+Platform kantin kampus oleh Trinity LFA untuk CR YOUTH 2026. Mahasiswa bisa langsung memesan tanpa wajib login; penjual mengelola gerai melalui akun; pengelola memantau operasional seluruh kantin melalui akses khusus.
 
-Web kantin kampus untuk Hackathon CR YOUTH 2026 oleh Trinity LFA. MVP satu gerai, satu menu dengan dua pilihan porsi, tiga slot pickup, dan tiga peran pengguna. Dibangun dengan Next.js, TypeScript, Supabase/PostgreSQL, dan penyimpanan demo SQLite.
+Versi alur 8 November 2026 menyediakan **6 gerai, 18 menu**, Dine in / Pick up segera atau terjadwal, **Promo Terbatas**, simulasi beberapa metode pembayaran, progres pesanan, QR pengambilan sekali pakai, pemindai kamera penjual, dan insight produksi/penjualan/sisa.
 
-## Lihat web langsung
+## Jalankan lokal
 
-**[Buka demo PORSI LOOP](https://porsi-loop-demo.secretloom514.chatgpt.site/)**
-
-Demo bersifat privat: masuk melalui ChatGPT dengan akun yang memiliki akses, kemudian pilih demo mahasiswa atau pemilik gerai. Akses pengelola tetap melalui `/akses-pengelola`. Seluruh transaksi pada tautan ini adalah simulasi. Data demo online disimpan di server; Supabase produksi belum dihubungkan.
-
-## Jalankan demo
-
-Gunakan Node.js **24 LTS** (minimal 22.13).
+Gunakan Node.js minimal 22.13 (disarankan 24 LTS).
 
 ```bash
 npm ci
-npm run check:config
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Mode bawaan adalah simulasi; tidak memerlukan Supabase atau data pribadi. Jam simulasi dimulai pada 10.00 WIB saat database pertama kali dibuat dan terus bergerak. Data disimpan pada `.data/porsi-loop.sqlite`.
+Buka http://localhost:3000/mahasiswa. Mode bawaan adalah demo SQLite dengan data sintetis; pembayaran tidak memindahkan uang sungguhan.
 
-| Ruang         | Alamat                            | Akses demo                                         |
-| ------------- | --------------------------------- | -------------------------------------------------- |
-| Landing       | `/`                               | Publik                                             |
-| Mahasiswa     | `/masuk` → `/mahasiswa`           | Masuk sebagai mahasiswa                            |
-| Pemilik gerai | `/masuk?peran=gerai` → `/gerai`   | Masuk sebagai pemilik gerai                        |
-| Pengelola     | `/akses-pengelola` → `/pengelola` | Akses terpisah; tidak ditawarkan pada login publik |
+| Ruang | Alamat | Kredensial lokal pengembangan |
+| --- | --- | --- |
+| Mahasiswa | `/mahasiswa` | Tanpa login; akun opsional `student@porsiloop.local` / `PorsiStudent2026!` |
+| Dapur Bu Ratna | `/masuk?peran=gerai` | `seller@porsiloop.local` / `PorsiSeller2026!` |
+| Gerai lainnya | `/masuk?peran=gerai` | `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada `@porsiloop.local`; kata sandi penjual yang sama |
+| Pengelola | `/akses-pengelola` | `admin@porsiloop.local` / `PorsiAdmin2026!` |
 
-Akun demo dibagi menurut peran untuk presentasi. Pesanan demo bukan transaksi sungguhan dan angka awal bukan hasil pilot.
+Kredensial contoh hanya menjadi default pada pengembangan. Server demo produksi wajib memakai DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD, DEMO_SELLER_EMAIL, dan DEMO_SELLER_PASSWORD yang dikonfigurasi sendiri. Mode Supabase memakai akun Auth nyata; tidak menerima pintasan akun demo.
 
-## Alur yang tersedia
+## Alur utama
 
-- Mahasiswa: katalog menu, ukuran porsi, slot pickup, pre-order, pembatalan sebelum cutoff, tiket/kode, rescue, dan riwayat pengambilan sendiri.
-- Gerai: pengaturan menu/lokasi/alergen/harga, perencanaan `P + W + buffer`, penyesuaian dengan alasan, produksi aktual, penjualan walk-in, pencatatan permintaan tak terlayani, pickup, rescue, dan rekonsiliasi.
-- Pengelola: agregat operasional, histori, penerimaan rescue, waste intensity, kualitas rekonsiliasi, ledger stok, dan log. Tidak menerima daftar pesanan individu.
-- Sesi berikutnya: setelah rekonsiliasi lengkap, gerai memilih tanggal/cutoff/pickup baru. Histori dan tiket lama disimpan. Stok akhir lama tidak otomatis menjadi produksi sesi baru.
-
-Reservasi menahan kuota; hanya pickup yang menurunkan stok dan menambah porsi terlayani. Saran produksi tidak membuat stok. Pre-order dan histori walk-in dipisahkan agar tidak dihitung dua kali.
+- Mahasiswa: pilih gerai dan menu → Dine in/Pick up → jadwal → pembayaran → pantau status → QR pengambilan.
+- Penjual: lihat pesanan/notifikasi → konfirmasi tunai bila perlu → siapkan → siap → Scan QR saat serah terima.
+- Pengelola: perbandingan gerai, trafik pesanan anonim, produksi, penjualan normal, Promo Terbatas terambil, waste, dan rekonsiliasi.
+- Produksi: permintaan terkonfirmasi + estimasi walk-in terpisah + buffer; keputusan penjual tidak menambah stok sampai produksi selesai dicatat.
+- Stok: reservasi menahan kuota; hanya serah terima mengurangi stok dan menambah porsi terlayani. Promo berasal dari surplus aktual yang diperiksa penjual.
 
 ## Verifikasi
 
 ```bash
+npm run check:config
 npm test
 npm run build
 npm run typecheck
 npm run test:integration
-```
-
-Tes integrasi menyalakan server produksi dengan database sementara dan memeriksa akses peran, CSRF/origin, rollback, kuota serentak, idempotensi, logout, dan siklus hingga sesi baru. Tidak mengubah data demo pengembangan.
-
-Tes browser tersedia untuk layar 390px dan desktop 1440px:
-
-```bash
-npx playwright install --with-deps chromium
+npx playwright install chromium
 npm run test:e2e
 ```
 
-Tes browser memeriksa login peran, pemesanan, dialog/Escape, retry respons hilang, reduced motion, dan overflow. Screenshot disimpan pada hasil tes. Konfigurasi CI berada di `.github/workflows/ci.yml`; keberhasilan browser dan workflow harus diperiksa pada hasil eksekusinya, bukan diasumsikan dari keberadaan file.
+Tes browser menjalankan server produksi dengan kredensial uji tersendiri dan basis data sementara. Tes mencakup tamu, checkout, QR asli yang dapat didekode, persiapan penjual, pengambilan sekali pakai, privasi, dialog keyboard, dan tampilan mobile/desktop.
 
-## Supabase dan deployment
+## Supabase
 
-Ikuti [panduan deployment](docs/deployment.md) dan [kontrak backend](docs/backend.md). Mode Supabase memerlukan proyek nyata, skema, akun, dan secrets pada server. **Akun Supabase yang terhubung pada kelanjutan ini tidak menampilkan proyek**, sehingga pemasangan dan pengujian cloud belum dilakukan. Mode nyata tidak beralih ke demo jika konfigurasi gagal.
-
-Demo SQLite membutuhkan disk persisten pada satu instance server. Untuk deployment dengan beberapa instance atau filesystem sementara, gunakan mode Supabase. Dockerfile disediakan sebagai opsi packaging; build image belum diverifikasi pada lingkungan tanpa Docker.
+Proyek **PORSI LOOP** telah dibuat: [buka dashboard](https://supabase.com/dashboard/project/wcodhmpstpdmjpqbwoeo). Skema privat dan pembatasan akses database telah dipasang serta diperiksa. Koneksi aplikasi masih membutuhkan SUPABASE_SERVICE_ROLE_KEY di konfigurasi server yang tidak di-commit. Mode cloud tidak beralih diam-diam ke demo bila konfigurasi tidak lengkap. QRIS/E-wallet/transfer nyata membutuhkan integrasi gateway; mode cloud menyediakan jalur tunai terverifikasi dan menolak simulasi pembayaran.
 
 ## Dokumen
 
-- [Skenario demo langkah demi langkah](docs/demo.md)
-- [Cakupan proposal/PRD dan batas MVP](docs/requirements.md)
-- [Backend, keamanan, dan API](docs/backend.md)
-- [Deployment dan Supabase](docs/deployment.md)
-- [Sumber, lisensi, dan batas klaim](docs/research.md)
+- [Alur, keamanan, notifikasi, dan batas implementasi terkini](docs/flow-v2.md)
+- [Audit lengkap PRD dan proposal dengan rujukan halaman](docs/requirements-audit-2026-11-08.md)
+- [Peran penyedia platform, pengelola kantin, dan laporan uang](docs/roles-and-finance.md)
+- [Kontrak backend](docs/backend.md)
+- [Deployment](docs/deployment.md)
+- [Sumber dan batas klaim](docs/research.md)
 
-Penerimaan rescue adalah pendapatan bruto aktual dari pickup. Manfaat bersih dan penurunan waste memerlukan baseline serta biaya yang valid; aplikasi tidak mengarang klaim tersebut atau mengonversi porsi menjadi emisi. Perluasan ke banyak gerai memerlukan model tenant/tabel relasional serta pengujian akses lintas gerai; hal tersebut tidak diklaim sebagai fitur MVP satu gerai ini.
+Data demo bukan hasil pilot. Porsi Promo Terbatas terambil adalah outcome distribusi, bukan otomatis bukti pengurangan waste. Kg waste berasal dari penimbangan; manfaat ekonomi membutuhkan baseline dan biaya yang valid.

@@ -2,9 +2,11 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import type { User } from '../domain';
 import { DomainError } from './engine';
-import { mode, readDemoSession } from './store';
+import { createDemoSession, mode, readDemoSession } from './store';
+import { createGuest } from './auth';
 
 export const COOKIE = 'porsi_session';
+export const GUEST_COOKIE = 'porsi_guest';
 export const cookieOptions = () => ({
   httpOnly: true,
   secure:
@@ -46,12 +48,37 @@ export function checkOrigin(request: NextRequest) {
 export async function readUser(): Promise<User | null> {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (!token) return null;
-  if (mode() === 'supabase') {
+  if (token && mode() === 'supabase') {
     const { readCloudSession } = await import('./supabase');
-    return readCloudSession(token);
+    const user = await readCloudSession(token);
+    if (user) return user;
   }
-  return readDemoSession(token);
+  if (token && mode() === 'demo') {
+    const user = await readDemoSession(token);
+    if (user) return user;
+  }
+  const guestToken = jar.get(GUEST_COOKIE)?.value;
+  if (!guestToken) return null;
+  if (mode() === 'supabase') {
+    const { readCloudGuestSession } = await import('./supabase');
+    return readCloudGuestSession(guestToken);
+  }
+  const guest = await readDemoSession(guestToken);
+  return guest?.isGuest && guest.role === 'student' ? guest : null;
+}
+export async function ensureUser(): Promise<User> {
+  const existing = await readUser();
+  if (existing) return existing;
+  const jar = await cookies();
+  if (mode() === 'supabase') {
+    const { createCloudGuestSession } = await import('./supabase');
+    const { user, token } = createCloudGuestSession();
+    jar.set(GUEST_COOKIE, token, cookieOptions());
+    return user;
+  }
+  const user = createGuest();
+  jar.set(GUEST_COOKIE, await createDemoSession(user), cookieOptions());
+  return user;
 }
 export function errorResponse(error: unknown) {
   if (error instanceof DomainError)

@@ -20,6 +20,7 @@ import {
 
 import { Badge, Button, EmptyState, Stat } from '../ui';
 import { clock, rupiah, type Snapshot } from '@/lib/domain';
+import { FinanceDashboard } from './finance';
 import './styles.css';
 
 import {
@@ -29,6 +30,7 @@ import {
   MovementLedger,
   dateLabel,
   safePercent,
+  ProductionInsight,
 } from './shared';
 
 function HistoryChart({ state }: { state: Snapshot }) {
@@ -107,9 +109,9 @@ function HistoryTable({ state }: { state: Snapshot }) {
           <tr>
             <th>Tanggal sesi</th>
             <th>Produksi</th>
-            <th>Pre-order diambil</th>
+            <th>Pesanan normal diserahkan</th>
             <th>Walk-in</th>
-            <th>Rescue</th>
+            <th>Promo Terbatas</th>
             <th>Dibuang</th>
             <th>Kualitas data</th>
           </tr>
@@ -138,6 +140,50 @@ function HistoryTable({ state }: { state: Snapshot }) {
   );
 }
 
+function OutletComparison({ state }: { state: Snapshot }) {
+  const outlets = state.outlets?.length ? state.outlets : [{ id: state.menu.outletId ?? 'current', name: state.menu.outlet, location: state.menu.location, category: state.menu.category, menuIds: [state.menu.id], metrics: state.metrics }];
+  return <section className="panel">
+    <PanelHeading title="Bandingkan layanan antar gerai" description="Porsi yang diserahkan, stok fisik, dan limbah dari sesi yang tercatat. Identitas pembeli tidak ditampilkan."><Badge tone="neutral">{outlets.length} gerai · {state.menus?.length ?? 1} menu</Badge></PanelHeading>
+    <div className="table-wrap"><table className="data-table ops-outlet-comparison"><thead><tr><th>Gerai</th><th>Produksi</th><th>Normal diserahkan</th><th>Promo diserahkan</th><th>Stok fisik</th><th>Dibuang</th><th>Antrean aktif</th></tr></thead>
+      <tbody>{outlets.map((outlet) => {
+        const kitchens = state.kitchens?.filter((kitchen) => kitchen.menu.outletId === outlet.id) ?? [];
+        const normal = kitchens.length ? kitchens.reduce((sum, kitchen) => sum + kitchen.reconciliation.preorderPickedUp + kitchen.metrics.walkin, 0) : state.orders.filter((order) => order.outletId === outlet.id && order.status === 'picked_up').reduce((sum, order) => sum + order.quantity, 0) + (outlet.metrics?.walkin ?? 0);
+        const active = state.orderTraffic?.filter((item) => item.outletId === outlet.id).reduce((sum, item) => sum + item.active, 0) ?? [...state.orders, ...state.claims].filter((item) => item.outletId === outlet.id && ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(item.status)).length;
+        return <tr key={outlet.id}><td><strong>{outlet.name}</strong><span className="ops-table-sub">{outlet.location} · {outlet.menuIds.length} menu</span></td><td>{outlet.metrics?.produced ?? 0}</td><td>{normal}</td><td>{outlet.metrics?.rescued ?? 0}</td><td>{outlet.metrics?.stock ?? 0}</td><td>{outlet.metrics?.waste ?? 0} porsi<span className="ops-table-sub">{(outlet.metrics?.wasteKg ?? 0).toLocaleString('id-ID')} kg tercatat</span></td><td><Badge tone={active ? 'orange' : 'neutral'}>{active} pesanan</Badge></td></tr>;
+      })}</tbody>
+    </table></div>
+  </section>;
+}
+
+function OrderTraffic({ state }: { state: Snapshot }) {
+  const all = [...state.orders.map((order) => ({ ...order, channel: 'normal' })), ...state.claims.map((claim) => ({ ...claim, channel: 'promo' }))];
+  const groups = new Map<string, { date: string; outlet: string; total: number; portions: number; normal: number; promo: number; paid: number; served: number }>();
+  for (const item of all) {
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(item.createdAt));
+    const outlet = state.outlets?.find((entry) => entry.id === item.outletId)?.name ?? state.menu.outlet;
+    const key = `${date}-${item.outletId ?? outlet}`;
+    const row = groups.get(key) ?? { date, outlet, total: 0, portions: 0, normal: 0, promo: 0, paid: 0, served: 0 };
+    row.total += 1;
+    row.portions += item.quantity;
+    if (item.channel === 'normal') row.normal += 1;
+    else row.promo += 1;
+    if (item.paymentStatus === 'paid') row.paid += 1;
+    if (item.status === 'picked_up') row.served += 1;
+    groups.set(key, row);
+  }
+  const rows = state.orderTraffic?.map((item) => ({ date: item.date, outlet: item.outletName, total: item.orders, portions: item.portions, normal: item.normal, promo: item.promo, paid: item.paid, served: item.served })).sort((a, b) => b.date.localeCompare(a.date) || a.outlet.localeCompare(b.outlet)) ?? [...groups.values()].sort((a, b) => b.date.localeCompare(a.date) || a.outlet.localeCompare(b.outlet));
+  const total = state.orderTraffic?.reduce((sum, item) => sum + item.orders, 0) ?? all.length;
+  const pending = state.orderTraffic?.reduce((sum, item) => sum + item.pending, 0) ?? all.filter((item) => item.paymentStatus === 'pending').length;
+  const preparing = state.orderTraffic?.reduce((sum, item) => sum + item.preparing, 0) ?? all.filter((item) => item.status === 'preparing').length;
+  const ready = state.orderTraffic?.reduce((sum, item) => sum + item.ready, 0) ?? all.filter((item) => item.status === 'ready').length;
+  return <section className="panel">
+    <PanelHeading title="Arus pesanan yang tercatat" description="Riwayat permintaan per hari dan gerai, tanpa nama, akun, atau token pembeli." />
+    <div className="ops-traffic-summary"><div><strong>{total}</strong><span>pesanan tercatat</span></div><div><strong>{pending}</strong><span>menunggu pembayaran</span></div><div><strong>{preparing}</strong><span>sedang disiapkan</span></div><div><strong>{ready}</strong><span>siap diserahkan</span></div></div>
+    {rows.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>Tanggal masuk</th><th>Gerai</th><th>Pesanan</th><th>Normal / Promo</th><th>Porsi dipesan</th><th>Pesanan lunas</th><th>Pesanan diserahkan</th></tr></thead><tbody>{rows.map((row) => <tr key={`${row.date}-${row.outlet}`}><td>{dateLabel(row.date)}</td><td><strong>{row.outlet}</strong></td><td>{row.total}</td><td>{row.normal} / {row.promo}</td><td>{row.portions}</td><td>{row.paid}</td><td>{row.served}</td></tr>)}</tbody></table></div> : <EmptyState icon={ShoppingBag} title="Belum ada arus pesanan" description="Pesanan baru akan muncul sebagai ringkasan per hari dan gerai setelah mahasiswa memesan." />}
+    <p className="ops-footnote">Porsi dipesan dapat mencakup pembatalan dan pesanan belum lunas. Pesanan diserahkan hanya bertambah sesudah verifikasi penyerahan.</p>
+  </section>;
+}
+
 function AdminOverview({ state }: { state: Snapshot }) {
   const served =
     state.reconciliation.preorderPickedUp +
@@ -151,11 +197,10 @@ function AdminOverview({ state }: { state: Snapshot }) {
     <div className="stack ops-page">
       <div className="ops-greeting">
         <div>
-          <span className="eyebrow">PANDANGAN UTUH, KEPUTUSAN TERARAH</span>
-          <h1>Kantin yang terus belajar.</h1>
+          <span className="eyebrow">RUANG PENGELOLA KANTIN</span>
+          <h1>Ringkasan kantin Anda.</h1>
           <p className="muted">
-            Pantau layanan, kualitas pencatatan, dan hasil setiap sesi dalam
-            satu pandangan.
+            Pantau penjualan, penerimaan, pesanan, dan operasional seluruh gerai di kantin Anda.
           </p>
         </div>
         <span className="ops-date">
@@ -164,14 +209,16 @@ function AdminOverview({ state }: { state: Snapshot }) {
         </span>
       </div>
       <div className="stat-grid">
+        <Stat label="Penjualan selesai" value={rupiah(state.finance?.grossSales ?? state.metrics.revenue)} note="Seluruh gerai · sesi berjalan tiap menu" icon={ShoppingBag} />
+        <Stat label="Penerimaan setelah refund" value={rupiah(state.finance?.netPayments ?? 0)} note="Pembayaran diterima dikurangi refund selesai" icon={TrendingUp} />
         <Stat
           label="Porsi terlayani hari ini"
           value={served}
-          note="Pre-order, walk-in & rescue diambil"
+          note="Normal & Promo Terbatas diserahkan"
           icon={Utensils}
         />
         <Stat
-          label="Rescue tersalurkan"
+          label="Promo Terbatas tersalurkan"
           value={state.metrics.rescued}
           note="Berdasarkan pickup terkonfirmasi"
           icon={Sprout}
@@ -189,6 +236,9 @@ function AdminOverview({ state }: { state: Snapshot }) {
           icon={ClipboardCheck}
         />
       </div>
+      <OutletComparison state={state} />
+      <OrderTraffic state={state} />
+      <ProductionInsight state={state} />
       <div className="ops-main-grid">
         <section className="panel">
           <PanelHeading
@@ -226,31 +276,6 @@ function AdminOverview({ state }: { state: Snapshot }) {
           </Badge>
         </section>
       </div>
-      <section className="panel">
-        <PanelHeading
-          title="Gerai dalam pemantauan"
-          description="Lingkup MVP: satu gerai dan satu menu."
-        />
-        <div className="ops-outlet-row">
-          <div className="ops-outlet-avatar">
-            <CookingPot size={25} />
-          </div>
-          <div>
-            <h3>{state.menu.outlet}</h3>
-            <p className="muted">
-              {state.menu.location} · {state.menu.name}
-            </p>
-          </div>
-          <div>
-            <span className="ops-table-sub">Status pencatatan sesi</span>
-            <Badge tone={state.reconciliation.complete ? 'green' : 'orange'}>
-              {state.reconciliation.complete
-                ? 'Lengkap'
-                : 'Menunggu penutupan sesi'}
-            </Badge>
-          </div>
-        </div>
-      </section>
       <section className="panel">
         <PanelHeading
           title="Riwayat sesi"
@@ -299,7 +324,7 @@ function Impact({ state }: { state: Snapshot }) {
         />
         <div className="stat-grid">
           <Stat
-            label="Pre-order diambil"
+            label="Pesanan normal diserahkan"
             value={r.preorderPickedUp}
             note="Porsi, berdasarkan validasi pickup"
             icon={ShoppingBag}
@@ -310,7 +335,7 @@ function Impact({ state }: { state: Snapshot }) {
             note={
               eligible
                 ? `${r.preorderPickedUp} dari ${eligible} porsi dikonfirmasi (termasuk yang masih menunggu)`
-                : 'Belum ada pre-order terkonfirmasi'
+                : 'Belum ada pesanan terkonfirmasi'
             }
             icon={TicketCheck}
           />
@@ -321,7 +346,7 @@ function Impact({ state }: { state: Snapshot }) {
             icon={Clock3}
           />
           <Stat
-            label="Rescue tersalurkan"
+            label="Promo Terbatas tersalurkan"
             value={r.rescuePickedUp}
             note={`${state.metrics.rescueReserved} porsi masih dalam reservasi`}
             icon={Leaf}
@@ -375,7 +400,7 @@ function Impact({ state }: { state: Snapshot }) {
             <TrendingUp size={23} />
           </div>
           <span className="eyebrow">CATATAN EKONOMI</span>
-          <h2>Penerimaan rescue</h2>
+          <h2>Penerimaan Promo Terbatas</h2>
           <div className="ops-impact-value money">
             {rupiah(rescueRevenue)}
             <span>Penerimaan dari pickup terkonfirmasi</span>
@@ -397,7 +422,7 @@ function Impact({ state }: { state: Snapshot }) {
       <div className="callout">
         <Info size={20} />
         <p>
-          Rescue dilaporkan sebagai porsi tersalurkan. Pengurangan limbah
+          Promo Terbatas dilaporkan sebagai porsi tersalurkan. Pengurangan limbah
           memerlukan perbandingan berat limbah aktual dengan baseline yang
           sebanding. MVP tidak menampilkan klaim emisi karbon.
         </p>
@@ -414,8 +439,8 @@ function Impact({ state }: { state: Snapshot }) {
             </span>
             <h3>Hitung layanan aktual</h3>
             <p>
-              Denominator mencakup pre-order diambil, walk-in terjual, dan
-              rescue diambil. Reservasi dan no-show tidak masuk.
+              Denominator mencakup pesanan normal diserahkan, walk-in terjual, dan
+              Promo Terbatas diambil. Reservasi dan no-show tidak masuk.
             </p>
           </div>
           <div>
@@ -450,7 +475,7 @@ function Ledger({ state }: { state: Snapshot }) {
   const logs = useMemo(
     () =>
       state.logs.filter((log) =>
-        `${log.action} ${log.detail} ${log.actor}`
+        `${log.action} ${log.detail}`
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),
@@ -515,7 +540,7 @@ function Ledger({ state }: { state: Snapshot }) {
             <input
               type="search"
               aria-label="Cari log aktivitas"
-              placeholder="Cari aktivitas atau pelaku…"
+              placeholder="Cari aktivitas operasional…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -529,10 +554,10 @@ function Ledger({ state }: { state: Snapshot }) {
                   <ClipboardCheck size={17} />
                 </span>
                 <div>
-                  <h3>{log.action.replaceAll('_', ' ')}</h3>
-                  <p>{log.detail}</p>
+                  <h3>{log.action.replaceAll('_', ' ').replace(/pre-order/gi, 'Pick up').replace(/rescue/gi, 'Promo Terbatas')}</h3>
+                  <p>{log.detail.replace(/pre-order/gi, 'Pick up').replace(/rescue/gi, 'Promo Terbatas')}</p>
                   <small>
-                    {log.actor} · {dateLabel(log.at)}
+                    Catatan operasional · {dateLabel(log.at)}
                   </small>
                 </div>
                 <time dateTime={log.at}>
@@ -564,6 +589,7 @@ export function AdminDashboard({ tab }: { tab: string }) {
       </div>
     );
   if (tab === 'impact') return <Impact state={state} />;
+  if (tab === 'finance') return <FinanceDashboard state={state} />;
   if (tab === 'ledger') return <Ledger state={state} />;
   return <AdminOverview state={state} />;
 }

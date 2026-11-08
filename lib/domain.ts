@@ -1,7 +1,12 @@
 export type Role = 'student' | 'seller' | 'admin';
 export type Portion = 'small' | 'regular';
+export type Fulfillment = 'dine_in' | 'pick_up';
+export type PaymentMethod = 'qris' | 'ewallet' | 'bank_transfer' | 'cash';
+export type PaymentStatus = 'pending' | 'paid' | 'refund_pending' | 'refunded' | 'expired';
 export type OrderStatus =
+  | 'pending_payment'
   | 'confirmed'
+  | 'preparing'
   | 'ready'
   | 'picked_up'
   | 'cancelled'
@@ -13,8 +18,13 @@ export interface User {
   role: Role;
   name: string;
   email?: string;
+  isGuest?: boolean;
+  outletId?: string;
 }
 export interface Menu {
+  slots?: Slot[];
+  outletId?: string;
+  availableStock?: number;
   id: string;
   name: string;
   description: string;
@@ -41,6 +51,12 @@ export interface Slot {
   closed: boolean;
 }
 export interface Order {
+  outletId?: string;
+  fulfillment?: Fulfillment;
+  paymentStatus?: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  pickupToken?: string;
+  paymentExpiresAt?: string;
   serviceDate?: string;
   outletName?: string;
   pickupLocation?: string;
@@ -61,6 +77,7 @@ export interface Order {
   pickedUpAt?: string;
 }
 export interface RescueBatch {
+  outletId?: string;
   allergens?: string[];
   id: string;
   menuId: string;
@@ -76,6 +93,13 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  note?: string;
+  outletId?: string;
+  fulfillment?: Fulfillment;
+  paymentStatus?: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  pickupToken?: string;
+  paymentExpiresAt?: string;
   serviceDate?: string;
   outletName?: string;
   pickupLocation?: string;
@@ -183,7 +207,48 @@ export interface HistoricalSession {
   wasteKg: number;
   closed: boolean;
 }
+export interface FinanceTotals {
+  normalSales: number;
+  promoSales: number;
+  grossSales: number;
+  grossPayments: number;
+  refunds: number;
+  refundPending: number;
+  netPayments: number;
+  awaitingPayment: number;
+  servedPortions: number;
+  completedOrders: number;
+  orders: number;
+  walkinPortions: number;
+  walkinRevenue: number;
+}
+export interface FinanceMethod {
+  method: PaymentMethod | 'walk_in' | 'unrecorded';
+  grossPayments: number;
+  refunds: number;
+  refundPending: number;
+  netPayments: number;
+}
+export interface OutletFinance extends FinanceTotals {
+  outletId: string;
+  outletName: string;
+  menuCount: number;
+  businessDates: string[];
+  paymentMethods: FinanceMethod[];
+}
+export interface FinanceReport extends FinanceTotals {
+  scope: 'current_sessions';
+  businessDates: string[];
+  outlets: OutletFinance[];
+  paymentMethods: FinanceMethod[];
+}
 export interface Snapshot {
+  finance?: FinanceReport;
+  orderTraffic?: { date: string; outletId: string; outletName: string; orders: number; portions: number; normal: number; promo: number; paid: number; served: number; pending: number; preparing: number; ready: number; active: number }[];
+  menus?: Menu[];
+  outlets?: { id: string; name: string; location: string; category: string; menuIds: string[]; metrics?: Metrics }[];
+  kitchens?: Snapshot[];
+  selectedOutletId?: string;
   sessionId: string;
   movements: StockMovement[];
   user: User | null;
@@ -213,7 +278,9 @@ export const roleNames: Record<Role, string> = {
   admin: 'Pengelola kantin',
 };
 export const statusNames: Record<OrderStatus, string> = {
+  pending_payment: 'Menunggu pembayaran',
   confirmed: 'Terkonfirmasi',
+  preparing: 'Sedang disiapkan',
   ready: 'Siap diambil',
   picked_up: 'Sudah diambil',
   cancelled: 'Dibatalkan',
