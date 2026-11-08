@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { OrderChat } from './order-chat';
 import dynamic from 'next/dynamic';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -161,6 +162,12 @@ export function AppShell({ role }: { role: Role }) {
     state.claims.filter((c) =>
       ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(c.status),
     ).length;
+  const hasPromo = state.rescues.some(
+    (b) =>
+      b.active &&
+      b.available > 0 &&
+      new Date(b.expiresAt).getTime() > new Date(state.now).getTime(),
+  );
   const nav = (mobile = false) =>
     navs[role].map((n) => (
       <Link
@@ -178,8 +185,17 @@ export function AppShell({ role }: { role: Role }) {
         )}
         <n.icon size={mobile ? 21 : 19} />
         <span>{mobile ? n.mobile || n.label : n.label}</span>
+        {n.id === 'rescue' && hasPromo && (
+          <span
+            className="nav-promo-dot"
+            role="img"
+            aria-label="Promo tersedia"
+          />
+        )}
         {n.id === 'orders' && count > 0 && (
-          <span className="nav-count">{count}</span>
+          <span className="nav-count" aria-label={`${count} pesanan aktif`}>
+            {count > 99 ? '99+' : count}
+          </span>
         )}
       </Link>
     ));
@@ -359,9 +375,13 @@ export function AppShell({ role }: { role: Role }) {
           </footer>
         </div>
       </div>
-      <nav className="app-bottom-nav glass" aria-label="Navigasi seluler">
-        {nav(true)}
-      </nav>
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <nav className="app-bottom-nav glass" aria-label="Navigasi seluler">
+            {nav(true)}
+          </nav>,
+          document.body,
+        )}
       <OrderChat />
       <Modal
         open={profile}

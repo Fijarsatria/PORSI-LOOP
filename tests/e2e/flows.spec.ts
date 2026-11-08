@@ -521,3 +521,59 @@ test('seller credentials allow editing menu information, price and availability'
     card.getByRole('button', { name: 'Pesan', exact: true }),
   ).toBeDisabled();
 });
+
+test('compact mobile catalogue keeps two columns and a visible dock at both scroll extremes', async ({
+  page,
+}, info) => {
+  await page.goto('/customer');
+  for (const width of [320, 375, 430]) {
+    await page.setViewportSize({ width, height: 760 });
+    const cards = page.getByTestId('menu-card');
+    await expect(cards).toHaveCount(18);
+    const first = await cards.nth(0).boundingBox();
+    const second = await cards.nth(1).boundingBox();
+    expect(Math.abs(first!.y - second!.y)).toBeLessThan(2);
+    expect(second!.x).toBeGreaterThan(first!.x + first!.width);
+    await noOverflow(page);
+    const dock = page.getByRole('navigation', { name: 'Navigasi seluler' });
+    await expect(dock).toBeVisible();
+    expect(
+      await dock.evaluate((el) => el.parentElement === document.body),
+    ).toBe(true);
+    const before = await dock.boundingBox();
+    await cards.last().scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect
+      .poll(async () => Math.abs((await dock.boundingBox())!.y - before!.y))
+      .toBeLessThan(2);
+    expect(before!.y + before!.height).toBeLessThanOrEqual(760 - 8);
+    expect(
+      await dock.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(
+          document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2),
+        );
+      }),
+    ).toBe(true);
+    await expect(dock.locator('.nav-promo-dot')).toHaveCount(1);
+  }
+  await page.setViewportSize({ width: 375, height: 760 });
+  await page.getByTestId('menu-card').first().scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: info.outputPath('compact-mobile-catalogue.png'),
+  });
+  await page.getByTestId('menu-order-button').first().click();
+  const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
+  await checkout.getByLabel('Nama pemesan').fill('Pembeli mobile');
+  await checkout
+    .getByRole('button', { name: 'Bayar di gerai', exact: true })
+    .click();
+  await checkout.getByRole('button', { name: 'Buat pesanan' }).click();
+  const ticket = page.getByRole('dialog', { name: 'Status pesananmu' });
+  await ticket.getByRole('button', { name: 'Tutup dialog' }).click();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Navigasi seluler' })
+      .locator('.nav-count'),
+  ).toHaveText('1');
+});

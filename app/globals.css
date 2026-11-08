@@ -5223,3 +5223,48 @@ input[type='range'] {
   font-size: 12px;
   white-space: nowrap;
 }
+/* Keep the mobile dock independent of page transitions and browser overscroll. */
+.app-bottom-nav {
+  z-index: 60;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  padding: 6px 4px;
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border: 1px solid #e2eadbd9;
+  background: #f9fbf5f5;
+  box-shadow: 0 8px 32px #173d3526;
+}
+.nav-promo-dot {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 19px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #c33832;
+  box-shadow: 0 0 0 2px #f9fbf5;
+  pointer-events: none;
+}
+.nav-count {
+  width: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 18px;
+  box-shadow: 0 0 0 2px #f9fbf5;
+}
+.app-sidebar .nav-promo-dot {
+  position: static;
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+.app-sidebar .nav-count {
+  min-width: 22px;
+  width: auto;
+}
