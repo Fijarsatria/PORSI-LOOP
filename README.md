@@ -56,6 +56,7 @@ Proyek **PORSI LOOP** telah dibuat: [buka dashboard](https://supabase.com/dashbo
 
 - [Alur, keamanan, notifikasi, dan batas implementasi terkini](docs/flow-v2.md)
 - [Penyederhanaan penjual, pendaftaran customer, rating, dan gerai](docs/customer-canteen-update.md)
+- [Hasil pemeriksaan kelanjutan dan batas verifikasi](docs/verification-2026-11-08.md)
 - [Audit lengkap PRD dan proposal dengan rujukan halaman](docs/requirements-audit-2026-11-08.md)
 - [Peran penyedia platform, pengelola kantin, dan laporan uang](docs/roles-and-finance.md)
 - [Kontrak backend](docs/backend.md)

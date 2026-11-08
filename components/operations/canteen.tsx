@@ -71,10 +71,9 @@ export function CanteenPulse({ state }: { state: Snapshot }) {
           icon={Wallet}
           label="Pembayaran diterima"
           value={
-            <span
+            <abbr
               title={rupiah(state.finance?.netPayments ?? 0)}
-              aria-label={rupiah(state.finance?.netPayments ?? 0)}
-            >{`Rp${new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(state.finance?.netPayments ?? 0)}`}</span>
+            >{`Rp${new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(state.finance?.netPayments ?? 0)}`}</abbr>
           }
           note="Penerimaan setelah refund"
         />

@@ -1,6 +1,9 @@
 .canteen-pulse {
   gap: 24px;
 }
+.canteen-pulse abbr {
+  text-decoration: none;
+}
 .canteen-pulse .stat-grid {
   margin: 0;
 }

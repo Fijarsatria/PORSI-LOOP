@@ -264,6 +264,7 @@ export function AppShell({ role }: { role: Role }) {
             {role !== 'student' && (
               <Link
                 className="button button-ghost work-shop-link"
+                aria-label="Belanja sebagai customer"
                 href="/customer"
               >
                 <span className="work-shop-label">Belanja</span>{' '}
