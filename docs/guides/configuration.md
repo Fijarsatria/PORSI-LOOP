@@ -19,4 +19,4 @@ Buat `.env.local` hanya pada perangkat pengembangan, atau isi variabel di pengat
 
 Untuk pengembangan demo, konfigurasi tambahan tidak diperlukan. Untuk cloud, isi lima variabel Supabase/session/origin serta `PORSI_MODE=supabase`, lalu jalankan `npm run check:config`. Pemeriksaan ini tidak menguji koneksi database; gunakan juga [verifikasi database](../../supabase/README.md).
 
-`PORSI_COOKIE_INSECURE=true` hanya untuk pengujian build produksi melalui HTTP loopback; jangan dipakai pada hosting publik. Kredensial demo pengembangan tercantum di README dan bukan kredensial Supabase.
+`PORSI_COOKIE_INSECURE=true` hanya untuk pengujian build produksi melalui HTTP loopback; jangan dipakai pada hosting publik. Kredensial tidak dicantumkan di README atau dokumentasi publik; simpan seluruh nilai autentikasi pada pengaturan privat lingkungan masing-masing.

@@ -28,11 +28,9 @@ Metode pembayaran pembeli langsung belum dicatat terpisah, sehingga nilainya dit
 
 ## Akun demo pengembangan
 
-- Dapur Bu Ratna: `seller@porsiloop.local` / `PorsiSeller2026!`.
-- Pengelola kantin: `admin@porsiloop.local` / `PorsiAdmin2026!`.
-- Gerai lain: `dedi`, `sari`, `hadi`, `nusantara`, atau `roti` pada domain `@porsiloop.local`, dengan kata sandi penjual yang sama.
+- Akun gerai dan pengelola disediakan secara terpisah untuk lingkungan pengembangan; detail login tidak dipublikasikan di dokumentasi.
 
-Kredensial ini untuk demo lokal. Hosting demo produksi wajib mengatur kredensial staf sendiri, sedangkan mode Supabase memakai akun Auth nyata. Tidak ada akun penyedia platform publik yang membagikan akses infrastruktur.
+Akun ini hanya untuk demo lokal. Hosting demo produksi wajib mengatur kredensial staf sendiri, sedangkan mode Supabase memakai akun Auth nyata. Tidak ada akun penyedia platform publik yang membagikan akses infrastruktur.
 
 ## Kembali ke beranda
 

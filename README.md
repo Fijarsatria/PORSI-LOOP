@@ -54,24 +54,11 @@ Buka **http://localhost:3000/customer** di browser. Secara bawaan, aplikasi berj
 
 Pengguna Windows juga dapat menggunakan [`scripts/mulai-lokal.cmd`](scripts/mulai-lokal.cmd) setelah dependensi terpasang.
 
-<details>
-<summary><strong>Akun demo untuk pengembangan lokal</strong></summary>
-
-| Peran | Email | Kata sandi |
-| --- | --- | --- |
-| Customer | `student@porsiloop.local` | `PorsiStudent2026!` |
-| Penjual | `seller@porsiloop.local` | `PorsiSeller2026!` |
-| Pengelola | `admin@porsiloop.local` | `PorsiAdmin2026!` |
-
-Akun di atas hanya untuk **pengembangan/demo**. Jangan gunakan kredensial ini untuk layanan nyata; akun pada mode Supabase dikelola terpisah.
-
-</details>
-
 ### Menggunakan Supabase
 
-Untuk menjalankan mode cloud, buat `.env.local` pada komputer atau isi environment variables di layanan hosting. Atur `PORSI_MODE=supabase`, URL dan kunci Supabase, `SESSION_SECRET`, serta `APP_ORIGIN` sesuai [panduan konfigurasi](docs/guides/configuration.md).
+Untuk menjalankan mode cloud, siapkan konfigurasi privat di perangkat atau pengaturan environment variables hosting sesuai [panduan konfigurasi](docs/guides/configuration.md).
 
-**Jangan commit file environment yang berisi secrets.** Panduan pemasangan skema dan pemeriksaannya ada di [folder Supabase](supabase/README.md).
+**File environment dan kredensial tidak boleh dimasukkan ke Git.** Panduan pemasangan skema dan pemeriksaannya ada di [folder Supabase](supabase/README.md).
 
 ## Struktur proyek
 
