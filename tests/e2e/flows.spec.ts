@@ -178,3 +178,33 @@ test('Promo Terbatas cash waits for seller verification before issuing the buyer
   await expect(ticket.getByRole('heading', { name: 'Selamat menikmati!' })).toBeVisible({ timeout: 10000 });
   await staff.close();
 });
+
+test('scroll returns after checkout switches to a ticket and navigation returns home', async ({ page }) => {
+  await page.goto('/mahasiswa');
+  await page.getByTestId('menu-order-button').first().click();
+  const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
+  await checkout.getByLabel('Nama pemesan').fill('Uji Gulir');
+  await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
+  const ticket = page.getByRole('dialog', { name: 'Selesaikan pembayaran' });
+  await expect(ticket).toBeVisible();
+  await expect(page.locator('dialog[open]')).toHaveCount(1);
+  await ticket.getByRole('button', { name: 'Batalkan pesanan', exact: true }).click();
+  const cancellation = page.getByRole('dialog', { name: 'Batalkan pesanan ini?' });
+  await expect(cancellation).toBeVisible();
+  await expect(page.locator('dialog[open]')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('dialog[open]')).toHaveCount(1);
+  await expect(ticket).toBeVisible();
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).overflow)).toBe('hidden');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
+  await page.getByRole('link', { name: 'PORSI LOOP, beranda' }).first().click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('main h1')).toBeVisible();
+  await page.locator('main h1').scrollIntoViewIfNeeded();
+  await page.locator('main h1').hover();
+  const before = await page.evaluate(() => scrollY);
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(before + 100);
+});
