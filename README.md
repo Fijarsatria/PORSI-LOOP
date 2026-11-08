@@ -66,6 +66,5 @@ Demo SQLite membutuhkan disk persisten pada satu instance server. Untuk deployme
 - [Backend, keamanan, dan API](docs/backend.md)
 - [Deployment dan Supabase](docs/deployment.md)
 - [Sumber, lisensi, dan batas klaim](docs/research.md)
-- [Review kelanjutan dan bukti verifikasi](docs/completion-review.md)
 
 Penerimaan rescue adalah pendapatan bruto aktual dari pickup. Manfaat bersih dan penurunan waste memerlukan baseline serta biaya yang valid; aplikasi tidak mengarang klaim tersebut atau mengonversi porsi menjadi emisi. Perluasan ke banyak gerai memerlukan model tenant/tabel relasional serta pengujian akses lintas gerai; hal tersebut tidak diklaim sebagai fitur MVP satu gerai ini.

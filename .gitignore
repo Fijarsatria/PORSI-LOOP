@@ -13,3 +13,11 @@ playwright-report/
 .DS_Store
 .openai-local/
 outputs/
+# Generated editor/runtime metadata
+/AGENTS.md
+/next-env.d.ts
+.sites-runtime/
+.wrangler/
+.vercel/
+coverage/
+*.log
