@@ -4777,6 +4777,49 @@ input[type='range'] {
 }
 
 /* Decorative rings stay inside the illustration at small viewport widths. */
+:root {
+  --muted: #52624e;
+}
+.demo-banner {
+  color: #4d603f;
+}
+.app-footer,
+.app-nav-link,
+.app-breadcrumb,
+.app-clock,
+.workspace-name small,
+.sidebar-label,
+.sidebar-note,
+.sidebar-note > p,
+.sidebar-note > a,
+.sidebar-user small,
+.auth-story-foot,
+.auth-demo-note,
+.auth-bottom,
+.auth-copyright,
+.auth-divider span {
+  color: #52624e;
+}
+.app-sidebar .app-nav-link {
+  color: #52624e;
+}
+.work-shop-link {
+  font-size: 11px;
+  padding: 8px 10px;
+  min-height: 40px;
+}
+@media (max-width: 599px) {
+  .work-shop-label {
+    display: none;
+  }
+  .work-shop-link {
+    width: 38px;
+    padding: 8px;
+  }
+}
+.seller-scan-page .fine-print {
+  max-width: 48ch;
+}
 .hero .orbit {
   transform: none;
 }

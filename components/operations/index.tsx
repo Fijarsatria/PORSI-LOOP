@@ -1,3 +1,3 @@
 'use client';
-export { SellerDashboard } from './seller';
+export { SellerDashboard } from './seller-simple';
 export { AdminDashboard } from './admin';

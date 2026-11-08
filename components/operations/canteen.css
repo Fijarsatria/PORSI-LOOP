@@ -1,0 +1,236 @@
+.canteen-pulse {
+  gap: 24px;
+}
+.canteen-pulse .stat-grid {
+  margin: 0;
+}
+.canteen-chart-grid {
+  display: grid;
+  gap: 22px;
+}
+.canteen-donut-panel {
+  text-align: center;
+}
+.canteen-donut-panel .section-heading {
+  text-align: left;
+}
+.canteen-donut {
+  width: 205px;
+  height: 205px;
+  border-radius: 50%;
+  margin: 30px auto;
+  display: grid;
+  place-items: center;
+  transform: rotate(-90deg);
+  box-shadow: inset 0 0 0 1px #ffffff45;
+}
+.canteen-donut > div {
+  background: white;
+  width: 157px;
+  height: 157px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  transform: rotate(90deg);
+}
+.canteen-donut strong {
+  font: 600 47px/1.2 var(--display);
+  letter-spacing: -0.06em;
+}
+.canteen-donut strong small {
+  font-size: 20px;
+}
+.canteen-donut > div > span {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.canteen-donut-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px 20px;
+  margin: 0 0 25px;
+}
+.canteen-donut-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.canteen-donut-legend strong {
+  margin-left: auto;
+  font-size: 14px;
+}
+.canteen-donut-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.canteen-donut-legend .normal {
+  background: var(--leaf);
+}
+.canteen-donut-legend .promo {
+  background: #a6c573;
+}
+.canteen-donut-legend .rest {
+  background: #dbe4d0;
+}
+.canteen-donut-legend .waste {
+  background: #d6ac83;
+}
+.canteen-bars > div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 23px;
+  padding-block: 5px 25px;
+}
+.canteen-bars article > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.canteen-bars article strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.canteen-bars article small {
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--muted);
+}
+.canteen-bar-track {
+  height: 12px;
+  background: #edf2e6;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.canteen-bar-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #567e48, #9cbc77);
+  border-radius: 20px;
+  transition: width 0.5s;
+}
+.canteen-insights {
+  display: grid;
+  gap: 16px;
+}
+.canteen-insights article {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #e7efdd;
+  border: 1px solid #dce6cf;
+  padding: 23px;
+  border-radius: 20px;
+}
+.canteen-insights strong {
+  font-size: 15px;
+}
+.canteen-insights p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 7px;
+  line-height: 1.8;
+}
+.canteen-insights a {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 13px;
+}
+.canteen-outlet-grid {
+  display: grid;
+  gap: 20px;
+}
+.canteen-outlet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+}
+.canteen-outlet-icon {
+  width: 57px;
+  height: 57px;
+  display: grid;
+  place-items: center;
+  border-radius: 19px;
+  background: var(--green-light);
+  margin-bottom: 4px;
+}
+.canteen-outlet > .badge {
+  position: absolute;
+  top: 25px;
+  right: 22px;
+}
+.canteen-outlet h2 {
+  font-size: 23px;
+}
+.canteen-outlet > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: -8px;
+}
+.canteen-outlet-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  border-block: 1px solid var(--line);
+  padding-block: 16px;
+  width: 100%;
+  margin-block: 3px;
+}
+.canteen-outlet-mini span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.canteen-outlet-mini strong {
+  font: 600 25px/1.5 var(--display);
+  color: var(--ink);
+  display: block;
+}
+.canteen-outlet > .button {
+  width: 100%;
+  font-size: 12px;
+  margin-top: auto;
+}
+.canteen-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.canteen-accounts > span {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 11px;
+}
+.canteen-accounts small {
+  font-size: 10px;
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+}
+@media (min-width: 650px) {
+  .canteen-outlet-grid,
+  .canteen-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .canteen-chart-grid {
+    grid-template-columns: 0.95fr 1.2fr;
+  }
+}
+@media (min-width: 1400px) {
+  .canteen-outlet-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

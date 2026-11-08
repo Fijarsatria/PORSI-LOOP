@@ -27,6 +27,7 @@ import {
   Ticket,
   Utensils,
   Wallet,
+  ScanLine,
   type LucideIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -55,19 +56,14 @@ const navs: Record<
   ],
   seller: [
     { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
+    { id: 'orders', label: 'Pesanan & ambil', mobile: 'Pesanan', icon: Ticket },
+    { id: 'scan', label: 'Scan QR', icon: ScanLine },
+    { id: 'menu', label: 'Menu gerai', mobile: 'Menu', icon: Utensils },
     {
       id: 'planning',
       label: 'Rencana produksi',
       mobile: 'Rencana',
       icon: NotebookPen,
-    },
-    { id: 'orders', label: 'Pesanan & ambil', mobile: 'Pesanan', icon: Ticket },
-    { id: 'rescue', label: 'Promo Terbatas', mobile: 'Promo', icon: Sprout },
-    {
-      id: 'closing',
-      label: 'Tutup sesi',
-      mobile: 'Tutup sesi',
-      icon: ClipboardCheck,
     },
   ],
   admin: [
@@ -77,7 +73,13 @@ const navs: Record<
       mobile: 'Ringkasan',
       icon: LayoutDashboard,
     },
-    { id: 'finance', label: 'Penjualan & pemasukan', mobile: 'Penjualan', icon: Wallet },
+    {
+      id: 'finance',
+      label: 'Penjualan & pemasukan',
+      mobile: 'Penjualan',
+      icon: Wallet,
+    },
+    { id: 'outlets', label: 'Gerai & akses', mobile: 'Gerai', icon: Store },
     {
       id: 'impact',
       label: 'Laporan dampak',
@@ -92,10 +94,11 @@ const navs: Record<
     },
   ],
 };
-const routes = { student: '/mahasiswa', seller: '/gerai', admin: '/pengelola' };
+const routes = { student: '/customer', seller: '/gerai', admin: '/pengelola' };
 
 export function AppShell({ role }: { role: Role }) {
-  const { state, loading, busy, logout, refresh, refreshing, toast, notices } = useApp();
+  const { state, loading, busy, logout, refresh, refreshing, toast, notices } =
+    useApp();
   const [profile, setProfile] = useState(false);
   const [notifications, setNotifications] = useState(false);
   const params = useSearchParams();
@@ -151,14 +154,18 @@ export function AppShell({ role }: { role: Role }) {
       </main>
     );
   const count =
-    state.orders.filter((o) => ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(o.status))
-      .length + state.claims.filter((c) => ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(c.status)).length;
+    state.orders.filter((o) =>
+      ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(o.status),
+    ).length +
+    state.claims.filter((c) =>
+      ['pending_payment', 'confirmed', 'preparing', 'ready'].includes(c.status),
+    ).length;
   const nav = (mobile = false) =>
     navs[role].map((n) => (
       <Link
         key={n.id}
         href={`${base}${n.id === navs[role][0].id ? '' : `?tab=${n.id}`}`}
-        className={`app-nav-link ${tab === n.id ? 'active' : ''}`}
+        className={`app-nav-link ${tab === n.id ? 'active' : ''} ${role === 'seller' && n.id === 'scan' ? 'nav-scan' : ''}`}
         aria-current={tab === n.id ? 'page' : undefined}
       >
         {tab === n.id && (
@@ -191,7 +198,7 @@ export function AppShell({ role }: { role: Role }) {
           </span>
           <div>
             {role === 'student'
-              ? 'Ruang mahasiswa'
+              ? 'Ruang customer'
               : role === 'seller'
                 ? state.menu.outlet
                 : 'Ruang pengelola'}
@@ -228,7 +235,11 @@ export function AppShell({ role }: { role: Role }) {
           <span className="avatar">{state.user.name.slice(0, 1)}</span>
           <span>
             <strong>{state.user.name}</strong>
-            <small>{state.user.isGuest ? 'Tamu · tanpa wajib login' : roleNames[role]}</small>
+            <small>
+              {state.user.isGuest
+                ? 'Tamu · tanpa wajib login'
+                : roleNames[role]}
+            </small>
           </span>
           <Settings2 size={17} />
         </button>
@@ -241,7 +252,7 @@ export function AppShell({ role }: { role: Role }) {
           <div className="app-breadcrumb">
             <span>
               {role === 'student'
-                ? 'Ruang mahasiswa'
+                ? 'Ruang customer'
                 : role === 'seller'
                   ? 'Ruang gerai'
                   : 'Ruang pengelola'}
@@ -250,6 +261,15 @@ export function AppShell({ role }: { role: Role }) {
             <strong>{active.label}</strong>
           </div>
           <div className="app-topbar-actions">
+            {role !== 'student' && (
+              <Link
+                className="button button-ghost work-shop-link"
+                href="/customer"
+              >
+                <span className="work-shop-label">Belanja</span>{' '}
+                <ShoppingBag size={16} />
+              </Link>
+            )}
             <span className="app-clock">
               <Clock3 size={15} />
               {clock(state.now)} WIB
@@ -342,23 +362,31 @@ export function AppShell({ role }: { role: Role }) {
           <h3>{state.user.name}</h3>
           <Badge>{state.user.isGuest ? 'Sesi tamu' : roleNames[role]}</Badge>
           <p className="muted">
-            {state.user.isGuest ? 'Pesanan tersimpan di browser ini. Simpan tiket QR sebelum menutup atau membersihkan browser.' : state.mode === 'demo'
-              ? 'Akun demonstrasi. Aktivitas disimpan sebagai data simulasi di instalasi ini.'
-              : state.user.email}
+            {state.user.isGuest
+              ? 'Pesanan tersimpan di browser ini. Simpan tiket QR sebelum menutup atau membersihkan browser.'
+              : state.mode === 'demo'
+                ? 'Akun demonstrasi. Aktivitas disimpan sebagai data simulasi di instalasi ini.'
+                : state.user.email}
           </p>
           <Link className="button button-secondary full-width" href="/#top">
             Lihat beranda <ArrowRight size={17} />
           </Link>
-          {state.user.isGuest && <Link className="button button-secondary full-width" href="/masuk">Masuk dengan akun (opsional)</Link>}
-          {!state.user.isGuest && <Button
-            variant="ghost"
-            loading={busy}
-            onClick={async () => {
-              if (await logout()) setProfile(false);
-            }}
-          >
-            Keluar dari akun <LogOut size={17} />
-          </Button>}
+          {state.user.isGuest && (
+            <Link className="button button-secondary full-width" href="/masuk">
+              Masuk dengan akun (opsional)
+            </Link>
+          )}
+          {!state.user.isGuest && (
+            <Button
+              variant="ghost"
+              loading={busy}
+              onClick={async () => {
+                if (await logout()) setProfile(false);
+              }}
+            >
+              Keluar dari akun <LogOut size={17} />
+            </Button>
+          )}
         </div>
       </Modal>
       <Modal
@@ -367,7 +395,19 @@ export function AppShell({ role }: { role: Role }) {
         title="Notifikasi pesanan"
       >
         <div className="stack">
-          {notices.length > 0 ? notices.map((message, index) => <p className="callout" key={`${index}-${message}`}><Bell size={18} /><span>{message}</span></p>) : <p className="muted">Pembaruan pesanan akan muncul di sini. Data diperbarui otomatis selama halaman terbuka.</p>}
+          {notices.length > 0 ? (
+            notices.map((message, index) => (
+              <p className="callout" key={`${index}-${message}`}>
+                <Bell size={18} />
+                <span>{message}</span>
+              </p>
+            ))
+          ) : (
+            <p className="muted">
+              Pembaruan pesanan akan muncul di sini. Data diperbarui otomatis
+              selama halaman terbuka.
+            </p>
+          )}
           <div className="callout">
             <Clock3 size={22} />
             <div>
@@ -390,11 +430,25 @@ export function AppShell({ role }: { role: Role }) {
               </span>
             </div>
           )}
-          <Button variant="secondary" onClick={async () => {
-            if (!('Notification' in window)) { toast('Browser ini belum mendukung notifikasi perangkat. Pembaruan tetap muncul di halaman.'); return; }
-            const permission = await Notification.requestPermission();
-            toast(permission === 'granted' ? 'Notifikasi perangkat aktif saat browser mendukungnya.' : 'Pembaruan tetap tersedia di halaman pesanan.');
-          }}><Bell size={17} /> Aktifkan notifikasi perangkat</Button>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              if (!('Notification' in window)) {
+                toast(
+                  'Browser ini belum mendukung notifikasi perangkat. Pembaruan tetap muncul di halaman.',
+                );
+                return;
+              }
+              const permission = await Notification.requestPermission();
+              toast(
+                permission === 'granted'
+                  ? 'Notifikasi perangkat aktif saat browser mendukungnya.'
+                  : 'Pembaruan tetap tersedia di halaman pesanan.',
+              );
+            }}
+          >
+            <Bell size={17} /> Aktifkan notifikasi perangkat
+          </Button>
           <Button onClick={() => setNotifications(false)}>
             Mengerti <CheckIcon />
           </Button>

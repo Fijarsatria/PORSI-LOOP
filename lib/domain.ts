@@ -23,6 +23,7 @@ export interface User {
   outletId?: string;
 }
 export interface Menu {
+  draft?: boolean;
   ratingAverage?: number;
   ratingCount?: number;
   slots?: Slot[];

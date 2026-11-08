@@ -25,7 +25,13 @@ import {
 } from 'lucide-react';
 import { useApp } from '../provider';
 import { Badge, Button, EmptyState, Field, Modal, Stat } from '../ui';
-import { clock, rupiah, type Snapshot, type Order, type RescueClaim } from '@/lib/domain';
+import {
+  clock,
+  rupiah,
+  type Snapshot,
+  type Order,
+  type RescueClaim,
+} from '@/lib/domain';
 import './styles.css';
 
 import {
@@ -44,12 +50,12 @@ function PickupForm() {
     <div className="ops-pickup-form">
       <PickupScanner />
       <p className="ops-footnote">
-        Verifikasi lunas, siap, gerai yang benar, dan QR sekali pakai sebelum makanan diserahkan.
+        Verifikasi lunas, siap, gerai yang benar, dan QR sekali pakai sebelum
+        makanan diserahkan.
       </p>
     </div>
   );
 }
-
 function ProductionForm({
   state,
   onDone,
@@ -326,8 +332,8 @@ function MenuSettings({
 function SellerOverview({ state }: { state: Snapshot }) {
   const [productionOpen, setProductionOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const active = state.orders.filter(
-    (order) => activeStatuses.includes(order.status),
+  const active = state.orders.filter((order) =>
+    activeStatuses.includes(order.status),
   );
   return (
     <div className="stack ops-page">
@@ -428,7 +434,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
       <section className="panel">
         <PanelHeading
           title="Menu sesi ini"
-          description="Kelola informasi yang dilihat mahasiswa."
+          description="Kelola informasi yang dilihat customer."
         >
           <Button variant="ghost" onClick={() => setMenuOpen(true)}>
             <Settings2 size={16} />
@@ -490,7 +496,7 @@ function SellerOverview({ state }: { state: Snapshot }) {
   );
 }
 
-function Planning({ state }: { state: Snapshot }) {
+export function Planning({ state }: { state: Snapshot }) {
   const { action, busy } = useOperations();
   const [productionOpen, setProductionOpen] = useState(false);
   const [overrideOpen, setOverrideOpen] = useState(false);
@@ -689,9 +695,9 @@ function Planning({ state }: { state: Snapshot }) {
             <ShieldCheck size={24} />
             <h3>Permintaan tidak dihitung dua kali.</h3>
             <p className="muted">
-              Histori penjualan total tidak dijumlahkan dengan komitmen Pick up terjadwal.
-              Estimasi hanya memakai kanal walk-in dan sesi yang rekonsiliasinya
-              lengkap.
+              Histori penjualan total tidak dijumlahkan dengan komitmen Pick up
+              terjadwal. Estimasi hanya memakai kanal walk-in dan sesi yang
+              rekonsiliasinya lengkap.
             </p>
           </section>
         </div>
@@ -846,55 +852,192 @@ function SlotSettings({ state }: { state: Snapshot }) {
   );
 }
 
-const paymentLabels = { pending: 'Belum lunas', paid: 'Lunas', refund_pending: 'Menunggu pengembalian uang', refunded: 'Dikembalikan', expired: 'Pembayaran kedaluwarsa' };
-const paymentMethods = { qris: 'QRIS', ewallet: 'Dompet digital', bank_transfer: 'Transfer bank', cash: 'Tunai' };
+const paymentLabels = {
+  pending: 'Belum lunas',
+  paid: 'Lunas',
+  refund_pending: 'Menunggu pengembalian uang',
+  refunded: 'Dikembalikan',
+  expired: 'Pembayaran kedaluwarsa',
+};
+const paymentMethods = {
+  qris: 'QRIS',
+  ewallet: 'Dompet digital',
+  bank_transfer: 'Transfer bank',
+  cash: 'Tunai',
+};
 const activeStatuses = ['pending_payment', 'confirmed', 'preparing', 'ready'];
 
 function PaymentDetails({ item }: { item: Order | RescueClaim }) {
-  return <div className="ops-payment-details">
-    <Badge tone={item.paymentStatus === 'paid' ? 'green' : item.paymentStatus === 'pending' ? 'orange' : 'neutral'}>
-      {item.paymentStatus ? paymentLabels[item.paymentStatus] : 'Catatan pembayaran lama'}
-    </Badge>
-    <span className="ops-table-sub">{item.paymentMethod ? paymentMethods[item.paymentMethod] : 'Data simulasi lama'}</span>
-  </div>;
+  return (
+    <div className="ops-payment-details">
+      <Badge
+        tone={
+          item.paymentStatus === 'paid'
+            ? 'green'
+            : item.paymentStatus === 'pending'
+              ? 'orange'
+              : 'neutral'
+        }
+      >
+        {item.paymentStatus
+          ? paymentLabels[item.paymentStatus]
+          : 'Catatan pembayaran lama'}
+      </Badge>
+      <span className="ops-table-sub">
+        {item.paymentMethod
+          ? paymentMethods[item.paymentMethod]
+          : 'Data simulasi lama'}
+      </span>
+    </div>
+  );
 }
 
-function OrderActions({ item, claim = false }: { item: Order | RescueClaim; claim?: boolean }) {
+function OrderActions({
+  item,
+  claim = false,
+}: {
+  item: Order | RescueClaim;
+  claim?: boolean;
+}) {
   const { action } = useOperations();
   const { busy } = useApp();
   const [refundOpen, setRefundOpen] = useState(false);
   const reference = claim ? { claimId: item.id } : { orderId: item.id };
-  if (item.paymentStatus === 'refund_pending') return <>
-    <Button variant="secondary" disabled={busy} onClick={() => setRefundOpen(true)}>Konfirmasi uang dikembalikan</Button>
-    <Modal open={refundOpen} onClose={() => setRefundOpen(false)} title="Konfirmasi pengembalian tunai">
-      <form className="stack" onSubmit={async (event) => { event.preventDefault(); if (await action({ type: 'confirm_cash_refund', ...reference })) setRefundOpen(false); }}>
-        <p>Kembalikan {rupiah(item.price * item.quantity)} kepada {item.customer} untuk pesanan {item.code} sebelum menyimpan konfirmasi.</p>
-        <label className="checkbox-field"><input type="checkbox" required /> Saya sudah mengembalikan uang tunai kepada pembeli.</label>
-        <Button type="submit" loading={busy}>Simpan konfirmasi pengembalian</Button>
-      </form>
-    </Modal>
-  </>;
+  if (item.paymentStatus === 'refund_pending')
+    return (
+      <>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => setRefundOpen(true)}
+        >
+          Konfirmasi uang dikembalikan
+        </Button>
+        <Modal
+          open={refundOpen}
+          onClose={() => setRefundOpen(false)}
+          title="Konfirmasi pengembalian tunai"
+        >
+          <form
+            className="stack"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (await action({ type: 'confirm_cash_refund', ...reference }))
+                setRefundOpen(false);
+            }}
+          >
+            <p>
+              Kembalikan {rupiah(item.price * item.quantity)} kepada{' '}
+              {item.customer} untuk pesanan {item.code} sebelum menyimpan
+              konfirmasi.
+            </p>
+            <label className="checkbox-field">
+              <input type="checkbox" required /> Saya sudah mengembalikan uang
+              tunai kepada pembeli.
+            </label>
+            <Button type="submit" loading={busy}>
+              Simpan konfirmasi pengembalian
+            </Button>
+          </form>
+        </Modal>
+      </>
+    );
   if (!activeStatuses.includes(item.status)) return null;
-  return <div className="ops-row-actions">
-    {item.paymentStatus === 'pending' && item.paymentMethod === 'cash' && <Button variant="secondary" disabled={busy} onClick={() => action({ type: 'verify_cash_payment', ...reference })}>Tunai diterima</Button>}
-    {item.paymentStatus === 'pending' && item.paymentMethod !== 'cash' && <span className="ops-footnote">Menunggu pembayaran</span>}
-    {item.paymentStatus === 'paid' && item.status === 'confirmed' && <Button variant="secondary" disabled={busy} onClick={() => action({ type: 'prepare_order', ...reference })}><CookingPot size={15} />Mulai siapkan</Button>}
-    {item.paymentStatus === 'paid' && item.status === 'preparing' && <Button disabled={busy} onClick={() => action({ type: 'ready_order', ...reference })}><Check size={15} />Tandai siap</Button>}
-    {item.status === 'ready' && <span className="ops-ready-hint"><TicketCheck size={15} />Scan QR saat serah-terima</span>}
-  </div>;
+  return (
+    <div className="ops-row-actions">
+      {item.paymentStatus === 'pending' && item.paymentMethod === 'cash' && (
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => action({ type: 'verify_cash_payment', ...reference })}
+        >
+          Tunai diterima
+        </Button>
+      )}
+      {item.paymentStatus === 'pending' && item.paymentMethod !== 'cash' && (
+        <span className="ops-footnote">Menunggu pembayaran</span>
+      )}
+      {item.paymentStatus === 'paid' && item.status === 'confirmed' && (
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => action({ type: 'prepare_order', ...reference })}
+        >
+          <CookingPot size={15} />
+          Mulai siapkan
+        </Button>
+      )}
+      {item.paymentStatus === 'paid' && item.status === 'preparing' && (
+        <Button
+          disabled={busy}
+          onClick={() => action({ type: 'ready_order', ...reference })}
+        >
+          <Check size={15} />
+          Tandai siap
+        </Button>
+      )}
+      {item.status === 'ready' && (
+        <span className="ops-ready-hint">
+          <TicketCheck size={15} />
+          Scan QR saat serah-terima
+        </span>
+      )}
+    </div>
+  );
 }
 
 function PromoClaimTable({ claims }: { claims: RescueClaim[] }) {
-  return claims.length ? <div className="table-wrap"><table className="data-table ops-order-table">
-    <thead><tr><th>Pesanan promo</th><th>Menu & porsi</th><th>Pemenuhan</th><th>Pembayaran</th><th>Status & tindakan</th></tr></thead>
-    <tbody>{claims.map((claim) => <tr key={claim.id}>
-      <td><strong className="ops-code">{claim.code}</strong><span className="ops-table-sub">{claim.customer}</span></td>
-      <td><strong>{claim.menuName}</strong><span className="ops-table-sub">{claim.quantity} porsi · {rupiah(claim.price * claim.quantity)}</span></td>
-      <td><strong>{claim.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}</strong><span className="ops-table-sub">Sebelum {clock(claim.expiresAt)} WIB</span></td>
-      <td><PaymentDetails item={claim} /></td>
-      <td><StatusPill status={claim.status} /><OrderActions item={claim} claim /></td>
-    </tr>)}</tbody>
-  </table></div> : <p className="muted">Belum ada pesanan Promo Terbatas yang cocok dengan filter.</p>;
+  return claims.length ? (
+    <div className="table-wrap">
+      <table className="data-table ops-order-table">
+        <thead>
+          <tr>
+            <th>Pesanan promo</th>
+            <th>Menu & porsi</th>
+            <th>Pemenuhan</th>
+            <th>Pembayaran</th>
+            <th>Status & tindakan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {claims.map((claim) => (
+            <tr key={claim.id}>
+              <td>
+                <strong className="ops-code">{claim.code}</strong>
+                <span className="ops-table-sub">{claim.customer}</span>
+              </td>
+              <td>
+                <strong>{claim.menuName}</strong>
+                <span className="ops-table-sub">
+                  {claim.quantity} porsi ·{' '}
+                  {rupiah(claim.price * claim.quantity)}
+                </span>
+              </td>
+              <td>
+                <strong>
+                  {claim.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}
+                </strong>
+                <span className="ops-table-sub">
+                  Sebelum {clock(claim.expiresAt)} WIB
+                </span>
+              </td>
+              <td>
+                <PaymentDetails item={claim} />
+              </td>
+              <td>
+                <StatusPill status={claim.status} />
+                <OrderActions item={claim} claim />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p className="muted">
+      Belum ada pesanan Promo Terbatas yang cocok dengan filter.
+    </p>
+  );
 }
 
 function OrderTable({
@@ -918,9 +1061,7 @@ function OrderTable({
   );
   const shown = limit
     ? orders
-        .filter(
-          (order) => activeStatuses.includes(order.status),
-        )
+        .filter((order) => activeStatuses.includes(order.status))
         .slice(0, limit)
     : orders;
   return shown.length ? (
@@ -948,18 +1089,28 @@ function OrderTable({
               <td>
                 <strong>{order.menuName}</strong>
                 <span className="ops-table-sub">
-                  {order.quantity} × {(state.menus?.find((menu) => menu.id === order.menuId) ?? state.menu).portionLabels[order.portion]} ·{' '}
-                  {rupiah(order.price * order.quantity)}
+                  {order.quantity} ×{' '}
+                  {
+                    (
+                      state.menus?.find((menu) => menu.id === order.menuId) ??
+                      state.menu
+                    ).portionLabels[order.portion]
+                  }{' '}
+                  · {rupiah(order.price * order.quantity)}
                 </span>
               </td>
               <td>
-                <strong>{order.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}</strong>
+                <strong>
+                  {order.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}
+                </strong>
                 <span className="ops-table-slot">
                   <Clock3 size={14} />
                   {order.slotLabel}
                 </span>
               </td>
-              <td><PaymentDetails item={order} /></td>
+              <td>
+                <PaymentDetails item={order} />
+              </td>
               <td>
                 <StatusPill status={order.status} />
               </td>
@@ -983,8 +1134,16 @@ function OrderTable({
 function Orders({ state }: { state: Snapshot }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
-  const activeCount = [...state.orders, ...state.claims].filter((item) => activeStatuses.includes(item.status)).length;
-  const claims = state.claims.filter((claim) => (filter === 'all' || claim.status === filter) && `${claim.code} ${claim.customer} ${claim.menuName}`.toLowerCase().includes(query.toLowerCase()));
+  const activeCount = [...state.orders, ...state.claims].filter((item) =>
+    activeStatuses.includes(item.status),
+  ).length;
+  const claims = state.claims.filter(
+    (claim) =>
+      (filter === 'all' || claim.status === filter) &&
+      `${claim.code} ${claim.customer} ${claim.menuName}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
+  );
   return (
     <div className="stack ops-page">
       <div className="ops-greeting">
@@ -992,7 +1151,8 @@ function Orders({ state }: { state: Snapshot }) {
           <span className="eyebrow">LAYANI SESUAI SLOT</span>
           <h1>Antrean gerai, dari bayar hingga siap.</h1>
           <p className="muted">
-            Semua menu gerai Anda. Siapkan pesanan yang sudah lunas, lalu scan QR saat makanan diserahkan.
+            Semua menu gerai Anda. Siapkan pesanan yang sudah lunas, lalu scan
+            QR saat makanan diserahkan.
           </p>
         </div>
         <Badge tone="green">{activeCount} pesanan aktif</Badge>
@@ -1034,7 +1194,13 @@ function Orders({ state }: { state: Snapshot }) {
         </div>
         <OrderTable state={state} query={query} filter={filter} />
       </section>
-      <section className="panel"><PanelHeading title="Antrean Promo Terbatas" description="Pembayaran dan tahapan penyerahan diperiksa dengan aturan yang sama." /><PromoClaimTable claims={claims} /></section>
+      <section className="panel">
+        <PanelHeading
+          title="Antrean Promo Terbatas"
+          description="Pembayaran dan tahapan penyerahan diperiksa dengan aturan yang sama."
+        />
+        <PromoClaimTable claims={claims} />
+      </section>
       <div className="callout">
         <Clock3 size={19} />
         <p>
@@ -1046,7 +1212,7 @@ function Orders({ state }: { state: Snapshot }) {
   );
 }
 
-function Rescue({ state }: { state: Snapshot }) {
+export function Rescue({ state }: { state: Snapshot }) {
   const { action, busy } = useOperations();
   const [open, setOpen] = useState(false);
   const [closingBatch, setClosingBatch] = useState<string | null>(null);
@@ -1166,7 +1332,9 @@ function Rescue({ state }: { state: Snapshot }) {
         <PanelHeading
           title="Reservasi & pengambilan"
           description="Kuota ditahan saat reservasi; distribusi tercatat setelah pickup."
-        ><PickupScanner /></PanelHeading>
+        >
+          <PickupScanner />
+        </PanelHeading>
         <PromoClaimTable claims={state.claims} />
       </section>
       <div className="callout">
@@ -1400,7 +1568,7 @@ function SessionStart({ state }: { state: Snapshot }) {
   );
 }
 
-function Closing({ state }: { state: Snapshot }) {
+export function Closing({ state }: { state: Snapshot }) {
   const { action, busy } = useOperations();
   const r = state.reconciliation;
   const [internal, setInternal] = useState(r.internal);
@@ -1613,19 +1781,64 @@ export function SellerDashboard({ tab }: { tab: string }) {
         <p>Menyiapkan ringkasan gerai…</p>
       </div>
     );
-  const kitchens = (state.kitchens?.length ? state.kitchens : [state]).filter((kitchen) => !state.user?.outletId || kitchen.menu.outletId === state.user.outletId);
-  const selected = kitchens.find((kitchen) => kitchen.menu.id === menuId) ?? kitchens.find((kitchen) => kitchen.menu.id === state.menu.id) ?? kitchens[0] ?? state;
+  const kitchens = (state.kitchens?.length ? state.kitchens : [state]).filter(
+    (kitchen) =>
+      !state.user?.outletId || kitchen.menu.outletId === state.user.outletId,
+  );
+  const selected =
+    kitchens.find((kitchen) => kitchen.menu.id === menuId) ??
+    kitchens.find((kitchen) => kitchen.menu.id === state.menu.id) ??
+    kitchens[0] ??
+    state;
   const kitchen = { ...selected, user: state.user, menus: state.menus };
-  const content = tab === 'planning' ? <Planning state={kitchen} />
-    : tab === 'orders' ? <Orders state={state} />
-      : tab === 'rescue' ? <Rescue state={kitchen} />
-        : tab === 'closing' ? <Closing key={`${kitchen.menu.id}-${kitchen.sessionId}`} state={kitchen} />
-          : <SellerOverview state={kitchen} />;
-  return <OperationsScope state={kitchen}><div className="stack ops-page">
-    <section className="ops-menu-switch" aria-label="Lingkup gerai dan menu">
-      <div><span className="ops-switch-label">Gerai Anda</span><strong>{kitchen.menu.outlet}</strong><p>{tab === 'orders' ? `Antrean seluruh ${kitchens.length} menu · Dine in dan Pick up` : 'Produksi, rencana, promo, dan rekonsiliasi dicatat per menu.'}</p></div>
-      {tab !== 'orders' && <Field label="Menu yang dikelola"><select value={kitchen.menu.id} onChange={(event) => setMenuId(event.target.value)}>{kitchens.map((item) => <option key={item.menu.id} value={item.menu.id}>{item.menu.name}</option>)}</select></Field>}
-    </section>
-    <div key={tab === 'orders' ? 'queue' : kitchen.menu.id}>{content}</div>
-  </div></OperationsScope>;
+  const content =
+    tab === 'planning' ? (
+      <Planning state={kitchen} />
+    ) : tab === 'orders' ? (
+      <Orders state={state} />
+    ) : tab === 'rescue' ? (
+      <Rescue state={kitchen} />
+    ) : tab === 'closing' ? (
+      <Closing
+        key={`${kitchen.menu.id}-${kitchen.sessionId}`}
+        state={kitchen}
+      />
+    ) : (
+      <SellerOverview state={kitchen} />
+    );
+  return (
+    <OperationsScope state={kitchen}>
+      <div className="stack ops-page">
+        <section
+          className="ops-menu-switch"
+          aria-label="Lingkup gerai dan menu"
+        >
+          <div>
+            <span className="ops-switch-label">Gerai Anda</span>
+            <strong>{kitchen.menu.outlet}</strong>
+            <p>
+              {tab === 'orders'
+                ? `Antrean seluruh ${kitchens.length} menu · Dine in dan Pick up`
+                : 'Produksi, rencana, promo, dan rekonsiliasi dicatat per menu.'}
+            </p>
+          </div>
+          {tab !== 'orders' && (
+            <Field label="Menu yang dikelola">
+              <select
+                value={kitchen.menu.id}
+                onChange={(event) => setMenuId(event.target.value)}
+              >
+                {kitchens.map((item) => (
+                  <option key={item.menu.id} value={item.menu.id}>
+                    {item.menu.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+        </section>
+        <div key={tab === 'orders' ? 'queue' : kitchen.menu.id}>{content}</div>
+      </div>
+    </OperationsScope>
+  );
 }

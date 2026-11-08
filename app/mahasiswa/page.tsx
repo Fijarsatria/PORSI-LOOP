@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { PageLoading } from '@/components/ui';
-export const metadata = { title: 'Ruang mahasiswa', robots: { index: false } };
+export const metadata = { title: 'Ruang customer', robots: { index: false } };
 export default function Page() {
   return (
     <Suspense fallback={<PageLoading />}>

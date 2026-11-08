@@ -29,7 +29,7 @@ import { Brand, LinkButton } from '@/components/ui';
 const roles = [
   {
     id: 'student',
-    label: 'Untuk mahasiswa',
+    label: 'Untuk customer',
     icon: Utensils,
     title: 'Jam istirahatmu,\nbuat menikmati makan.',
     body: 'Lihat menu, pilih porsi yang pas, lalu tentukan waktu ambil. Datang ke gerai dengan kode pesananmu.',
@@ -39,7 +39,7 @@ const roles = [
       'Promo Terbatas makanan layak yang masih tersedia',
     ],
     action: 'Pilih makan siangmu',
-    href: '/mahasiswa',
+    href: '/customer',
   },
   {
     id: 'seller',
@@ -82,7 +82,7 @@ export function PublicHeader() {
         <a href="/#dampak">Kenapa PORSI?</a>
       </nav>
       <div className="header-actions">
-        <Link href="/mahasiswa" className="header-login">
+        <Link href="/customer" className="header-login">
           Pilih menu <ArrowUpRight size={17} />
         </Link>
         <button
@@ -276,7 +276,7 @@ export function Landing() {
                 <br className="desktop-br" /> makanan baik sampai ke piring.
               </p>
               <div className="hero-actions">
-                <LinkButton href="/mahasiswa" arrow>
+                <LinkButton href="/customer" arrow>
                   Yuk, pilih porsimu
                 </LinkButton>
                 <a href="#cara-kerja" className="text-link">
@@ -621,7 +621,7 @@ export function Landing() {
                 Rencananya juga baik.
               </h2>
               <p>Mulai satu loop baik dari makan siang berikutnya.</p>
-              <LinkButton href="/mahasiswa" variant="lime" arrow>
+              <LinkButton href="/customer" variant="lime" arrow>
                 Coba PORSI LOOP
               </LinkButton>
             </div>
@@ -647,8 +647,8 @@ export function Landing() {
             <br />
             Selamatkan bila tersisa. Ukur dampaknya.
           </p>
-          <a href="/masuk?peran=gerai" className="text-link">
-            Punya gerai? Mulai di sini <ArrowUpRight size={17} />
+          <a href="/tentang" className="text-link">
+            Kenali lingkar baiknya <ArrowUpRight size={17} />
           </a>
         </div>
         <div className="footer-bottom">

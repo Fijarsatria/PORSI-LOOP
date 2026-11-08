@@ -899,15 +899,17 @@ function marketplaceSnapshot(
     ...(user?.role === 'admin'
       ? { staffAccounts: state.staffAccounts ?? [] }
       : {}),
-    menus: all.map((kitchen) => ({
-      ...kitchen.menu,
-      slots: kitchen.slots,
-      variableCost:
-        user?.role === 'admin' ||
-        (user?.role === 'seller' && kitchen.menu.outletId === user.outletId)
-          ? kitchen.menu.variableCost
-          : 0,
-    })),
+    menus: all
+      .filter((kitchen) => staff || !kitchen.menu.draft)
+      .map((kitchen) => ({
+        ...kitchen.menu,
+        slots: kitchen.slots,
+        variableCost:
+          user?.role === 'admin' ||
+          (user?.role === 'seller' && kitchen.menu.outletId === user.outletId)
+            ? kitchen.menu.variableCost
+            : 0,
+      })),
     outlets: outletIds.map((id) => {
       const group = all.filter((kitchen) => kitchen.menu.outletId === id);
       return {
@@ -1161,9 +1163,9 @@ function catalogCommand(
     if (name.length < 2)
       throw new DomainError('Isi nama sedikitnya 2 karakter.');
     const kitchen = createState(now, true);
-    kitchen.createdAt = state.createdAt;
-    kitchen.demoClock = state.demoClock;
-    kitchen.businessDate = state.businessDate;
+    kitchen.createdAt = (source ?? state).createdAt;
+    kitchen.demoClock = (source ?? state).demoClock;
+    kitchen.businessDate = (source ?? state).businessDate;
     kitchen.slots = structuredClone((source ?? state).slots).map((slot) => ({
       ...slot,
       reserved: 0,
@@ -1176,6 +1178,7 @@ function catalogCommand(
         : `outlet-${randomUUID()}`);
     kitchen.menu = {
       ...kitchen.menu,
+      draft: !source,
       id: `menu-${randomUUID()}`,
       outletId,
       outlet: source?.menu.outlet ?? name,
@@ -1728,6 +1731,7 @@ function applyKitchenAction(
       if (action.category !== undefined)
         state.menu.category = text(action.category, 60);
       if (typeof action.active === 'boolean') state.menu.active = action.active;
+      if (state.menu.active) state.menu.draft = false;
       if (action.smallPrice !== undefined)
         state.menu.prices.small = integer(
           action.smallPrice,

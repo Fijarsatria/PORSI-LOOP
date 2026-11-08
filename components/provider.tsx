@@ -13,6 +13,7 @@ import { AlertCircle, CheckCircle2, X, WifiOff } from 'lucide-react';
 import type { Role, Snapshot } from '@/lib/domain';
 import { createIdempotencyKey } from '@/lib/client/idempotency';
 import { orderNotices } from '@/lib/client/notifications';
+import { usePathname } from 'next/navigation';
 
 interface AppContextValue {
   state: Snapshot | null;
@@ -30,12 +31,22 @@ interface AppContextValue {
     password?: string,
   ) => Promise<boolean>;
   logout: () => Promise<boolean>;
+  account: (payload: Record<string, unknown>) => Promise<boolean>;
   toast: (message: string) => void;
   notices: string[];
 }
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const space =
+    pathname.startsWith('/gerai') ||
+    pathname.startsWith('/pengelola') ||
+    pathname.startsWith('/akses-pengelola')
+      ? 'work'
+      : 'customer';
+  const spaceRef = useRef(space);
+  spaceRef.current = space;
   const [state, setState] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -70,9 +81,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
     if (!messages.length) return;
     setNotices((items) => [...messages, ...items].slice(0, 20));
-    const message = messages.length > 1 ? `${messages.length} pembaruan pesanan. ${messages[0]}` : messages[0];
+    const message =
+      messages.length > 1
+        ? `${messages.length} pembaruan pesanan. ${messages[0]}`
+        : messages[0];
     toast(message);
-    if ('Notification' in window && Notification.permission === 'granted' && document.hidden)
+    if (
+      'Notification' in window &&
+      Notification.permission === 'granted' &&
+      document.hidden
+    )
       new Notification('PORSI LOOP', { body: message, icon: '/icon.png' });
   }, [state, toast]);
   const refresh = useCallback(async () => {
@@ -80,7 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRefreshing(true);
     const version = ++generation.current;
     try {
-      const response = await fetch('/api/state', {
+      const response = await fetch(`/api/state?space=${spaceRef.current}`, {
         cache: 'no-store',
         signal: AbortSignal.timeout(15000),
       });
@@ -109,7 +127,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('focus', sync);
     document.addEventListener('visibilitychange', sync);
-    void refresh();
     const id = setInterval(() => {
       if (!inFlight.current) void refresh();
     }, 4000);
@@ -120,6 +137,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [refresh]);
+  useEffect(() => {
+    generation.current++;
+    setLoading(true);
+    void refresh();
+  }, [space, refresh]);
   const mutate = async (
     url: string,
     method: string,
@@ -133,7 +155,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Porsi-Space': spaceRef.current,
+        },
         body: payload ? JSON.stringify(payload) : undefined,
         signal: AbortSignal.timeout(20000),
       });
@@ -142,6 +167,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         throw new Error(
           result.error || 'Perubahan belum tersimpan. Coba lagi.',
         );
+      if (result.verificationRequired) {
+        toast(result.message);
+        return false;
+      }
       setState(result);
       return true;
     } catch (e) {
@@ -189,6 +218,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           toast,
           notices,
           action,
+          account: (payload) => mutate('/api/accounts', 'POST', payload),
           login: async (role, demo, email, password) => {
             const success = await mutate('/api/auth', 'POST', {
               role,

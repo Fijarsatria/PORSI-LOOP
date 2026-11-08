@@ -24,8 +24,9 @@ export default function Page() {
       </h1>
       <p className="about-lead">
         PORSI LOOP adalah prototipe Trinity LFA untuk CR YOUTH 2026. Fokusnya
-        menghubungkan pilihan porsi dan pesanan terjadwal dengan perencanaan produksi,
-        Promo Terbatas makanan layak, dan pencatatan sisa di kantin kampus.
+        menghubungkan pilihan porsi dan pesanan terjadwal dengan perencanaan
+        produksi, Promo Terbatas makanan layak, dan pencatatan sisa di kantin
+        kampus.
       </p>
       <section className="panel">
         <FlaskConical />
@@ -77,10 +78,10 @@ export default function Page() {
         <ShieldCheck />
         <h2>Arti angka dampak</h2>
         <p>
-          Promo Terbatas dihitung setelah serah terima divalidasi gerai. Reservasi saja
-          tidak dihitung. Porsi yang diambil tidak otomatis membuktikan makanan
-          itu akan terbuang tanpa Promo Terbatas. Aplikasi tidak mengonversi porsi
-          menjadi klaim emisi.
+          Promo Terbatas dihitung setelah serah terima divalidasi gerai.
+          Reservasi saja tidak dihitung. Porsi yang diambil tidak otomatis
+          membuktikan makanan itu akan terbuang tanpa Promo Terbatas. Aplikasi
+          tidak mengonversi porsi menjadi klaim emisi.
         </p>
         <p>
           Indikator lingkungan memakai kilogram sisa terukur per 100 porsi
@@ -89,12 +90,12 @@ export default function Page() {
           tidak disamakan dengan pendapatan nyata.
         </p>
         <p>
-          Gerai wajib memeriksa kelayakan makanan sebelum menawarkan Promo Terbatas.
-          Informasi waktu bukan jaminan keamanan pangan. Periksa komposisi,
-          alergen, kondisi, dan cara penanganan bersama gerai.
+          Gerai wajib memeriksa kelayakan makanan sebelum menawarkan Promo
+          Terbatas. Informasi waktu bukan jaminan keamanan pangan. Periksa
+          komposisi, alergen, kondisi, dan cara penanganan bersama gerai.
         </p>
       </section>
-      <Link className="button button-primary" href="/mahasiswa">
+      <Link className="button button-primary" href="/customer">
         Coba alurnya <ArrowUpRight size={17} />
       </Link>
       <footer className="fine-print">
