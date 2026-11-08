@@ -1027,8 +1027,13 @@ const customerName = (value: unknown, user: User) => {
   return name;
 };
 const refund = (ticket: Order | RescueClaim, mode: 'demo' | 'supabase') => {
+  // Simulated digital payments are refunded at once; cash is returned by the
+  // seller, who confirms it afterwards.
   if (ticket.paymentStatus === 'paid')
-    ticket.paymentStatus = mode === 'demo' ? 'refunded' : 'refund_pending';
+    ticket.paymentStatus =
+      mode === 'demo' || ticket.paymentMethod !== 'cash'
+        ? 'refunded'
+        : 'refund_pending';
   else ticket.paymentStatus = 'expired';
   delete ticket.pickupToken;
 };
@@ -1074,20 +1079,9 @@ export function applyAction(
     )
   )
     return catalogCommand(state, user, action, now);
-  if (mode === 'supabase' && action.type === 'pay_order')
-    throw new DomainError(
-      'Pembayaran digital belum tersedia. Gunakan tunai dan minta gerai memverifikasi pembayaran.',
-      503,
-    );
-  if (
-    mode === 'supabase' &&
-    ['preorder', 'claim_rescue'].includes(action.type) &&
-    action.paymentMethod !== 'cash'
-  )
-    throw new DomainError(
-      'QRIS, e-wallet, dan transfer belum tersedia sampai penyedia pembayaran dikonfigurasi. Pilih tunai.',
-      503,
-    );
+  // Payments are simulated in every mode: QRIS, e-wallet and bank transfer are
+  // marked paid by the customer's "simulate payment" step, while cash is
+  // confirmed by the seller. No real money moves through either path.
   if (state.kitchens) {
     const kitchens = [state, ...state.kitchens];
     const referenced = kitchens.find(

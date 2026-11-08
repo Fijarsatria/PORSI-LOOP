@@ -319,6 +319,14 @@ export function SellerDashboard({ tab }: { tab: string }) {
                           : 'Menunggu pembayaran'}
                   </span>
                 </div>
+                {o.status === 'pending_payment' &&
+                  o.paymentMethod === 'cash' && (
+                    <div className="seller-order-note">
+                      Customer membayar tunai di gerai. Setelah uang diterima,
+                      ketuk Konfirmasi tunai agar pesanan masuk antrean dan QR
+                      pengambilan terbit.
+                    </div>
+                  )}
                 {o.seat && (
                   <div className="seller-order-note">
                     Meja / posisi: {o.seat}

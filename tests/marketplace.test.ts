@@ -45,12 +45,18 @@ test('public snapshots expose availability while private forecasting and costs s
   assert.equal(staff.kitchens?.[0].recommendation.walkinEstimate, 24);
 });
 
-test('live mode blocks synthetic payment and unconfigured digital checkout; verified cash uses the same paid lifecycle', () => {
+test('live mode accepts simulated digital payment and seller-verified cash through the same paid lifecycle', () => {
   const state = createState(now);
-  assert.throws(() => applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', paymentMethod: 'qris' }, now, 'supabase'), /belum tersedia/i);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', paymentMethod: 'qris' }, now, 'supabase');
+  const digital = state.orders[0];
+  assert.equal(digital.status, 'pending_payment');
+  assert.throws(() => applyAction(state, seller, { type: 'verify_cash_payment', orderId: digital.id }, now, 'supabase'), /tunai/i);
+  applyAction(state, guest, { type: 'pay_order', orderId: digital.id }, now, 'supabase');
+  assert.equal(digital.status, 'confirmed');
+  assert.equal(digital.paymentStatus, 'paid');
   applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', paymentMethod: 'cash' }, now, 'supabase');
   const order = state.orders[0];
-  assert.throws(() => applyAction(state, guest, { type: 'pay_order', orderId: order.id }, now, 'supabase'), /belum tersedia/i);
+  assert.throws(() => applyAction(state, guest, { type: 'pay_order', orderId: order.id }, now, 'supabase'), /diverifikasi gerai/i);
   applyAction(state, seller, { type: 'verify_cash_payment', orderId: order.id }, now, 'supabase');
   assert.equal(order.status, 'confirmed');
   assert.equal(order.paymentStatus, 'paid');

@@ -507,7 +507,6 @@ export function StudentDashboard({ tab }: { tab: string }) {
   const ticketActive =
     !!currentTicket && activeStatuses.includes(currentTicket.status);
   const onlinePending =
-    state.mode === 'demo' &&
     !!currentTicket &&
     currentTicket.paymentStatus === 'pending' &&
     currentTicket.paymentMethod !== 'cash' &&
@@ -1541,7 +1540,6 @@ export function StudentDashboard({ tab }: { tab: string }) {
                     <button
                       type="button"
                       key={method}
-                      disabled={state.mode !== 'demo' && method !== 'cash'}
                       aria-pressed={paymentMethod === method}
                       className={paymentMethod === method ? 'selected' : ''}
                       onClick={() => setPaymentMethod(method)}
@@ -1554,9 +1552,9 @@ export function StudentDashboard({ tab }: { tab: string }) {
                 })}
               </div>
               <p className="market-demo-note">
-                {state.mode === 'demo'
-                  ? 'DEMO · Pembayaran online memakai simulator, tanpa transaksi uang sungguhan. Pembayaran di gerai perlu diverifikasi penjual.'
-                  : 'Pembayaran online belum tersedia. Bayar di gerai, lalu penjual memverifikasi pembayaranmu.'}
+                SIMULASI · QRIS, e-wallet, dan transfer memakai simulator tanpa
+                uang sungguhan. Untuk Bayar di gerai, penjual mengonfirmasi
+                setelah kamu membayar tunai.
               </p>
             </fieldset>
             {localError && (
@@ -1635,7 +1633,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
             {onlinePending ? (
               <div className="market-payment-view">
                 <div className="market-demo-label">
-                  DEMO · SIMULATOR PEMBAYARAN
+                  SIMULASI PEMBAYARAN
                 </div>
                 <div className="market-payment-symbol">
                   {currentTicket.paymentMethod === 'qris' ? (
@@ -1655,7 +1653,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
                 </strong>
                 <p>
                   {currentTicket.paymentMethod === 'qris'
-                    ? 'Kode QR pembayaran tidak diterbitkan pada demo ini.'
+                    ? 'Kode QR pembayaran tidak diterbitkan pada simulasi ini.'
                     : 'Tidak perlu membuka aplikasi pembayaran atau mentransfer uang.'}{' '}
                   Gunakan tombol simulasi untuk melanjutkan.
                 </p>
@@ -1911,9 +1909,9 @@ export function StudentDashboard({ tab }: { tab: string }) {
             pemesanan.
           </p>
           <p className="market-demo-note">
-            {state.mode === 'demo'
-              ? 'Dalam demo, pembayaran yang sudah berhasil akan dicatat dikembalikan. Tidak ada transaksi uang sungguhan.'
-              : 'Jika sudah membayar, hubungi gerai untuk pengembalian uang. Status akan menunggu konfirmasi penjual.'}
+            Pembayaran simulasi yang sudah berhasil akan dicatat dikembalikan.
+            Untuk Bayar di gerai, status menunggu konfirmasi pengembalian dari
+            penjual.
           </p>
           <div>
             <Button variant="secondary" onClick={() => setCancelTarget(null)}>
