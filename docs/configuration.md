@@ -4,7 +4,7 @@ Buat `.env.local` hanya pada perangkat pengembangan, atau isi variabel di pengat
 
 | Variabel                                      | Kegunaan                                                                                                             |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `PORSI_OWNER_EMAIL`                           | Email pemilik untuk aktivasi pengelola pertama; hanya diberikan pada akun Supabase yang emailnya sudah dikonfirmasi  |
+| `PORSI_OWNER_USER_ID`                           | UUID akun Supabase Auth pengelola pertama yang dibuat administrator; jangan mengikat hak pengelola ke alamat email  |
 | `PORSI_MODE`                                  | `demo` (bawaan) atau `supabase`                                                                                      |
 | `APP_ORIGIN`                                  | Origin situs, misalnya `http://localhost:3000` saat lokal; HTTPS di produksi                                         |
 | `PORSI_DATA_DIR`                              | Direktori SQLite persisten untuk demo                                                                                |

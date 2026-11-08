@@ -104,12 +104,9 @@ function unseal(token: string): SessionToken | GuestToken | null {
 export function userFromAuth(user: SupabaseUser): User {
   // Roles are issued only by a trusted administrator, never from user_metadata.
   const rawRole = user.app_metadata?.role;
-  const ownerEmail = process.env.PORSI_OWNER_EMAIL?.trim().toLowerCase();
-  const isVerifiedOwner =
-    !!ownerEmail &&
-    !!user.email_confirmed_at &&
-    user.email?.trim().toLowerCase() === ownerEmail;
-  const role: Role = isVerifiedOwner
+  const ownerId = process.env.PORSI_OWNER_USER_ID?.trim();
+  const isConfiguredOwner = !!ownerId && user.id === ownerId;
+  const role: Role = isConfiguredOwner
     ? 'admin'
     : rawRole === 'seller' || rawRole === 'admin'
       ? rawRole

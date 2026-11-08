@@ -79,42 +79,33 @@ test('cloud guest cookies are authenticated encrypted identities and tampering f
   }
 });
 
-test('only the verified configured owner receives bootstrap manager access', () => {
-  const original = process.env.PORSI_OWNER_EMAIL;
+test('owner bootstrap uses immutable Auth identity, never a claimed email', () => {
+  const original = process.env.PORSI_OWNER_USER_ID;
   try {
-    process.env.PORSI_OWNER_EMAIL = 'owner@example.test';
+    process.env.PORSI_OWNER_USER_ID = 'owner-test';
     const user = {
       id: 'owner-test',
       email: 'owner@example.test',
       app_metadata: {},
       user_metadata: { role: 'admin' },
     };
-    assert.equal(userFromAuth(user as never).role, 'student');
+    assert.equal(userFromAuth(user as never).role, 'admin');
     assert.equal(
-      userFromAuth({
-        ...user,
-        email_confirmed_at: new Date().toISOString(),
-      } as never).role,
+      userFromAuth({ ...user, id: 'different-auth-user' } as never).role,
+      'student',
+    );
+    assert.equal(
+      userFromAuth({ ...user, email: 'changed@example.test' } as never).role,
       'admin',
     );
+    delete process.env.PORSI_OWNER_USER_ID;
+    assert.equal(userFromAuth(user as never).role, 'student');
     assert.equal(
-      userFromAuth({
-        ...user,
-        email: 'other@example.test',
-        email_confirmed_at: new Date().toISOString(),
-      } as never).role,
-      'student',
-    );
-    delete process.env.PORSI_OWNER_EMAIL;
-    assert.equal(
-      userFromAuth({
-        ...user,
-        email_confirmed_at: new Date().toISOString(),
-      } as never).role,
-      'student',
+      userFromAuth({ ...user, app_metadata: { role: 'admin' } } as never).role,
+      'admin',
     );
   } finally {
-    if (original === undefined) delete process.env.PORSI_OWNER_EMAIL;
-    else process.env.PORSI_OWNER_EMAIL = original;
+    if (original === undefined) delete process.env.PORSI_OWNER_USER_ID;
+    else process.env.PORSI_OWNER_USER_ID = original;
   }
 });
