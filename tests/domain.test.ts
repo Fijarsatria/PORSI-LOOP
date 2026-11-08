@@ -41,7 +41,7 @@ test('pre-order reserves slot capacity, snapshots isolate student identity, and 
   applyAction(
     state,
     student,
-    { type: 'preorder', slotId: 'slot-1', portion: 'small', quantity: 2 },
+    { type: 'preorder', phone: '081234567890', slotId: 'slot-1', portion: 'small', quantity: 2 },
     fixed,
   );
   assert.equal(
@@ -102,7 +102,7 @@ test('rescue reservation holds quota; only seller-validated pickup changes stock
   applyAction(
     state,
     student,
-    { type: 'claim_rescue', batchId, quantity: 2 },
+    { type: 'claim_rescue', phone: '081234567890', batchId, quantity: 2 },
     fixed,
   );
   assert.equal(stock(state), 10);
@@ -142,7 +142,7 @@ test('expiry releases rescue and pre-order holds, with no fabricated pickup', ()
   applyAction(
     state,
     student,
-    { type: 'claim_rescue', batchId: 'rescue-today' },
+    { type: 'claim_rescue', phone: '081234567890', batchId: 'rescue-today' },
     fixed,
   );
   expire(state, fixed + 5 * 3600000);
@@ -162,7 +162,7 @@ test('slots and quantities reject overselling; idempotency replays do not duplic
     state,
     student,
     {
-      type: 'preorder',
+      type: 'preorder', phone: '081234567890',
       slotId: 'slot-1',
       portion: 'regular',
       quantity: 2,
@@ -174,7 +174,7 @@ test('slots and quantities reject overselling; idempotency replays do not duplic
     state,
     student,
     {
-      type: 'preorder',
+      type: 'preorder', phone: '081234567890',
       slotId: 'slot-1',
       portion: 'regular',
       quantity: 2,
@@ -188,7 +188,7 @@ test('slots and quantities reject overselling; idempotency replays do not duplic
       applyAction(
         state,
         student,
-        { type: 'preorder', slotId: 'slot-1', portion: 'regular', quantity: 1 },
+        { type: 'preorder', phone: '081234567890', slotId: 'slot-1', portion: 'regular', quantity: 1 },
         fixed,
       ),
     /Slot baru saja penuh/,
@@ -233,7 +233,7 @@ test('the complete PRD ledger reconciles 50 = 23 pre-order + 20 walk-in + 3 resc
       state,
       { ...student, id: `student-${i}` },
       {
-        type: 'preorder',
+        type: 'preorder', phone: '081234567890',
         slotId: `slot-${(i % 3) + 1}`,
         portion: 'regular',
         quantity: 1,
@@ -272,13 +272,13 @@ test('the complete PRD ledger reconciles 50 = 23 pre-order + 20 walk-in + 3 resc
   applyAction(
     state,
     student,
-    { type: 'claim_rescue', batchId: state.rescues[0].id, quantity: 2 },
+    { type: 'claim_rescue', phone: '081234567890', batchId: state.rescues[0].id, quantity: 2 },
     afterSession,
   );
   applyAction(
     state,
     { ...student, id: 'rescue-other' },
-    { type: 'claim_rescue', batchId: state.rescues[0].id, quantity: 1 },
+    { type: 'claim_rescue', phone: '081234567890', batchId: state.rescues[0].id, quantity: 1 },
     afterSession,
   );
   for (const claim of state.claims) {

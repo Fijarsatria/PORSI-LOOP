@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { normalizePhone } from '../phone';
 import { summarizeFinance } from './finance';
 import type {
   Action,
@@ -960,6 +961,15 @@ function marketplaceSnapshot(
   };
 }
 
+function requiredPhone(value: unknown): string {
+  const phone = normalizePhone(value);
+  if (!phone)
+    throw new DomainError(
+      'Isi nomor telepon yang valid, misalnya 081234567890 atau +6281234567890.',
+    );
+  return phone;
+}
+
 function menuImage(value: unknown): string {
   if (typeof value !== 'string' || value.length > 90000)
     throw new DomainError('Foto terlalu besar. Pilih foto lain.');
@@ -1509,6 +1519,7 @@ function applyKitchenAction(
         code: newCode(state, 'PL'),
         userId: user.id,
         customer: customerName(action.customer, user),
+        phone: requiredPhone(action.phone),
         menuId: state.menu.id,
         menuName: state.menu.name,
         portion,
@@ -1991,6 +2002,7 @@ function applyKitchenAction(
         code: newCode(state, 'RS'),
         userId: user.id,
         customer: customerName(action.customer, user),
+        phone: requiredPhone(action.phone),
         batchId: batch.id,
         note: text(action.note, 200),
         menuName: batch.menuName,

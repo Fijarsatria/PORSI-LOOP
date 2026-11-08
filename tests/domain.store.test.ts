@@ -24,7 +24,7 @@ test('SQLite serializes competing requests, persists state, and validates revoca
   const results = await Promise.allSettled(
     Array.from({ length: 5 }, (_, i) =>
       mutate(DEMO_USERS.student, {
-        type: 'preorder',
+        type: 'preorder', phone: '081234567890',
         slotId: 'slot-1',
         portion: 'regular',
         quantity: 5,

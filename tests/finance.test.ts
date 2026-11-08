@@ -13,7 +13,7 @@ test('canteen finance separates fulfilled sales, received payments, pending paym
   state.movements = [];
   state.produced = 50;
   const order = (method = 'qris') => {
-    applyAction(state, guest, { type: 'preorder', portion: 'regular', slotId: 'asap', quantity: 1, paymentMethod: method }, now);
+    applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', quantity: 1, paymentMethod: method }, now);
     return state.orders[0];
   };
   const fulfilled = order();
@@ -32,7 +32,7 @@ test('canteen finance separates fulfilled sales, received payments, pending paym
   applyAction(state, guest, { type: 'cancel_order', orderId: cashRefund.id }, now, 'supabase');
   applyAction(state, DEMO_USERS.seller, { type: 'record_walkin', quantity: 2 }, now);
   applyAction(state, DEMO_USERS.seller, { type: 'publish_rescue', quantity: 2, price: 10000, foodChecked: true }, now);
-  applyAction(state, guest, { type: 'claim_rescue', batchId: state.rescues[0].id, quantity: 1, paymentMethod: 'qris' }, now);
+  applyAction(state, guest, { type: 'claim_rescue', phone: '081234567890', batchId: state.rescues[0].id, quantity: 1, paymentMethod: 'qris' }, now);
   const claim = state.claims[0];
   applyAction(state, guest, { type: 'pay_order', claimId: claim.id }, now);
   applyAction(state, DEMO_USERS.seller, { type: 'prepare_order', claimId: claim.id }, now);

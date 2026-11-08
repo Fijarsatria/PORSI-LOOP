@@ -47,7 +47,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
   const [queue, setQueue] = useState('new');
   useEffect(() => {
     const status = params.get('status');
-    if (status && ['new', 'processing', 'done'].includes(status))
+    if (status && ['new', 'processing', 'ready', 'done'].includes(status))
       setQueue(status);
   }, [params]);
   const [closing, setClosing] = useState(false);
@@ -68,7 +68,8 @@ export function SellerDashboard({ tab }: { tab: string }) {
     new: orders.filter((o) =>
       ['pending_payment', 'confirmed'].includes(o.status),
     ),
-    processing: orders.filter((o) => ['preparing', 'ready'].includes(o.status)),
+    processing: orders.filter((o) => o.status === 'preparing'),
+    ready: orders.filter((o) => o.status === 'ready'),
     done: orders.filter(
       (o) =>
         !['pending_payment', 'confirmed', 'preparing', 'ready'].includes(
@@ -127,7 +128,7 @@ export function SellerDashboard({ tab }: { tab: string }) {
           ) : undefined
         }
       />
-      {(tab === 'overview' || tab === 'orders') && (
+      {tab === 'overview' && (
         <div className="seller-queue-summary">
           {[
             {
@@ -143,10 +144,16 @@ export function SellerDashboard({ tab }: { tab: string }) {
               n: groups.processing.length,
             },
             {
+              id: 'ready',
+              label: 'Siap diambil',
+              icon: Package,
+              n: groups.ready.length,
+            },
+            {
               id: 'done',
               label: 'Selesai',
               icon: CheckCheck,
-              n: groups.done.filter((o) => o.status === 'picked_up').length,
+              n: groups.done.length,
             },
           ].map((s) => (
             <Link
@@ -251,10 +258,14 @@ export function SellerDashboard({ tab }: { tab: string }) {
       )}
       {tab === 'orders' && (
         <>
-          <div className="segmented" aria-label="Kelompok pesanan">
+          <div
+            className="segmented seller-order-stages"
+            aria-label="Kelompok pesanan"
+          >
             {[
               ['new', 'Masuk', groups.new.length],
               ['processing', 'Diproses', groups.processing.length],
+              ['ready', 'Siap diambil', groups.ready.length],
               ['done', 'Selesai', groups.done.length],
             ].map(([id, label, n]) => (
               <button
@@ -278,6 +289,15 @@ export function SellerDashboard({ tab }: { tab: string }) {
                   </Badge>
                 </div>
                 <h3>{o.menuName}</h3>
+                {o.phone && (
+                  <a
+                    className="text-link"
+                    href={`tel:${o.phone}`}
+                    aria-label={`Telepon ${o.customer}`}
+                  >
+                    {o.phone}
+                  </a>
+                )}
                 <p>
                   {o.customer} · {o.quantity} porsi ·{' '}
                   {o.fulfillment === 'dine_in' ? 'Dine in' : 'Pick up'}

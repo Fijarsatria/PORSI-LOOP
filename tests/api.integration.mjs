@@ -78,10 +78,10 @@ test('production HTTP API: guest privacy, credentials, outlet isolation, payment
 
   await t.test('reservations serialize concurrent capacity and expire without moving stock', async () => {
     await success(admin, { type: 'reset_demo' });
-    const races = await Promise.all(Array.from({ length: 5 }, (_, i) => action(guest, { type: 'preorder', menuId: 'menu-ayam', portion: 'regular', slotId: 'slot-1', quantity: 5, idempotencyKey: `race-${i}` })));
+    const races = await Promise.all(Array.from({ length: 5 }, (_, i) => action(guest, { type: 'preorder', phone: '081234567890', menuId: 'menu-ayam', portion: 'regular', slotId: 'slot-1', quantity: 5, idempotencyKey: `race-${i}` })));
     assert.equal(races.filter(r => r.response.status === 200).length, 2);
     const accepted = races.findIndex(r => r.response.status === 200);
-    const replay = await success(guest, { type: 'preorder', menuId: 'menu-ayam', portion: 'regular', slotId: 'slot-1', quantity: 5, idempotencyKey: `race-${accepted}` });
+    const replay = await success(guest, { type: 'preorder', phone: '081234567890', menuId: 'menu-ayam', portion: 'regular', slotId: 'slot-1', quantity: 5, idempotencyKey: `race-${accepted}` });
     assert.equal(replay.orders.length, 2);
     assert.equal(replay.slots[0].reserved, 18);
     const expired = await success(admin, { type: 'advance_demo', minutes: 16 });
@@ -93,7 +93,7 @@ test('production HTTP API: guest privacy, credentials, outlet isolation, payment
 
   await t.test('paid order requires preparation, correct outlet and an unused QR; cash and promo share the lifecycle', async () => {
     await success(admin, { type: 'reset_demo' });
-    let state = await success(guest, { type: 'preorder', menuId: 'menu-ayam', portion: 'small', quantity: 1, slotId: 'asap', customer: 'Rani', fulfillment: 'dine_in', paymentMethod: 'qris' });
+    let state = await success(guest, { type: 'preorder', phone: '081234567890', menuId: 'menu-ayam', portion: 'small', quantity: 1, slotId: 'asap', customer: 'Rani', fulfillment: 'dine_in', paymentMethod: 'qris' });
     let order = state.orders[0];
     assert.equal(order.status, 'pending_payment');
     assert.equal(order.pickupToken, undefined);
@@ -111,13 +111,13 @@ test('production HTTP API: guest privacy, credentials, outlet isolation, payment
     assert.equal(picked.kitchens[0].metrics.stock, 31);
     assert.equal((await action(seller, { type: 'scan_pickup', token: order.pickupToken })).response.status, 409);
     assert.equal((await request('/api/state', { cookie: guest })).data.orders[0].status, 'picked_up');
-    state = await success(guest, { type: 'preorder', menuId: 'menu-ayam', portion: 'regular', quantity: 1, slotId: 'asap', customer: 'Rani', paymentMethod: 'cash' });
+    state = await success(guest, { type: 'preorder', phone: '081234567890', menuId: 'menu-ayam', portion: 'regular', quantity: 1, slotId: 'asap', customer: 'Rani', paymentMethod: 'cash' });
     const cash = state.orders.find(o => o.status === 'pending_payment');
     assert.equal((await action(guest, { type: 'pay_order', orderId: cash.id })).response.status, 400);
     await success(seller, { type: 'verify_cash_payment', orderId: cash.id });
     await success(guest, { type: 'cancel_order', orderId: cash.id });
     assert.equal((await request('/api/state', { cookie: guest })).data.orders.find(o => o.id === cash.id).paymentStatus, 'refunded');
-    state = await success(guest, { type: 'claim_rescue', batchId: 'menu-ayam-promo', quantity: 1, customer: 'Rani', fulfillment: 'pick_up', paymentMethod: 'ewallet' });
+    state = await success(guest, { type: 'claim_rescue', phone: '081234567890', batchId: 'menu-ayam-promo', quantity: 1, customer: 'Rani', fulfillment: 'pick_up', paymentMethod: 'ewallet' });
     const claim = state.claims[0];
     state = await success(guest, { type: 'pay_order', claimId: claim.id });
     const token = state.claims[0].pickupToken;

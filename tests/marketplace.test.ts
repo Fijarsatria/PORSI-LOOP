@@ -6,7 +6,7 @@ const now = Date.parse('2026-11-08T10:00:00+07:00');
 const guest = { id: 'guest-one', role: 'student' as const, name: 'Tamu', isGuest: true };
 const seller = DEMO_USERS.seller;
 function reserve(state: ReturnType<typeof createState>, extra = {}) {
-  applyAction(state, guest, { type: 'preorder', portion: 'regular', slotId: 'asap', quantity: 1, customer: 'Rani', fulfillment: 'pick_up', paymentMethod: 'qris', ...extra }, now);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', quantity: 1, customer: 'Rani', fulfillment: 'pick_up', paymentMethod: 'qris', ...extra }, now);
   return state.orders[0];
 }
 
@@ -47,8 +47,8 @@ test('public snapshots expose availability while private forecasting and costs s
 
 test('live mode blocks synthetic payment and unconfigured digital checkout; verified cash uses the same paid lifecycle', () => {
   const state = createState(now);
-  assert.throws(() => applyAction(state, guest, { type: 'preorder', portion: 'regular', slotId: 'asap', paymentMethod: 'qris' }, now, 'supabase'), /belum tersedia/i);
-  applyAction(state, guest, { type: 'preorder', portion: 'regular', slotId: 'asap', paymentMethod: 'cash' }, now, 'supabase');
+  assert.throws(() => applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', paymentMethod: 'qris' }, now, 'supabase'), /belum tersedia/i);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'asap', paymentMethod: 'cash' }, now, 'supabase');
   const order = state.orders[0];
   assert.throws(() => applyAction(state, guest, { type: 'pay_order', orderId: order.id }, now, 'supabase'), /belum tersedia/i);
   applyAction(state, seller, { type: 'verify_cash_payment', orderId: order.id }, now, 'supabase');
@@ -77,7 +77,7 @@ test('marketplace isolates seller kitchens and customer tickets while admin rece
   assert.equal(publicView.menus?.length, 18);
   assert.equal(publicView.kitchens, undefined);
   const foreignMenu = publicView.menus!.find(m => m.outletId !== seller.outletId)!;
-  applyAction(state, guest, { type: 'preorder', menuId: foreignMenu.id, portion: 'regular', slotId: 'asap', quantity: 1, customer: 'Rani', paymentMethod: 'qris' }, now);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', menuId: foreignMenu.id, portion: 'regular', slotId: 'asap', quantity: 1, customer: 'Rani', paymentMethod: 'qris' }, now);
   const own = snapshot(state, guest, 'demo', now).orders[0];
   applyAction(state, guest, { type: 'pay_order', orderId: own.id }, now);
   assert.equal(snapshot(state, { ...guest, id: 'guest-two' }, 'demo', now).orders.length, 0);
@@ -108,7 +108,7 @@ test('paid cancellation records a refund and promo uses only safe unallocated ph
 
 test('outlet pickup percentages are weighted by portions rather than summed across menus', () => {
   const state = createMarketplaceState(now);
-  applyAction(state, guest, { type: 'preorder', menuId: 'menu-ayam', slotId: 'asap', portion: 'regular', quantity: 1 }, now);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', menuId: 'menu-ayam', slotId: 'asap', portion: 'regular', quantity: 1 }, now);
   const order = state.orders[0];
   applyAction(state, guest, { type: 'pay_order', orderId: order.id }, now);
   applyAction(state, seller, { type: 'prepare_order', orderId: order.id }, now);
@@ -135,7 +135,7 @@ test('cloud starter has all eighteen kitchens but no fabricated availability, tr
 
 test('live cash cancellation waits for seller confirmation of the actual refund', () => {
   const state = createState(now);
-  applyAction(state, guest, { type: 'preorder', slotId: 'asap', portion: 'regular', paymentMethod: 'cash' }, now, 'supabase');
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', slotId: 'asap', portion: 'regular', paymentMethod: 'cash' }, now, 'supabase');
   const order = state.orders[0];
   applyAction(state, seller, { type: 'verify_cash_payment', orderId: order.id }, now, 'supabase');
   applyAction(state, guest, { type: 'cancel_order', orderId: order.id }, now, 'supabase');
@@ -152,7 +152,7 @@ test('live cash cancellation waits for seller confirmation of the actual refund'
 
 test('only the ticket owner receives pickup secrets, including across seller kitchen snapshots', () => {
   const state = createMarketplaceState(now);
-  applyAction(state, guest, { type: 'preorder', slotId: 'asap', menuId: 'menu-ayam', portion: 'regular' }, now);
+  applyAction(state, guest, { type: 'preorder', phone: '081234567890', slotId: 'asap', menuId: 'menu-ayam', portion: 'regular' }, now);
   const order = state.orders[0];
   applyAction(state, guest, { type: 'pay_order', orderId: order.id }, now);
   assert.ok(snapshot(state, guest, 'demo', now).orders[0].pickupToken);

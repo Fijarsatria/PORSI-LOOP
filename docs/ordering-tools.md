@@ -4,6 +4,10 @@
 
 Penjual membuka **Menu → Edit → Ganti foto**, memilih PNG/JPEG/WebP maksimal 10 MB, memeriksa pratinjau, lalu menyimpan. Browser mengubah foto menjadi WebP dengan sisi terpanjang 480 piksel dan menghapus metadata sumber. Gambar hasil maksimal 90.000 karakter disimpan bersama menu dalam penyimpanan aplikasi. Foto ditampilkan pada katalog, checkout, pesanan dan promo customer. SVG bawaan instalasi tetap dapat dipakai; unggahan SVG dan tautan gambar eksternal ditolak.
 
+## Tahap pesanan penjual
+
+Empat kelompok pesanan adalah **Masuk**, **Diproses**, **Siap diambil**, dan **Selesai**. Tombol Tandai siap memindahkan pesanan dari Diproses ke Siap diambil. Hanya verifikasi serah terima yang menyelesaikan pengambilan. Kelompok Selesai juga menyimpan tiket terminal dengan label status sebenarnya, misalnya dibatalkan atau kedaluwarsa.
+
 ## Penjualan langsung dan riwayat
 
 Dari Ringkasan, pilih **Catat penjualan langsung**, menu, jumlah, dan harga per porsi. Gunakan setelah pembayaran diterima dan makanan diserahkan. Stok bebas berkurang dan nilai transaksi masuk laporan; stok yang dicadangkan untuk pesanan/promo tetap dilindungi.
@@ -23,6 +27,10 @@ Promo dapat diterbitkan dari satu formulir: porsi, harga, durasi, informasi maka
 - Pengelola: `/akses-pengelola`.
 
 Menu tiga garis di landing menyediakan pintasan ketiganya, termasuk pengelola. Tombol keluar terlihat di bagian atas ruang akun; sesi kerja dan belanja tetap terpisah. Tampilan pemuatan bergerak mengikuti proses pengambilan data/login, dengan tips yang bisa diganti dan dukungan reduced motion, tanpa sengaja menambah waktu tunggu.
+
+## Nomor telepon pada pesanan
+
+Customer wajib mengisi nomor telepon untuk pesanan biasa maupun Promo Terbatas. Format lokal seperti `081234567890` dinormalisasi menjadi `+6281234567890`. Nomor divalidasi lagi pada server dan hanya tersedia bagi customer pemilik tiket serta penjual gerainya. Pesanan lama yang belum memiliki nomor tetap bisa dibaca.
 
 ## Chat
 

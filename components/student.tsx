@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizePhone } from '@/lib/phone';
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -382,6 +383,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('qris');
   const [customer, setCustomer] = useState('');
+  const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
   const [search, setSearch] = useState('');
   const [outletFilter, setOutletFilter] = useState('all');
@@ -575,6 +577,10 @@ export function StudentDashboard({ tab }: { tab: string }) {
       setLocalError('Isi nama pemesan agar gerai dapat mengenali pesananmu.');
       return;
     }
+    if (!normalizePhone(phone)) {
+      setLocalError('Isi nomor telepon yang valid, misalnya 081234567890.');
+      return;
+    }
     if (!selectedMenu || !checkout) return;
     if (!checkoutAvailable || quantity > maxQuantity) {
       setLocalError(
@@ -609,6 +615,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
           batchId: checkout.id,
           quantity,
           customer: customer.trim(),
+          phone: normalizePhone(phone),
           fulfillment,
           paymentMethod,
           note: note.trim(),
@@ -620,6 +627,7 @@ export function StudentDashboard({ tab }: { tab: string }) {
           portion,
           slotId: fulfillment === 'dine_in' ? 'asap' : slotId,
           customer: customer.trim(),
+          phone: normalizePhone(phone),
           fulfillment,
           paymentMethod,
           note: note.trim(),
@@ -1326,6 +1334,26 @@ export function StudentDashboard({ tab }: { tab: string }) {
                 }}
               />
             </Field>
+            <Field
+              label="Nomor telepon"
+              hint="Wajib agar gerai dapat menghubungimu jika ada perubahan pesanan."
+            >
+              <input
+                aria-label="Nomor telepon"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                required
+                minLength={9}
+                maxLength={30}
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setLocalError('');
+                }}
+                placeholder="Contoh: 081234567890"
+              />
+            </Field>
             <fieldset className="market-fieldset">
               <legend>Mau dinikmati di mana?</legend>
               <div className="market-choice-grid">
@@ -1797,6 +1825,12 @@ export function StudentDashboard({ tab }: { tab: string }) {
                         : 'Belum dibayar'}
                 </dd>
               </div>
+              {currentTicket.phone && (
+                <div>
+                  <dt>Nomor telepon</dt>
+                  <dd>{currentTicket.phone}</dd>
+                </div>
+              )}
               <div className="market-ticket-grand-total">
                 <dt>Total</dt>
                 <dd>{rupiah(currentTicket.price * currentTicket.quantity)}</dd>

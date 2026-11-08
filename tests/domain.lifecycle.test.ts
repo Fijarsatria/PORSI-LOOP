@@ -32,7 +32,7 @@ test('live installations start with a closed sample menu and no fabricated deman
       applyAction(
         state,
         student,
-        { type: 'preorder', portion: 'regular', slotId: 'slot-1' },
+        { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'slot-1' },
         now,
       ),
     /tidak tersedia/,
@@ -66,7 +66,7 @@ test('rescue expiry is consistent at the exact deadline', () => {
   applyAction(
     state,
     student,
-    { type: 'claim_rescue', batchId: state.rescues[0].id },
+    { type: 'claim_rescue', phone: '081234567890', batchId: state.rescues[0].id },
     now,
   );
   expire(state, Date.parse(state.rescues[0].expiresAt));
@@ -126,7 +126,7 @@ test('incomplete reconciliation is retained and corrected in place; completed se
   applyAction(
     state,
     student,
-    { type: 'preorder', portion: 'regular', slotId: 'slot-1' },
+    { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'slot-1' },
     now,
   );
   expire(state, later);
@@ -274,7 +274,7 @@ test('slot availability reflects the total remaining session capacity, including
       applyAction(
         state,
         student,
-        { type: 'preorder', portion: 'regular', slotId: 'slot-2' },
+        { type: 'preorder', phone: '081234567890', portion: 'regular', slotId: 'slot-2' },
         now,
       ),
     /Kuota produksi/,

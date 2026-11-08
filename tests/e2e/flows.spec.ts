@@ -111,6 +111,7 @@ test('guest payment, real QR, seller preparation, notifications and one-time han
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await expect(checkout).toBeVisible();
   await checkout.getByLabel('Nama pemesan').fill('Ayu Uji');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout.getByRole('button', { name: /^Pick up/ }).click();
   await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   await page
@@ -187,6 +188,7 @@ test('dialog error, keyboard focus, accessibility and reduced motion remain usab
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await dialog.getByLabel('Nama pemesan').fill('Uji Error');
+  await dialog.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   const accessibility = await new AxeBuilder({ page })
     .include('dialog[open]')
     .withTags(['wcag2a', 'wcag2aa'])
@@ -286,6 +288,7 @@ test('scheduled Pick up remains orderable after immediate cooked stock is exhaus
   await expect(dialog.getByRole('button', { name: /^Dine in/ })).toBeDisabled();
   await expect(dialog.getByLabel('Waktu ambil')).toHaveValue(/^slot-/);
   await dialog.getByLabel('Nama pemesan').fill('Uji Jadwal');
+  await dialog.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await dialog.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   await expect(
     page.getByRole('dialog', { name: 'Selesaikan pembayaran' }),
@@ -306,6 +309,7 @@ test('Promo Terbatas cash waits for seller verification before issuing the buyer
     .click();
   const checkout = page.getByRole('dialog', { name: 'Pesan Promo Terbatas' });
   await checkout.getByLabel('Nama pemesan').fill('Uji Promo Tunai');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -372,6 +376,7 @@ test('scroll returns after checkout switches to a ticket and navigation returns 
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Uji Gulir');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout.getByRole('button', { name: 'Lanjut pembayaran' }).click();
   const ticket = page.getByRole('dialog', { name: 'Selesaikan pembayaran' });
   await expect(ticket).toBeVisible();
@@ -565,6 +570,7 @@ test('compact mobile catalogue keeps two columns and a visible dock at both scro
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Pembeli mobile');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();

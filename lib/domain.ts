@@ -63,6 +63,7 @@ export interface ChatMessage {
   at: string;
 }
 export interface Order {
+  phone?: string;
   messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   outletId?: string;
@@ -107,6 +108,7 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  phone?: string;
   messages?: ChatMessage[];
   rating?: { stars: number; comment: string; at: string };
   note?: string;

@@ -112,6 +112,7 @@ test('guest and seller exchange order messages in a panel clear of navigation', 
   await page.getByTestId('menu-order-button').first().click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Pembeli chat');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();

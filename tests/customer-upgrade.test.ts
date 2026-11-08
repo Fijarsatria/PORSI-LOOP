@@ -90,7 +90,7 @@ test('guest tickets transfer only to the authenticated customer and ratings requ
     state,
     guest,
     {
-      type: 'preorder',
+      type: 'preorder', phone: '081234567890',
       menuId: 'menu-ayam',
       quantity: 1,
       portion: 'regular',
@@ -185,7 +185,7 @@ test('persistent customer and seller accounts keep credentials private and prese
     isGuest: true,
   };
   const ordered = await store.mutate(guest, {
-    type: 'preorder',
+    type: 'preorder', phone: '081234567890',
     menuId: 'menu-ayam',
     quantity: 1,
     portion: 'regular',

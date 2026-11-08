@@ -14,7 +14,7 @@ test('a retry of the same reset does not erase transactions created after the fi
   state = applyDemoCommand(
     state,
     DEMO_USERS.student,
-    { type: 'preorder', quantity: 1, portion: 'regular', slotId: 'slot-1' },
+    { type: 'preorder', phone: '081234567890', quantity: 1, portion: 'regular', slotId: 'slot-1' },
     now,
   );
   const session = state.sessionId;

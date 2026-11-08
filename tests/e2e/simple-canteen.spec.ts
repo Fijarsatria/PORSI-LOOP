@@ -105,6 +105,7 @@ test('manager creates a seller, seller adds food, shops without logout, then cus
   await page.getByTestId('menu-order-button').click();
   const checkout = page.getByRole('dialog', { name: 'Pilihanmu, porsi pasmu' });
   await checkout.getByLabel('Nama pemesan').fill('Customer uji');
+  await checkout.getByLabel('Nomor telepon', {exact:true}).fill('081234567890');
   await checkout
     .getByRole('button', { name: 'Bayar di gerai', exact: true })
     .click();
@@ -126,6 +127,10 @@ test('manager creates a seller, seller adds food, shops without logout, then cus
   await queued.getByRole('button', { name: 'Mulai siapkan' }).click();
   await page.getByRole('button', { name: /^Diproses/ }).click();
   await queued.getByRole('button', { name: 'Tandai siap' }).click();
+  await expect(queued).not.toBeVisible();
+  await page.getByRole('button',{name:/^Siap diambil/}).click();
+  await expect(queued).toBeVisible();
+  await expect(queued).toContainText('Siap diambil');
   const ready = await (
     await page.request.get('/api/state?space=customer')
   ).json();
