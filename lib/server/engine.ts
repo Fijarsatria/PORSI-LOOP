@@ -45,7 +45,7 @@ export function createState(at = Date.now(), empty = false): StoreState {
   const clock = new Date(`${date}T10:00:00+07:00`).getTime();
   const menu: Menu = {
     id: 'menu-ayam', name: 'Nasi ayam rempah', description: 'Ayam berbumbu rempah, nasi hangat, tumis sayur, dan sambal terpisah. Pilih porsi yang pas untukmu.',
-    outlet: 'Dapur Bu Ratna', location: 'Kantin kampus · Gerai A-03', image: '/images/ayam-rempah.webp', category: 'Nasi & lauk',
+    outlet: 'Dapur Bu Ratna', location: 'Kantin kampus · Gerai A-03', image: '/images/nasi-ayam.webp', category: 'Nasi & lauk',
     tags: ['Dimasak hari ini', 'Sambal terpisah'], allergens: ['Kedelai', 'Gandum (kecap)'],
     prices: { small: 13000, regular: 18000 }, portionLabels: { small: 'Porsi kecil', regular: 'Porsi reguler' }, variableCost: empty ? 0 : 9000, active: true,
   };
@@ -283,3 +283,4 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
   if (key) state.idempotency = [...state.idempotency.slice(-999), `${user.id}:${key}`];
   return state;
 }
+
