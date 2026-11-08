@@ -67,7 +67,7 @@ Semua endpoint mutasi memeriksa Origin yang sama (atau `APP_ORIGIN` yang dikonfi
 
 ## Perhitungan dan batas bukti
 
-Rencana: `T=min(C,P+W+b)`. `P` berasal dari pre-order yang tidak dibatalkan, `W` dari rata-rata maksimal tujuh sesi selesai yang benar-benar memiliki kolom walk-in, `b` buffer yang terlihat, dan `C` kapasitas gerai. Implementasi menetapkan minimal tiga hari riwayat; di bawah itu dipakai baseline manual dengan sumber `manual`/label data terbatas. Rentang `W−2..W+4` adalah rentang ilustrasi untuk fixture MVP, bukan interval statistik terkalibrasi. Override menyimpan target akhir, alasan, dan waktu. Rekomendasi tidak menambah stok.
+Rencana: `T=min(C,P+W+b)`. `P` berasal dari pre-order yang tidak dibatalkan, `W` dari rata-rata maksimal tujuh sesi selesai yang benar-benar memiliki kolom walk-in, `b` buffer yang terlihat, dan `C` kapasitas gerai. Implementasi menetapkan minimal tiga hari riwayat; di bawah itu dipakai baseline manual dengan sumber `manual`/label data terbatas. Rentang menunjukkan minimum–maksimum walk-in yang diamati pada riwayat tersebut, bukan interval prediksi statistik terkalibrasi. Pada baseline manual, kedua batas sama dengan baseline agar tidak menciptakan ketidakpastian palsu. Override menyimpan target akhir, alasan, dan waktu. Rekomendasi tidak menambah stok.
 
 Stok fisik = produksi − pre-order diambil − walk-in − rescue diambil − konsumsi internal − waste. Pre-order dan penawaran rescue menahan kuota; klaim tidak mengurangi stok fisik lagi. Penjualan walk-in/waste/internal tidak boleh menghabiskan cadangan. Pengambilan ganda, stok negatif, jumlah tidak valid, slot penuh, dan tindakan dari peran salah ditolak server.
 

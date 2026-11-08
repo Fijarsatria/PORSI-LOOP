@@ -53,7 +53,7 @@ export function createState(at = Date.now(), empty = false): StoreState {
   const orders: Order[] = empty ? [] : Array.from({ length: 12 }, (_, i) => ({
     id: `seed-order-${i + 1}`, code: `PL-${(7100 + i).toString()}`, userId: `seed-student-${i + 1}`, customer: `Mahasiswa ${String(i + 1).padStart(2, '0')}`, menuId: menu.id, menuName: menu.name, portion: i % 3 === 0 ? 'small' : 'regular', quantity: 2, price: i % 3 === 0 ? 13000 : 18000, slotId: slots[i % 3].id, slotLabel: slots[i % 3].label, status: 'confirmed', note: '', createdAt: iso(clock - (30 - i) * 60000),
   }));
-  const history = empty ? [] : [22, 26, 23, 25, 24, 24, 24].map((walkin, i) => ({ date: iso(clock - (7 - i) * 86400000).slice(0, 10), produced: 50, preorders: 20, walkin, rescue: 2, waste: Math.max(0, 50 - 20 - walkin - 2), wasteKg: Math.round(Math.max(0, 50 - 20 - walkin - 2) * 0.18 * 100) / 100, closed: true }));
+  const history = empty ? [] : [22, 28, 23, 25, 22, 24, 24].map((walkin, i) => ({ date: iso(clock - (7 - i) * 86400000).slice(0, 10), produced: 50, preorders: 20, walkin, rescue: 2, waste: Math.max(0, 50 - 20 - walkin - 2), wasteKg: Math.round(Math.max(0, 50 - 20 - walkin - 2) * 0.18 * 100) / 100, closed: true }));
   return { schema: 1, createdAt: iso(at), demoClock: iso(clock), businessDate: date, menu, slots, orders,
     rescues: empty ? [] : [{ id: 'rescue-today', menuId: menu.id, menuName: menu.name, description: 'Porsi matang yang tersedia lebih awal. Lauk dan sayur mengikuti ketersediaan gerai.', quantity: 6, available: 6, price: 10000, originalPrice: 18000, expiresAt: iso(clock + 210 * 60000), publishedAt: iso(clock), foodChecked: true, active: true }],
     claims: [], produced: empty ? 0 : 32, walkin: 0, walkinRevenue: 0, internal: 0, waste: 0, wasteKg: 0, capacity: 50, buffer: 2, manualBaseline: 24, history, logs: [], closed: false, idempotency: [] };
@@ -91,7 +91,8 @@ export function recommendation(state: StoreState): Recommendation {
   const walkinEstimate = historyEnough ? Math.round(sum(history, h => h.walkin) / history.length) : state.manualBaseline;
   const preorders = sum(state.orders.filter(o => !['cancelled', 'expired'].includes(o.status)), o => o.quantity);
   const target = Math.min(state.capacity, preorders + walkinEstimate + state.buffer);
-  return { preorders, walkinEstimate, walkinRange: [Math.max(0, walkinEstimate - 2), walkinEstimate + 4], buffer: state.buffer, target, capacity: state.capacity, readyStock: stock(state), toProduce: Math.max(0, (state.override?.target ?? state.acceptedPlan?.target ?? target) - state.produced), source: historyEnough ? 'history' : 'manual', historyDays: history.length, override: state.override, accepted: state.acceptedPlan };
+  const walkinRange: [number, number] = historyEnough ? [Math.min(...history.map(h => h.walkin)), Math.max(...history.map(h => h.walkin))] : [walkinEstimate, walkinEstimate];
+  return { preorders, walkinEstimate, walkinRange, buffer: state.buffer, target, capacity: state.capacity, readyStock: stock(state), toProduce: Math.max(0, (state.override?.target ?? state.acceptedPlan?.target ?? target) - state.produced), source: historyEnough ? 'history' : 'manual', historyDays: history.length, override: state.override, accepted: state.acceptedPlan };
 }
 
 export function snapshot(state: StoreState, user: User | null, mode: 'demo' | 'supabase', realNow = Date.now()): Snapshot {
