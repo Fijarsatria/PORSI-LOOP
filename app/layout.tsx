@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     'Rencanakan sebelum memasak. Selamatkan bila tersisa. Ukur dampaknya. Pre-order, slot ambil, dan rescue makanan untuk kantin kampus.',
   applicationName: 'PORSI LOOP',
   manifest: '/manifest.webmanifest',
-  icons: { icon: '/icon.svg', apple: '/icon.svg' },
+  icons: { icon: '/icon.png', apple: '/icon.png' },
   openGraph: {
     title: 'PORSI LOOP — Porsi pas. Waktu lebih lepas.',
     description: 'Satu loop untuk makan siang yang lebih terencana.',

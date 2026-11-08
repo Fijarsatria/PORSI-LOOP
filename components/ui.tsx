@@ -9,6 +9,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useApp } from './provider';
 
@@ -26,28 +27,23 @@ export function Brand({
       aria-label="PORSI LOOP, beranda"
     >
       <span className="brand-symbol">
-        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <path
-            d="M21.2 5.2a11.8 11.8 0 1 0 6.4 13"
-            stroke="currentColor"
-            strokeWidth="3.3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M10.7 25.6a11.8 11.8 0 1 0-6.3-13"
-            stroke="currentColor"
-            strokeWidth="3.3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M12 17.6c1.1-4.2 4-6.3 9-6.4-1.4 4.6-4.1 7-8.3 6.9"
-            fill="currentColor"
-          />
-        </svg>
+        <Image src="/brand/logo.png" alt="" width={160} height={136} priority />
       </span>
       {!compact && (
         <span>
-          PORSI<span className="brand-loop">LOOP</span>
+          PORSI
+          <span className="brand-loop">
+            L
+            <Image
+              className="brand-loop-mark"
+              src="/brand/loop.png"
+              alt="OO"
+              width={47}
+              height={18}
+              unoptimized
+            />
+            P
+          </span>
           <span className="brand-dot">.</span>
         </span>
       )}

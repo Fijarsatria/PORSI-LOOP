@@ -242,17 +242,28 @@ input[type='range'] {
 }
 .brand-symbol {
   display: inline-flex;
-  width: 35px;
-  height: 35px;
+  width: 52px;
+  height: 44px;
   color: var(--leaf);
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.brand-symbol svg {
+.brand-symbol img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
 }
 .brand-loop {
   font-weight: 450;
   margin-left: 2px;
+}
+.brand-loop-mark {
+  display: inline-block;
+  height: 0.68em;
+  width: auto;
+  margin: 0 0.05em 0 0.06em;
+  vertical-align: 0.02em;
 }
 .brand-dot {
   color: #78a356;
@@ -1589,8 +1600,8 @@ input[type='range'] {
   gap: 5px;
 }
 .mobile-app-brand .brand-symbol {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 36px;
 }
 .app-breadcrumb {
   display: none;
@@ -1742,8 +1753,8 @@ input[type='range'] {
   font-size: 8px;
 }
 .app-footer .brand-symbol {
-  height: 21px;
-  width: 21px;
+  height: 26px;
+  width: 31px;
   opacity: 0.6;
 }
 .app-footer > a:last-child {
@@ -3182,8 +3193,8 @@ input[type='range'] {
     font-size: 22px;
   }
   .brand-symbol {
-    width: 36px;
-    height: 36px;
+    width: 56px;
+    height: 48px;
   }
   .header-login {
     min-height: 44px;
@@ -3683,8 +3694,8 @@ input[type='range'] {
     padding-left: 6px;
   }
   .app-sidebar .brand-symbol {
-    width: 31px;
-    height: 31px;
+    width: 47px;
+    height: 40px;
   }
   .workspace-name {
     display: flex;
