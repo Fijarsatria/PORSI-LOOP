@@ -5520,3 +5520,63 @@ input[type='range'] {
     transition: none;
   }
 }
+
+/* Public header on phones: keep logo, wordmark and "Pilih menu" on one line. */
+@media (max-width: 639px) {
+  .public-header {
+    left: 14px;
+    right: 14px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .public-header .brand {
+    min-width: 0;
+    gap: 6px;
+    font-size: 17px;
+    letter-spacing: -0.8px;
+  }
+  .public-header .brand-symbol {
+    width: 40px;
+    height: 34px;
+  }
+  .header-actions {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+  .header-login {
+    white-space: nowrap;
+    gap: 6px;
+    padding: 8px 14px;
+    min-height: 40px;
+  }
+}
+@media (max-width: 400px) {
+  .header-login svg {
+    display: none;
+  }
+  .public-header .brand {
+    font-size: 16px;
+  }
+}
+@media (max-width: 349px) {
+  .public-header {
+    left: 10px;
+    right: 10px;
+    padding: 6px 8px;
+  }
+  .public-header .brand {
+    font-size: 14px;
+    gap: 4px;
+  }
+  .public-header .brand-symbol {
+    width: 32px;
+    height: 28px;
+  }
+  .header-login {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .public-header .mobile-menu {
+    min-width: 32px;
+  }
+}
