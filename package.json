@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "test:integration": "node --test tests/api.integration.mjs"
+    "test:integration": "node --test tests/api.integration.mjs",
+    "check:config": "node --env-file-if-exists=.env.local scripts/check-config.mjs"
   },
   "engines": {
     "node": ">=22.13.0"

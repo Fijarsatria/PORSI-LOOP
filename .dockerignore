@@ -1,0 +1,13 @@
+node_modules
+.next
+.next-qa
+.git
+.env*
+.data
+.openai-local
+upload
+tmp
+outputs
+test-results
+playwright-report
+*.tsbuildinfo

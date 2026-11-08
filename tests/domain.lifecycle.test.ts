@@ -90,3 +90,14 @@ test('stockout requires unavailable walk-in stock; override retains the original
   act(state, { type: 'record_production', quantity: 5 });
   assert.throws(() => act(state, { type: 'record_stockout', reason: 'Masih ada porsi tersedia' }), /Masih ada stok/);
 });
+
+test('rescue allergen information remains tied to the food offered when the menu changes', () => {
+  const state = createState(now, true);
+  state.menu.prices.regular = 18000;
+  state.menu.allergens = ['Kedelai'];
+  act(state, { type: 'record_production', quantity: 3 });
+  act(state, { type: 'publish_rescue', quantity: 2, price: 10000, foodChecked: true });
+  act(state, { type: 'save_menu', allergens: ['Telur'] });
+  assert.deepEqual(state.rescues[0].allergens, ['Kedelai']);
+  assert.deepEqual(state.menu.allergens, ['Telur']);
+});

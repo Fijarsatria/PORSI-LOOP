@@ -22,3 +22,22 @@ Tanggal: 8 November 2026. Titik awal: `7decd009c071c856f436a10f35f84dbf21546e4d`
 - Plugin Supabase mengembalikan daftar proyek kosong. Tidak ada proyek cloud atau kredensial nyata yang diasumsikan.
 - Launcher preview terkelola menyisipkan argumen Vite `--host`/`--strictPort` ke `next dev`; Next.js menolaknya. Review browser tidak diklaim lulus. Uji HTTP produksi dan pemeriksaan statis tetap dapat dijalankan.
 - Referensi skill Windows `ui-ux-pro-max` dan `frontend-design` tidak tersedia di lingkungan ini. Identitas visual proyek dan dokumentasi desain yang sudah ada dipertahankan.
+
+## Hasil kelanjutan
+
+- Commit audit: `6d7d5c2`; commit inti: `434bb21`.
+- Rekonsiliasi tersimpan dalam histori per ID sesi; koreksi tidak menggandakan baris. Gerai dapat membuka sesi berikutnya tanpa menghapus histori atau tiket mahasiswa.
+- Ledger stok numerik dan referensi transaksi tersedia pada pengelola; stok akhir lama tetap diarsipkan dan tidak menjadi produksi baru.
+- Pickup sebelum slot ditolak, expiry konsisten pada batas waktu, override menyimpan saran awal, kejadian stockout dapat dicatat, dan retry respons hilang mempertahankan idempotency key.
+- Pengaturan gerai mencakup lokasi, alergen dan biaya variabel. Alergen rescue disimpan pada penawaran saat publikasi. Label simulasi tidak muncul pada workspace layanan nyata.
+- README, panduan demo, panduan deployment, pemeriksaan konfigurasi, Dockerfile, dan konfigurasi tes browser/CI disiapkan.
+
+## Verifikasi lokal akhir
+
+- `npm test`: 18 tes lulus (aturan domain, SQLite, konfigurasi, origin dan cloud fail-closed).
+- `npm run build`: build produksi Next.js lulus.
+- `npm run typecheck`: lulus.
+- `npm run test:integration`: 5 tes lulus pada server produksi dengan database sementara.
+- `npm run check:config`: lulus untuk mode demo.
+- Browser mobile/desktop dan Docker belum dijalankan lokal karena batas lingkungan yang dijelaskan di atas. Keberhasilan workflow GitHub dicatat terpisah berdasarkan hasil aktual.
+- Supabase cloud belum dipasang/diuji: daftar proyek pada koneksi pengguna kosong. Tidak ada klaim lulus pengujian cloud, banyak gerai, atau hasil pilot nyata.

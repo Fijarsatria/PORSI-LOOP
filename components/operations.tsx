@@ -1473,7 +1473,7 @@ function MovementLedger({ state }: { state: Snapshot }) {
   const labels = { opening_balance: "Saldo saat pembaruan sistem", production_confirmed: "Produksi selesai", preorder_pickup: "Pre-order diambil", walkin_sale: "Penjualan langsung", rescue_pickup: "Rescue diambil", internal: "Konsumsi internal", waste: "Makanan dibuang", reconciliation_correction: "Koreksi rekonsiliasi" };
   return <section className="panel">
     <PanelHeading title="Pergerakan stok fisik" description="Porsi bertambah setelah produksi dan berkurang setelah penyerahan atau pencatatan penggunaan." />
-    {state.movements.length ? <div className="ops-table-wrap"><table className="ops-table"><thead><tr><th scope="col">Waktu (WIB)</th><th scope="col">Pergerakan</th><th scope="col">Porsi</th><th scope="col">Referensi</th></tr></thead><tbody>{state.movements.slice().reverse().map(movement => <tr key={movement.id}><td>{clock(movement.at)}</td><td>{labels[movement.type]}</td><td>{movement.quantity > 0 ? "+" : ""}{movement.quantity}</td><td><code title={movement.reference}>{movement.reference.slice(0, 8)}</code></td></tr>)}</tbody></table></div> : <p className="muted">Belum ada pergerakan stok pada sesi ini.</p>}
+    {state.movements.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th scope="col">Waktu (WIB)</th><th scope="col">Pergerakan</th><th scope="col">Porsi</th><th scope="col">Referensi</th></tr></thead><tbody>{state.movements.slice().reverse().map(movement => <tr key={movement.id}><td>{clock(movement.at)}</td><td>{labels[movement.type]}</td><td>{movement.quantity > 0 ? "+" : ""}{movement.quantity}</td><td><code title={movement.reference}>{movement.reference.slice(0, 8)}</code></td></tr>)}</tbody></table></div> : <p className="muted">Belum ada pergerakan stok pada sesi ini.</p>}
   </section>;
 }
 
@@ -1760,7 +1760,7 @@ function HistoryTable({ state }: { state: Snapshot }) {
         </thead>
         <tbody>
           {state.history.map((item) => (
-            <tr key={item.date}>
+            <tr key={item.id ?? item.date}>
               <td>
                 <strong>{dateLabel(item.date)}</strong>
               </td>

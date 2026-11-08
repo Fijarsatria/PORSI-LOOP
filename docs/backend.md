@@ -78,3 +78,17 @@ Rekonsiliasi: `produksi = pre-order diambil + walk-in + rescue diambil + interna
 ## Verifikasi yang dijalankan
 
 `node --import tsx --test tests/domain*.test.ts` menguji aturan perencanaan, isolasi pesanan mahasiswa, cutoff pembatalan, cadangan vs pengambilan rescue, kedaluwarsa, kapasitas/idempotensi, dan alur contoh PRD lengkap `50=23+20+3+1+3+0` dengan satu no-show. Pengujian penyimpanan mengeksekusi transaksi SQLite yang bersaing serta pembuatan/pencabutan sesi server. `npm run typecheck` memverifikasi kontrak TypeScript. Pengujian Supabase cloud tetap membutuhkan proyek dan kredensial nyata; belum diklaim lulus.
+
+## Kelanjutan 8 November 2026
+
+- Pickup pre-order ditolak sebelum awal slot. No-show, expiry klaim, dan penutupan penawaran berlaku tepat pada batas akhirnya (`now >= deadline`).
+- `save_menu` juga menerima `outlet`, `location`, dan `allergens`. Penawaran rescue menyimpan salinan alergen saat publikasi agar perubahan menu tidak mengubah informasi makanan yang sudah ditawarkan.
+- `record_stockout` (gerai) menerima `reason` minimal 5 karakter dan hanya dapat digunakan saat stok bebas nol. Satu tindakan mencatat satu permintaan walk-in yang tidak terpenuhi. Ini pencatatan kejadian, bukan estimasi permintaan hilang.
+- `start_session` (gerai) menerima `businessDate: YYYY-MM-DD`, `cutoffTime: HH:mm`, dan `pickupStart: HH:mm`, seluruhnya WIB. Sesi sebelumnya harus lengkap; cutoff harus masih di depan dan sebelum/sama dengan pickup; tiga slot 30 menit harus berada pada hari yang sama. Menu, pengaturan, histori, dan tiket lama dipertahankan; produksi sesi baru nol. Stok akhir lama tetap berada dalam arsip dan tidak otomatis dipindahkan.
+- Rekonsiliasi menulis/memperbarui satu baris histori dengan ID sesi stabil, termasuk bila belum lengkap. Koreksi mengganti baris tersebut. Histori sesi berjalan tidak digunakan untuk memprediksi dirinya sendiri; sesi belum lengkap juga dikecualikan.
+- `movements` pada snapshot staf memuat ledger numerik stok fisik: tipe, perubahan porsi bertanda, referensi transaksi/audit, aktor, dan waktu. Reservasi bukan pengurangan stok fisik. Instalasi lama memperoleh saldo pembaruan eksplisit; event lama tidak direkayasa. Snapshot mahasiswa/publik tidak memuat ledger ini.
+- Override merekam target rekomendasi awal selain target akhir/alasan/waktu. Client mempertahankan idempotency key untuk retry tindakan identik setelah respons hilang. Logout/login berhasil membersihkan intent dari akun sebelumnya.
+- Mode konfigurasi tidak dikenal menghasilkan 503, bukan fallback simulasi. Login cloud memeriksa peran sebelum menyimpan sesi; logout cloud harus berhasil mencabut sesi server sebelum menganggap pengguna keluar.
+- Live mode dimulai dengan menu tidak aktif dan baseline manual nol; pemilik melengkapi konfigurasi operasional. Simulasi tetap memakai fixture yang dilabeli.
+
+`npm run test:integration` menguji endpoint server hasil build, termasuk rollback perubahan invalid, role/origin, kuota bersaing, retry, seluruh siklus layanan, pembukaan sesi berikutnya, dan pencabutan cookie. `npm run test:e2e` disediakan untuk pengujian browser; lihat hasil CI atau jalankan di lingkungan dengan browser yang didukung.

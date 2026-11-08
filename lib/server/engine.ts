@@ -65,7 +65,7 @@ export function createState(at = Date.now(), empty = false): StoreState {
   return { schema: 1, sessionId: randomUUID(), stockouts: 0,
     movements: empty ? [] : [{ id: 'seed-production', type: 'production_confirmed', quantity: 32, reference: 'seed-production', actor: 'Fixture simulasi', at: iso(clock) }],
     archivedOrders: [], archivedClaims: [], createdAt: iso(at), demoClock: iso(clock), businessDate: date, menu, slots, orders,
-    rescues: empty ? [] : [{ id: 'rescue-today', menuId: menu.id, menuName: menu.name, description: 'Porsi matang yang tersedia lebih awal. Lauk dan sayur mengikuti ketersediaan gerai.', quantity: 6, available: 6, price: 10000, originalPrice: 18000, expiresAt: iso(clock + 210 * 60000), publishedAt: iso(clock), foodChecked: true, active: true }],
+    rescues: empty ? [] : [{ id: 'rescue-today', allergens: [...menu.allergens], menuId: menu.id, menuName: menu.name, description: 'Porsi matang yang tersedia lebih awal. Lauk dan sayur mengikuti ketersediaan gerai.', quantity: 6, available: 6, price: 10000, originalPrice: 18000, expiresAt: iso(clock + 210 * 60000), publishedAt: iso(clock), foodChecked: true, active: true }],
     claims: [], produced: empty ? 0 : 32, walkin: 0, walkinRevenue: 0, internal: 0, waste: 0, wasteKg: 0, capacity: 50, buffer: 2, manualBaseline: empty ? 0 : 24, history, logs: [], closed: false, idempotency: [] };
 }
 
@@ -270,7 +270,7 @@ export function applyAction(state: StoreState, user: User, action: Action, now: 
       const expiresAt = action.expiresAt ? new Date(String(action.expiresAt)).getTime() : now + integer(action.durationMinutes ?? 60, 'Durasi rescue', 5, 180) * 60000;
       if (!Number.isFinite(expiresAt) || expiresAt <= now || expiresAt > now + 3 * 3600000) throw new DomainError('Batas pengambilan rescue harus 1–180 menit dari sekarang.');
       const price = integer(action.price ?? 10000, 'Harga rescue', 0, state.menu.prices.regular);
-      state.rescues.unshift({ id: randomUUID(), menuId: state.menu.id, menuName: state.menu.name, description: text(action.description, 300) || 'Makanan matang yang telah diperiksa gerai. Ambil sebelum batas waktu.', quantity, available: quantity, price, originalPrice: state.menu.prices.regular, expiresAt: iso(expiresAt), publishedAt: iso(now), foodChecked: true, active: true });
+      state.rescues.unshift({ id: randomUUID(), allergens: [...state.menu.allergens], menuId: state.menu.id, menuName: state.menu.name, description: text(action.description, 300) || 'Makanan matang yang telah diperiksa gerai. Ambil sebelum batas waktu.', quantity, available: quantity, price, originalPrice: state.menu.prices.regular, expiresAt: iso(expiresAt), publishedAt: iso(now), foodChecked: true, active: true });
       log(state, user, 'Rescue diterbitkan', `${quantity} porsi · layak diperiksa gerai`, now); break;
     }
     case 'close_rescue': {

@@ -5,7 +5,11 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { Action, Snapshot, User } from '../domain';
 import { applyAction, createState, DomainError, expire, serverNow, snapshot, type StoreState } from './engine';
 
-export const mode = (): 'demo' | 'supabase' => process.env.PORSI_MODE === 'supabase' ? 'supabase' : 'demo';
+export const mode = (): 'demo' | 'supabase' => {
+  const value = process.env.PORSI_MODE ?? 'demo';
+  if (value !== 'demo' && value !== 'supabase') throw new DomainError('PORSI_MODE harus demo atau supabase. Periksa konfigurasi layanan.', 503);
+  return value;
+};
 let dbPromise: Promise<DatabaseSync> | undefined;
 async function database() {
   if (!dbPromise) dbPromise = import('node:sqlite').then(({ DatabaseSync }) => {

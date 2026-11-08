@@ -52,6 +52,7 @@ export interface Order {
   pickedUpAt?: string;
 }
 export interface RescueBatch {
+  allergens?: string[];
   id: string;
   menuId: string;
   menuName: string;

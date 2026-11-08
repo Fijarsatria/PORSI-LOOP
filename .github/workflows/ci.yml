@@ -1,0 +1,39 @@
+name: PORSI LOOP checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      PORSI_MODE: demo
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check:config
+      - run: npm test
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: browser-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
