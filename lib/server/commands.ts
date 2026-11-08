@@ -3,12 +3,12 @@ import type { Action, User } from '../domain';
 import {
   applyAction,
   createState,
-  createMarketplaceState,
   DomainError,
   expire,
   serverNow,
   type StoreState,
 } from './engine';
+import { createDemoMarketplace } from './sample-data';
 
 // One command engine is shared by local and hosted demo persistence.
 export function applyDemoCommand(
@@ -29,7 +29,7 @@ export function applyDemoCommand(
         403,
       );
     const next = state.kitchens
-      ? createMarketplaceState(realNow)
+      ? createDemoMarketplace(realNow)
       : createState(realNow);
     if (key) next.idempotency.push(key);
     return next;

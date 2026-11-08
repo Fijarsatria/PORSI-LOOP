@@ -4,6 +4,7 @@ import { summarizeFinance } from './finance';
 import type {
   Action,
   AuditLog,
+  CommunityImpact,
   HistoricalSession,
   Menu,
   Order,
@@ -895,6 +896,7 @@ function marketplaceSnapshot(
   const outletIds = [...new Set(all.map((kitchen) => kitchen.menu.outletId!))];
   return {
     ...selected,
+    community: communityImpact(states, Date.parse(selected.now)),
     ...(user?.role === 'admin'
       ? { staffAccounts: state.staffAccounts ?? [] }
       : {}),
@@ -958,6 +960,124 @@ function marketplaceSnapshot(
           ),
         }
       : {}),
+  };
+}
+
+const jakartaDate = (ms: number) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
+    new Date(ms),
+  );
+// Anonymous canteen-wide summary for the last seven business days. It carries
+// no names, phone numbers, tickets or per-customer rows.
+function communityImpact(states: StoreState[], now: number): CommunityImpact {
+  const anchor = states.map((s) => s.businessDate).sort().at(-1)!;
+  const anchorMs = Date.parse(`${anchor}T12:00:00+07:00`);
+  const days = Array.from({ length: 7 }, (_, i) => ({
+    date: jakartaDate(anchorMs - (6 - i) * 86400000),
+    served: 0,
+    promo: 0,
+  }));
+  const byDate = new Map(days.map((day) => [day.date, day]));
+  // Closed sessions are summarised in history; tickets fill the days it lacks.
+  const closed = new Map<string, { served: number; promo: number }>();
+  let includesSample = false;
+  for (const state of states)
+    for (const row of state.history) {
+      if (!row.closed) continue;
+      const day = closed.get(row.date) ?? { served: 0, promo: 0 };
+      day.served += row.preorders + row.walkin + row.rescue;
+      day.promo += row.rescue;
+      closed.set(row.date, day);
+      if (row.id?.startsWith('sample-')) includesSample = true;
+    }
+  const rated = new Map<
+    string,
+    { menuName: string; outletName: string; total: number; count: number }
+  >();
+  const stars: number[] = [];
+  let promoSavings = 0;
+  for (const state of states) {
+    const walkinDay = byDate.get(state.businessDate);
+    if (walkinDay && !closed.has(walkinDay.date))
+      walkinDay.served += state.walkin;
+    const tickets = [
+      ...state.orders,
+      ...(state.archivedOrders ?? []),
+      ...state.claims,
+      ...(state.archivedClaims ?? []),
+    ];
+    for (const ticket of tickets) {
+      if (ticket.status !== 'picked_up') continue;
+      const promo = 'batchId' in ticket;
+      const row = byDate.get(
+        ticket.serviceDate ?? jakartaDate(Date.parse(ticket.createdAt)),
+      );
+      if (row) {
+        const counted = !closed.has(row.date);
+        if (counted) row.served += ticket.quantity;
+        if (promo) {
+          if (counted) row.promo += ticket.quantity;
+          promoSavings +=
+            Math.max(0, (ticket.originalPrice ?? ticket.price) - ticket.price) *
+            ticket.quantity;
+        }
+        if (ticket.sample) includesSample = true;
+      }
+      if (ticket.rating) {
+        stars.push(ticket.rating.stars);
+        const outletName = ticket.outletName ?? state.menu.outlet;
+        const key = `${ticket.menuName}|${outletName}`;
+        const entry = rated.get(key) ?? {
+          menuName: ticket.menuName,
+          outletName,
+          total: 0,
+          count: 0,
+        };
+        entry.total += ticket.rating.stars;
+        entry.count += 1;
+        rated.set(key, entry);
+      }
+    }
+  }
+  for (const day of days) {
+    const summary = closed.get(day.date);
+    if (summary) Object.assign(day, summary);
+  }
+  const offers = states.flatMap((state) =>
+    state.rescues.filter(
+      (batch) =>
+        batch.active &&
+        Date.parse(batch.expiresAt) > now &&
+        batchAvailable(state, batch) > 0,
+    ),
+  );
+  const servedPortions = sum(days, (day) => day.served);
+  const promoPortions = sum(days, (day) => day.promo);
+  return {
+    days,
+    servedPortions,
+    promoPortions,
+    promoShare: servedPortions
+      ? Math.round((promoPortions / servedPortions) * 100)
+      : 0,
+    promoSavings,
+    ratingAverage: stars.length
+      ? Math.round((sum(stars, (n) => n) / stars.length) * 10) / 10
+      : 0,
+    ratingCount: stars.length,
+    activePromos: offers.length,
+    outletsWithPromo: new Set(offers.map((batch) => batch.outletId)).size,
+    topMenus: [...rated.values()]
+      .filter((entry) => entry.count >= 2)
+      .map((entry) => ({
+        menuName: entry.menuName,
+        outletName: entry.outletName,
+        average: Math.round((entry.total / entry.count) * 10) / 10,
+        count: entry.count,
+      }))
+      .sort((a, b) => b.average - a.average || b.count - a.count)
+      .slice(0, 3),
+    includesSample,
   };
 }
 
@@ -2011,6 +2131,7 @@ function applyKitchenAction(
         menuName: batch.menuName,
         quantity,
         price: batch.price,
+        originalPrice: batch.originalPrice,
         status: 'pending_payment',
         outletId: state.menu.outletId,
         fulfillment: fulfillment(action.fulfillment),

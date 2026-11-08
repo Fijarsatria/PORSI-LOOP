@@ -16,7 +16,7 @@ test('production HTTP API: guest privacy, credentials, outlet isolation, payment
   const origin = `http://127.0.0.1:${port}`;
   let output = '';
   const server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(port)], {
-    env: { ...process.env, NODE_ENV: 'production', PORSI_MODE: 'demo', PORSI_DATA_DIR: directory, PORSI_COOKIE_INSECURE: 'true', APP_ORIGIN: origin,
+    env: { ...process.env, NODE_ENV: 'production', PORSI_MODE: 'demo', PORSI_SAMPLE_DATA: 'off', PORSI_DATA_DIR: directory, PORSI_COOKIE_INSECURE: 'true', APP_ORIGIN: origin,
       DEMO_ADMIN_EMAIL: 'admin@porsiloop.local', DEMO_ADMIN_PASSWORD: 'PorsiAdmin2026!', DEMO_SELLER_EMAIL: 'seller@porsiloop.local', DEMO_SELLER_PASSWORD: 'PorsiSeller2026!' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

@@ -16,6 +16,7 @@ import {
 } from '../lib/server/store';
 
 process.env.PORSI_MODE = 'demo';
+process.env.PORSI_SAMPLE_DATA = 'off';
 process.env.PORSI_DATA_DIR = mkdtempSync(join(tmpdir(), 'porsi-loop-test-'));
 
 test('SQLite serializes competing requests, persists state, and validates revocable server sessions', async () => {

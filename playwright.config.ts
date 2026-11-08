@@ -16,6 +16,6 @@ export default defineConfig({
     command: 'npm run start -- --port 3100',
     url: 'http://127.0.0.1:3100/api/state',
     reuseExistingServer: false,
-    env: { PORSI_MODE: 'demo', PORSI_DATA_DIR: resolve('tmp/e2e-data', String(process.pid) + '-' + Date.now()), PORSI_COOKIE_INSECURE: 'true', APP_ORIGIN: 'http://127.0.0.1:3100', DEMO_ADMIN_EMAIL: 'admin@porsiloop.local', DEMO_ADMIN_PASSWORD: 'PorsiAdmin2026!', DEMO_SELLER_EMAIL: 'seller@porsiloop.local', DEMO_SELLER_PASSWORD: 'PorsiSeller2026!', DEMO_STUDENT_EMAIL: 'student@porsiloop.local', DEMO_STUDENT_PASSWORD: 'PorsiStudent2026!' },
+    env: { PORSI_MODE: 'demo', PORSI_SAMPLE_DATA: 'off', PORSI_DATA_DIR: resolve('tmp/e2e-data', String(process.pid) + '-' + Date.now()), PORSI_COOKIE_INSECURE: 'true', APP_ORIGIN: 'http://127.0.0.1:3100', DEMO_ADMIN_EMAIL: 'admin@porsiloop.local', DEMO_ADMIN_PASSWORD: 'PorsiAdmin2026!', DEMO_SELLER_EMAIL: 'seller@porsiloop.local', DEMO_SELLER_PASSWORD: 'PorsiSeller2026!', DEMO_STUDENT_EMAIL: 'student@porsiloop.local', DEMO_STUDENT_PASSWORD: 'PorsiStudent2026!' },
   },
 });

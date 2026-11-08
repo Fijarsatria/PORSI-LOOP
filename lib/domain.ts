@@ -67,6 +67,7 @@ export interface ChatMessage {
   at: string;
 }
 export interface Order {
+  sample?: boolean;
   phone?: string;
   seat?: string;
   messages?: ChatMessage[];
@@ -113,6 +114,8 @@ export interface RescueBatch {
   active: boolean;
 }
 export interface RescueClaim {
+  sample?: boolean;
+  originalPrice?: number;
   phone?: string;
   seat?: string;
   messages?: ChatMessage[];
@@ -267,7 +270,26 @@ export interface FinanceReport extends FinanceTotals {
   outlets: OutletFinance[];
   paymentMethods: FinanceMethod[];
 }
+export interface CommunityImpact {
+  days: { date: string; served: number; promo: number }[];
+  servedPortions: number;
+  promoPortions: number;
+  promoShare: number;
+  promoSavings: number;
+  ratingAverage: number;
+  ratingCount: number;
+  activePromos: number;
+  outletsWithPromo: number;
+  topMenus: {
+    menuName: string;
+    outletName: string;
+    average: number;
+    count: number;
+  }[];
+  includesSample: boolean;
+}
 export interface Snapshot {
+  community?: CommunityImpact;
   staffAccounts?: {
     id: string;
     name: string;

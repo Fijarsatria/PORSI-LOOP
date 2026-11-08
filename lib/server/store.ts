@@ -13,6 +13,7 @@ import {
   type StoreState,
 } from './engine';
 import { applyDemoCommand } from './commands';
+import { createDemoMarketplace } from './sample-data';
 import {
   accountFields,
   isReservedEmail,
@@ -46,7 +47,7 @@ async function database() {
       );
       db.prepare(
         'INSERT OR IGNORE INTO application_state (id, document) VALUES (1, ?)',
-      ).run(JSON.stringify(createMarketplaceState()));
+      ).run(JSON.stringify(createDemoMarketplace()));
       return db;
     });
   return dbPromise;
